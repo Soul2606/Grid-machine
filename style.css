@@ -5,3 +5,7 @@
     grid-template-rows: repeat(4, 100px);
     gap: 15px;
 }
+
+.grid-cell{
+    background-color: gray;
+}
