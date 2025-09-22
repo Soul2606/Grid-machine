@@ -1,11 +1,20 @@
 
+.stack{
+    position: relative;
+}
+
 .main-grid{
     display: grid;
     grid-template-columns: repeat(4, 100px);
     grid-template-rows: repeat(4, 100px);
     gap: 15px;
+    position: absolute;
 }
 
 .grid-cell{
     background-color: gray;
+}
+
+.grid-cell1{
+    background-color: rgb(195, 170, 103);
 }
