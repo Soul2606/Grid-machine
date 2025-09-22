@@ -99,6 +99,13 @@ class GridItem {
 
 		return rowsContained && colsContained;
 	}
+
+	isEqual(otherItem){
+		if (!(otherItem instanceof GridItem)) throw new Error("otherItem is not a GridItem");
+		const area1 = this.getGridArea()
+		const area2 = otherItem.getGridArea()
+		return area1.rowStart === area2.rowStart && area1.rowEnd === area2.rowEnd && area1.colStart === area2.colStart && area1.colEnd === area2.colEnd
+	}
 }
 
 
