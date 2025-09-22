@@ -5,7 +5,7 @@ class GridItem {
 	#colStart
 	#colEnd
 	constructor(rowStart, rowEnd, colStart, colEnd) {
-		if (![colStart, colEnd, rowStart, rowEnd].every(item=>Number.isFinite(item))) throw new Error("Grid data contains invalid data")
+		if (![colStart, colEnd, rowStart, rowEnd].every(item=>Number.isFinite(item))) throw new Error("Grid area contains invalid data")
 		this.#rowStart = rowStart
 		this.#rowEnd = rowEnd
 		this.#colStart = colStart
@@ -21,8 +21,21 @@ class GridItem {
 		return new GridItem(gridArea.rowStart, gridArea.rowEnd, gridArea.colStart, gridArea.colEnd);
 	}
 
+	clone(){
+		return new GridItem(this.#rowStart, this.#rowEnd, this.#colStart, this.#colEnd)
+	}
+
 	getGridArea(){
 		return {rowStart:this.#rowStart, rowEnd:this.#rowEnd, colStart:this.#colStart, colEnd:this.#colEnd}
+	}
+
+	setGridArea(rowStart, rowEnd, colStart, colEnd){
+		if (![colStart, colEnd, rowStart, rowEnd].every(item=>Number.isFinite(item))) throw new Error("Grid area contains invalid data")
+		this.#rowStart = rowStart
+		this.#rowEnd = rowEnd
+		this.#colStart = colStart
+		this.#colEnd = colEnd
+		return this
 	}
 
 	applyGrid(element) {
@@ -49,28 +62,42 @@ class GridItem {
 		})
 	}
 
-	getSurroundingItems(otherItems){
-		if (!Array.isArray(otherItems)) throw new Error("otherItems is not an array");
-		if (otherItems.some(item => !(item instanceof GridItem))) throw new Error("Array contains non GridItem");
-		const { rowStart, rowEnd, colStart, colEnd } = this.getGridArea()
+	isAdjacent(otherItem) {
+		if (!(otherItem instanceof GridItem)) throw new Error("otherItem is not a GridItem");
 
-		return otherItems.filter(item=>{
-			const area = item.getGridArea()
+		const a = this.getGridArea();
+		const b = otherItem.getGridArea();
 
-			// Above
-			if (isOverlapping({ rowStart: rowStart - 1, rowEnd: rowStart, colStart, colEnd }, area)) return true;
+		const verticallyAligned = a.colStart < b.colEnd && a.colEnd > b.colStart;
+		const horizontallyAligned = a.rowStart < b.rowEnd && a.rowEnd > b.rowStart;
 
-			// Below
-			if (isOverlapping({ rowStart: rowEnd, rowEnd: rowEnd + 1, colStart, colEnd }, area)) return true;
+		// Above
+		if (a.rowStart === b.rowEnd && verticallyAligned) return true;
 
-			// Left
-			if (isOverlapping({ rowStart, rowEnd, colStart: colStart - 1, colEnd: colStart }, area)) return true;
+		// Below
+		if (a.rowEnd === b.rowStart && verticallyAligned) return true;
 
-			// Right
-			if (isOverlapping({ rowStart, rowEnd, colStart: colEnd, colEnd: colEnd + 1 }, area)) return true;
+		// Left
+		if (a.colStart === b.colEnd && horizontallyAligned) return true;
 
-			return false;
-		})
+		// Right
+		if (a.colEnd === b.colStart && horizontallyAligned) return true;
+
+		return false;
+	}
+
+	isSubsetOf(otherItem){
+		//Checks if this item is fully within the otherItem
+		if (!(otherItem instanceof GridItem)) throw new Error("otherItem is not a GridItem");
+
+		const a = this.getGridArea();
+		const b = otherItem.getGridArea();
+
+		// Check if `a` is fully inside `b`
+		const rowsContained = a.rowStart >= b.rowStart && a.rowEnd <= b.rowEnd;
+		const colsContained = a.colStart >= b.colStart && a.colEnd <= b.colEnd;
+
+		return rowsContained && colsContained;
 	}
 }
 
@@ -116,3 +143,16 @@ const gridCells = Array.from(document.getElementsByClassName('grid-cell')).map(i
 console.log(new GridItem(1,2,1,2).getGridArea())
 console.log(new GridItem(1,2,1,2).isOverlapping(new GridItem(1,3,1,3)))
 console.log(new GridItem(1,2,1,3).isOverlapping(new GridItem(2,3,3,4)))
+
+console.log('adjacency test')
+console.log(new GridItem(1,2,1,2).isAdjacent(new GridItem(1,2,2,3)))
+console.log('adjacency test, corner')
+console.log(new GridItem(1,2,1,2).isAdjacent(new GridItem(2,3,2,3)))
+console.log('adjacency test, subset/fully contained')
+console.log(new GridItem(1,2,1,2).isAdjacent(new GridItem(1,2,1,2)))
+
+console.log('subset test')
+console.log(new GridItem(1,2,1,2).isSubsetOf(new GridItem(1,2,1,2)))
+console.log(new GridItem(1,2,1,2).isSubsetOf(new GridItem(1,3,1,3)))
+console.log(new GridItem(1,3,1,3).isSubsetOf(new GridItem(1,2,1,2)))
+
