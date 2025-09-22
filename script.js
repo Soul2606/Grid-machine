@@ -1,18 +1,36 @@
 
 class GridItem {
-	#element
-	constructor(element) {
-		if (!(element instanceof HTMLElement)) throw new Error("invalid element");
-		if (this.#parseGridArea(element) === null) throw new Error("element has an invalid grid area");
-		this.#element = element
+	#rowStart
+	#rowEnd
+	#colStart
+	#colEnd
+	constructor(rowStart, rowEnd, colStart, colEnd) {
+		if (![colStart, colEnd, rowStart, rowEnd].every(item=>Number.isFinite(item))) throw new Error("Grid data contains invalid data")
+		this.#rowStart = rowStart
+		this.#rowEnd = rowEnd
+		this.#colStart = colStart
+		this.#colEnd = colEnd
 	}
 
-	getElement(){
-		return this.#element
+	static fromElement(element) {
+		if (!(element instanceof HTMLElement)) {
+			throw new Error("Argument is not an HTMLElement");
+		}
+		const gridArea = parseGridArea(element);
+		if (!gridArea) throw new Error("Element has an invalid grid area");
+		return new GridItem(gridArea.rowStart, gridArea.rowEnd, gridArea.colStart, gridArea.colEnd);
 	}
 
-	getGridArea() {
-		return this.#parseGridArea(this.#element)
+	getGridArea(){
+		return {rowStart:this.#rowStart, rowEnd:this.#rowEnd, colStart:this.#colStart, colEnd:this.#colEnd}
+	}
+
+	applyGrid(element) {
+		if (!(element instanceof HTMLElement)) throw new Error("element is not an HTMLElement");
+		element.style.gridRowStart = this.#rowStart
+		element.style.gridRowEnd = this.#rowEnd
+		element.style.gridColumnStart = this.#colStart
+		element.style.gridColumnEnd = this.#colEnd
 	}
 
 	isOverlapping(...otherItem) {
@@ -31,20 +49,10 @@ class GridItem {
 		})
 	}
 
-	#parseGridArea(element) {
-		const area = getComputedStyle(element).getPropertyValue('grid-area').trim().split('/');
-		if (area.length !== 4) return null
-		if (area.includes('auto')) return null
-		// Example area = "1 / 2 / 4 / 5"
-		const [rowStart, colStart, rowEnd, colEnd] = area
-			.map(s => parseInt(s, 10) || 0);
-		return { rowStart, rowEnd, colStart, colEnd };
-	}
-
 	getSurroundingItems(otherItems){
 		if (!Array.isArray(otherItems)) throw new Error("otherItems is not an array");
 		if (otherItems.some(item => !(item instanceof GridItem))) throw new Error("Array contains non GridItem");
-		const { rowStart, rowEnd, colStart, colEnd } = parseGridArea(this.#element)
+		const { rowStart, rowEnd, colStart, colEnd } = this.getGridArea()
 
 		return otherItems.filter(item=>{
 			const area = item.getGridArea()
@@ -89,6 +97,9 @@ function isOverlapping(area1, area2) {
 	if (!('rowStart' in a && 'rowEnd' in a && 'colStart' in a && 'colEnd' in a)) throw new Error("Error");
 	if (!('rowStart' in b && 'rowEnd' in b && 'colStart' in b && 'colEnd' in b)) throw new Error("Error");
 
+	if (![a.rowStart, a.rowEnd, a.colStart, a.colEnd].every(Number.isFinite)) throw new Error("Area1 contains invalid values");
+	if (![b.rowStart, b.rowEnd, b.colStart, b.colEnd].every(Number.isFinite)) throw new Error("Area2 contains invalid values");
+
 	const colsOverlap = a.colStart < b.colEnd && a.colEnd > b.colStart;
 	const rowsOverlap = a.rowStart < b.rowEnd && a.rowEnd > b.rowStart;
 
@@ -99,7 +110,9 @@ function isOverlapping(area1, area2) {
 
 
 
-const gridCells = Array.from(document.getElementsByClassName('grid-cell')).map(item => new GridItem(item))
-console.log(gridCells)
-gridCells[0].getSurroundingItems([gridCells[1], gridCells[2], gridCells[3]])
+const gridCells = Array.from(document.getElementsByClassName('grid-cell')).map(item => GridItem.fromElement(item))
 
+
+console.log(new GridItem(1,2,1,2).getGridArea())
+console.log(new GridItem(1,2,1,2).isOverlapping(new GridItem(1,3,1,3)))
+console.log(new GridItem(1,2,1,3).isOverlapping(new GridItem(2,3,3,4)))
