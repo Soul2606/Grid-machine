@@ -16,9 +16,18 @@ class GridItem {
 		if (!(element instanceof HTMLElement)) {
 			throw new Error("Argument is not an HTMLElement");
 		}
-		const gridArea = parseGridArea(element);
+		const gridArea = this.#parseGridArea(element);
 		if (!gridArea) throw new Error("Element has an invalid grid area");
 		return new GridItem(gridArea.rowStart, gridArea.rowEnd, gridArea.colStart, gridArea.colEnd);
+	}
+
+	static #parseGridArea(element) {
+		const area = getComputedStyle(element).getPropertyValue('grid-area').trim().split('/');
+		if (area.length !== 4) return null
+		if (area.includes('auto')) return null
+		// Example area = "1 / 2 / 4 / 5"
+		const [rowStart, colStart, rowEnd, colEnd] = area.map(s => parseInt(s, 10) || 0);
+		return { rowStart, rowEnd, colStart, colEnd };
 	}
 
 	clone(){
@@ -106,40 +115,42 @@ class GridItem {
 		const area2 = otherItem.getGridArea()
 		return area1.rowStart === area2.rowStart && area1.rowEnd === area2.rowEnd && area1.colStart === area2.colStart && area1.colEnd === area2.colEnd
 	}
+	
+	//JS GridItem class
+	isEdge(){
+		return this.#rowStart === this.#rowEnd || this.#colStart === this.#colEnd
+	}
+
+	isPoint(){
+		return this.#rowStart === this.#rowEnd && this.#colStart === this.#colEnd 
+	}
+
+	getEdgeTop(){
+		return new GridItem(this.#rowStart, this.#rowStart, this.#colStart, this.#colEnd)
+	}
+
+	getEdgeRight() {
+		return new GridItem(this.#rowStart, this.#rowEnd, this.#colEnd, this.#colEnd);
+	}
+
+	getEdgeBottom() {
+		return new GridItem(this.#rowEnd, this.#rowEnd, this.#colStart, this.#colEnd);
+	}
+
+	getEdgeLeft() {
+		return new GridItem(this.#rowStart, this.#rowEnd, this.#colStart, this.#colStart);
+	}
+
+
 }
 
 
 
 
-function parseGridArea(element) {
-	const area = getComputedStyle(element).getPropertyValue('grid-area').trim().split('/');
-	if (area.length !== 4) return null
-	if (area.includes('auto')) return null
-	// Example area = "1 / 2 / 4 / 5"
-	const [rowStart, colStart, rowEnd, colEnd] = area
-		.map(s => parseInt(s, 10) || 0);
-	return { rowStart, rowEnd, colStart, colEnd };
-}
 
 
 
 
-function isOverlapping(area1, area2) {
-	const a = area1
-	const b = area2
-
-	if (!('rowStart' in a && 'rowEnd' in a && 'colStart' in a && 'colEnd' in a)) throw new Error("Error");
-	if (!('rowStart' in b && 'rowEnd' in b && 'colStart' in b && 'colEnd' in b)) throw new Error("Error");
-
-	if (![a.rowStart, a.rowEnd, a.colStart, a.colEnd].every(Number.isFinite)) throw new Error("Area1 contains invalid values");
-	if (![b.rowStart, b.rowEnd, b.colStart, b.colEnd].every(Number.isFinite)) throw new Error("Area2 contains invalid values");
-
-	const colsOverlap = a.colStart < b.colEnd && a.colEnd > b.colStart;
-	const rowsOverlap = a.rowStart < b.rowEnd && a.rowEnd > b.rowStart;
-
-	return colsOverlap && rowsOverlap;
-		
-}
 
 
 
