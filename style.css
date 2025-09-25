@@ -1,4 +1,9 @@
 
+body{
+    color: white;
+    background-color: rgb(40, 41, 43);
+}
+
 .stack{
     position: relative;
 }
@@ -43,4 +48,9 @@
     background-color: rgb(191, 203, 211);
     border: 6px rgb(145, 172, 204);
     border-style: inset;
+}
+
+.machine{
+    display: grid;
+    gap: 5px;
 }
