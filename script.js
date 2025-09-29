@@ -174,3 +174,80 @@ console.log(new GridItem(1,2,1,2).isSubsetOf(new GridItem(1,2,1,2)))
 console.log(new GridItem(1,2,1,2).isSubsetOf(new GridItem(1,3,1,3)))
 console.log(new GridItem(1,3,1,3).isSubsetOf(new GridItem(1,2,1,2)))
 
+
+
+
+
+
+
+
+class Machine {
+	static createMachine(width, height, centerElement){
+		const root = document.createElement('div')
+		root.className = 'machine'
+		root.style.gridRow = `span ${height}`
+		root.style.gridColumn = `span ${width}`
+		const repeatString = (n, str)=>{
+			let string = ''
+			for(let i=0; i<n; i++){
+				string += str
+			}
+			return string
+		}
+		root.style.gridTemplateRows = `auto ${repeatString(height, '1fr ')}auto`
+		root.style.gridTemplateColumns = `auto ${repeatString(width, '1fr ')}auto`
+		
+		const center = document.createElement('div')
+		center.style.gridArea = `${2}/${2}/${2+height}/${2+width}`
+		if (centerElement) center.appendChild(centerElement)
+		root.appendChild(center)
+
+		//left
+		for (let i = 0; i < height; i++) {	
+			const edge = document.createElement('button')
+			edge.style.gridColumn = `${1}/${2}`
+			edge.style.gridRow = `${2+i}/${3+i}`
+			edge.style.width = '15px'
+			root.appendChild(edge)
+		}
+		
+		//right
+		for (let i = 0; i < height; i++) {	
+			const edge = document.createElement('button')
+			edge.style.gridColumn = `${width+2}/${width+3}`
+			edge.style.gridRow = `${2+i}/${3+i}`
+			edge.style.width = '15px'
+			root.appendChild(edge)
+		}
+
+		//top
+		for (let i = 0; i < width; i++) {	
+			const edge = document.createElement('button')
+			edge.style.gridColumn = `${2+i}/${3+i}`
+			edge.style.gridRow = `${1}/${2}`
+			edge.style.height = '15px'
+			root.appendChild(edge)
+		}
+
+		//bottom
+		for (let i = 0; i < width; i++) {	
+			const edge = document.createElement('button')
+			edge.style.gridColumn = `${2+i}/${3+i}`
+			edge.style.gridRow = `${height+2}/${height+3}`
+			edge.style.height = '15px'
+			root.appendChild(edge)
+		}
+
+		return root
+	}
+}
+
+const element = document.createElement('div')
+element.style.backgroundColor = 'white'
+element.style.width = '100%'
+element.style.height = '100%'
+document.getElementById('grid').appendChild(Machine.createMachine(3,3,element))
+
+
+
+
