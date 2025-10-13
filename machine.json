@@ -1,8 +1,30 @@
 [
     {
         "id":"stone_furnace",
-        "name":"stone_furnace",
+        "name":"Stone furnace",
         "capabilities":["smelt"],
-        "tier":0
+        "tier":0,
+        "requiresConfiguration":false
+    },
+    {
+        "id":"water_pump",
+        "name":"Water Pump",
+        "capabilities":["extract_water"],
+        "tier":0,
+        "requiresConfiguration":false
+    },
+    {
+        "id":"chemical_reactor_1",
+        "name":"Chemical Reactor",
+        "capabilities":["chemical_reactor"],
+        "tier":1,
+        "requiresConfiguration":true
+    },
+    {
+        "id":"electrolyses_chamber_1",
+        "name":"Electrolyses Chamber",
+        "capabilities":["electrolyze"],
+        "tier":1,
+        "requiresConfiguration":false
     }
 ]

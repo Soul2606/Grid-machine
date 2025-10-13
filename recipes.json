@@ -1,10 +1,40 @@
 [
     {
         "id":"smelt_aluminum",
-        "inputs":["raw_aluminum"],
-        "outputs":["aluminum"],
+        "inputs":[{"itemId":"raw_aluminum", "quantity":1}],
+        "outputs":[{"itemId":"aluminum", "quantity":1}],
         "requiredProcess":["smelt"],
         "requiredTier":0,
         "processTimeSeconds":5
+    },
+    {
+        "id":"extract_water",
+        "inputs":[],
+        "outputs":[{"itemId":"water", "quantity":1}],
+        "requiredProcess":["extract_water"],
+        "requiredTier":0,
+        "processTimeSeconds":0.1
+    },
+    {
+        "id":"produce_water",
+        "inputs":[
+            {"itemId":"hydrogen", "quantity":2},
+            {"itemId":"oxygen", "quantity":1}
+        ],
+        "outputs":[{"itemId":"water", "quantity":1}],
+        "requiredProcess":["chemical_reactor"],
+        "requiredTier":1,
+        "processTimeSeconds":1
+    },
+    {
+        "id":"electrolyze_water",
+        "inputs":[{"itemId":"water", "quantity":1}],
+        "outputs":[
+            {"itemId":"hydrogen", "quantity":2},
+            {"itemId":"oxygen", "quantity":1}
+        ],
+        "requiredProcess":["electrolyze"],
+        "requiredTier":1,
+        "processTimeSeconds":120
     }
 ]

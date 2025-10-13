@@ -1,12 +1,27 @@
 [
 	{
 		"id":"raw_aluminum",
-		"name":"raw_aluminum",
+		"name":"Raw Aluminum",
 		"tags":["raw_ore"]
 	},
 	{
 		"id":"aluminum",
-		"name":"aluminum",
+		"name":"Aluminum",
 		"tags":["metal"]
+	},
+	{
+		"id":"water",
+		"name":"Water",
+		"tags":[]
+	},
+	{
+		"id":"hydrogen",
+		"name":"Hydrogen",
+		"tags":[]
+	},
+	{
+		"id":"oxygen",
+		"name":"Oxygen",
+		"tags":[]
 	}
 ]
