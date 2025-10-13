@@ -1,0 +1,10 @@
+[
+    {
+        "id":"smelt_aluminum",
+        "inputs":["raw_aluminum"],
+        "outputs":["aluminum"],
+        "requiredProcess":["smelt"],
+        "requiredTier":0,
+        "processTimeSeconds":5
+    }
+]

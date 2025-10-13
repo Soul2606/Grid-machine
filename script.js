@@ -182,6 +182,15 @@ console.log(new GridItem(1,3,1,3).isSubsetOf(new GridItem(1,2,1,2)))
 
 
 class Machine {
+	#element
+	#stack
+	constructor(element, id){
+		if (!(element instanceof HTMLElement)) throw new Error("element is not an HTMLElement");
+		this.#element = element
+		this.#stack = 1
+		this.id = id
+	}
+
 	static createMachine(width, height, centerElement){
 		const root = document.createElement('div')
 		root.className = 'machine'
@@ -239,6 +248,17 @@ class Machine {
 		}
 
 		return root
+	}
+
+	setStack(value){
+		if (!Number.isInteger(value)) throw new Error("value is not an integer");
+		this.#stack = value
+		return this
+	}
+
+	getStack(){
+		//Stack is primitive
+		return this.#stack
 	}
 }
 

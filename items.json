@@ -1,0 +1,12 @@
+[
+	{
+		"id":"raw_aluminum",
+		"name":"raw_aluminum",
+		"tags":["raw_ore"]
+	},
+	{
+		"id":"aluminum",
+		"name":"aluminum",
+		"tags":["metal"]
+	}
+]
