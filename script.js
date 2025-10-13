@@ -271,3 +271,74 @@ document.getElementById('grid').appendChild(Machine.createMachine(3,3,element))
 
 
 
+
+
+async function fetchJSON(url) {
+	return fetch(url).then(response=>{
+		if (!response.ok) {
+			throw new Error("Network response was not ok" + response.statusText);
+			
+		}
+		return response.json()
+	})
+}
+
+
+
+
+function compile(items, machines, recipes) {
+
+	items.forEach(item => {
+		if (Object.keys(item).some(key=>!['id', 'name', 'tags'].includes(key))) throw new Error(`${item} has invalid keys`);	
+	})
+	machines.forEach(item => {
+		if (Object.keys(item).some(key=>!['id', 'name', 'capabilities', 'tier', 'requiresConfiguration'].includes(key))) throw new Error(`${item} has invalid keys`);	
+	})
+	recipes.forEach(item => {
+		if (Object.keys(item).some(key=>!['id', 'inputs', 'outputs', 'requiredProcess', 'requiredTier', 'processTimeSeconds'].includes(key))) throw new Error(`${item} has invalid keys`);	
+	})
+	
+	const hasDuplicateIds = (array)=>{
+		const previousIds = new Set()
+		for (const item of array) {
+			if (previousIds.has(item.id)) return true
+			previousIds.add(item.id)
+		}
+		return false
+	}
+	if (hasDuplicateIds(items)) throw new Error("Items has duplicate IDs");
+	if (hasDuplicateIds(machines)) throw new Error("Machines has duplicate IDs");
+	if (hasDuplicateIds(recipes)) throw new Error("Recipes has duplicate IDs");
+
+	//Check if setA is a subset of setB
+	const isSubset = (setA, setB) => [...setA].every(x => setB.has(x));
+
+	for (const machine of machines) {
+		if (machine.requiresConfiguration) continue
+		const relevantRecipes = recipes.filter(recipe=>machine.capabilities.includes(recipe.requiredProcess) && recipe.requiredTier <= machine.tier)
+		const inputIdsSets = relevantRecipes.map(recipe=>new Set(recipe.inputs.map(input=>input.itemId)))
+		for (let i = 0; i < inputIdsSets.length; i++) {
+			for (let j = i + 1; j < inputIdsSets.length; j++) {
+				const setA = inputIdsSets[i];
+				const setB = inputIdsSets[j];
+				if (i === j) continue
+				if (isSubset(setB, setA) || isSubset(setA, setB)) {
+					throw new Error(`Conflicting recipes detected for machine ${machine.name}. Recipe ${relevantRecipes[i].id} and ${relevantRecipes[j].id} have subset/superset inputs`);
+				}
+			}
+		}
+	}
+
+}
+
+
+
+(async () => {
+	const items = await fetchJSON('items.json')
+	const machines = await fetchJSON('machines.json')
+	const recipes = await fetchJSON('recipes.json')
+	compile(items, machines, recipes)
+})()
+
+
+
