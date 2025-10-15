@@ -288,16 +288,63 @@ async function fetchJSON(url) {
 
 function compile(items, machines, recipes) {
 
+	const checkKeys = (obj,keys)=>{
+		if (Object.keys(obj).some(key=>!keys.includes(key))) throw new Error(`${obj} has invalid keys, valid keys:${keys}`);	
+	}
+
 	items.forEach(item => {
-		if (Object.keys(item).some(key=>!['id', 'name', 'tags'].includes(key))) throw new Error(`${item} has invalid keys`);	
+		checkKeys(item,['id', 'name', 'tags'])
 	})
 	machines.forEach(item => {
-		if (Object.keys(item).some(key=>!['id', 'name', 'capabilities', 'tier', 'requiresConfiguration'].includes(key))) throw new Error(`${item} has invalid keys`);	
+		checkKeys(item,['id', 'name', 'capabilities', 'tier', 'requiresConfiguration'])
 	})
 	recipes.forEach(item => {
-		if (Object.keys(item).some(key=>!['id', 'inputs', 'outputs', 'requiredProcess', 'requiredTier', 'processTimeSeconds'].includes(key))) throw new Error(`${item} has invalid keys`);	
+		checkKeys(item,['id', 'inputs', 'outputs', 'requiredProcess', 'requiredTier', 'processTimeSeconds'])
 	})
 	
+	const checkType = (obj,type)=>{
+		if (type === 'array'){
+			if (!Array.isArray(obj)) throw new Error(`${obj} is not of an array`);
+		}
+		else if (typeof obj !== type) throw new Error(`${obj} is not of type ${type}`);
+	}
+
+	for (const item of items) {
+		checkType(item.id,'string')
+		checkType(item.name,'string')
+		checkType(item.tags,'array')
+		item.tags.forEach(tag=>checkType(tag,'string'))
+	}
+	
+	for (const machine of machines) {
+		checkType(machine.id,'string')
+		checkType(machine.name,'string')
+		checkType(machine.tier,'number')
+		checkType(machine.requiresConfiguration,'boolean')
+		checkType(machine.capabilities,'array')
+		machine.capabilities.forEach(item=>checkType(item,'string'))
+	}
+
+	for (const recipe of recipes) {
+		checkType(recipe.id,'string')
+		checkType(recipe.requiredProcess,'string')
+		checkType(recipe.requiredTier,'number')
+		checkType(recipe.processTimeSeconds,'number')
+		checkType(recipe.inputs,'array')
+		recipe.inputs.forEach(item=>{
+			checkKeys(item,['id','quantity'])
+			checkType(item.id,'string');
+			checkType(item.quantity,'number')
+		})
+		checkType(recipe.outputs,'array')
+		recipe.outputs.forEach(item=>{
+			checkKeys(item,['id','quantity'])
+			checkType(item.id,'string');
+			checkType(item.quantity,'number')
+		})
+	}
+	
+
 	const hasDuplicateIds = (array)=>{
 		const previousIds = new Set()
 		for (const item of array) {
@@ -310,6 +357,9 @@ function compile(items, machines, recipes) {
 	if (hasDuplicateIds(machines)) throw new Error("Machines has duplicate IDs");
 	if (hasDuplicateIds(recipes)) throw new Error("Recipes has duplicate IDs");
 
+	/*Some machines do not need to have their recipe set. All recipes used by those machines must me check to make sure they don't conflict.
+	Recipes conflict if they take the same ingredient and produce different things: (a,b,c)→(a) and (a,b,c)→(b). They also conflict if one is a subset of another: (a)→(c) and (a,b)→(d).
+	The outputs do not matter, only the input, even if they produce the exact same thing as long as the input conflict the entire recipe conflict. Conflict: (a)→(b) and (a)→(b). Don't conflict: (a)→(b) and (b)→(b).*/
 	//Check if setA is a subset of setB
 	const isSubset = (setA, setB) => [...setA].every(x => setB.has(x));
 
@@ -329,6 +379,7 @@ function compile(items, machines, recipes) {
 		}
 	}
 
+	return {items, machines, recipes}
 }
 
 
@@ -337,8 +388,13 @@ function compile(items, machines, recipes) {
 	const items = await fetchJSON('items.json')
 	const machines = await fetchJSON('machines.json')
 	const recipes = await fetchJSON('recipes.json')
-	compile(items, machines, recipes)
-})()
+	return compile(items, machines, recipes)
+})().then(main)
+
+
+function main(response) {
+	console.log(response)
+}
 
 
 
