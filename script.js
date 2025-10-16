@@ -147,40 +147,6 @@ class GridItem {
 
 
 
-
-
-
-
-
-
-
-
-const gridCells = Array.from(document.getElementsByClassName('grid-cell')).map(item => GridItem.fromElement(item))
-
-
-console.log(new GridItem(1,2,1,2).getGridArea())
-console.log(new GridItem(1,2,1,2).isOverlapping(new GridItem(1,3,1,3)))
-console.log(new GridItem(1,2,1,3).isOverlapping(new GridItem(2,3,3,4)))
-
-console.log('adjacency test')
-console.log(new GridItem(1,2,1,2).isAdjacent(new GridItem(1,2,2,3)))
-console.log('adjacency test, corner')
-console.log(new GridItem(1,2,1,2).isAdjacent(new GridItem(2,3,2,3)))
-console.log('adjacency test, subset/fully contained')
-console.log(new GridItem(1,2,1,2).isAdjacent(new GridItem(1,2,1,2)))
-
-console.log('subset test')
-console.log(new GridItem(1,2,1,2).isSubsetOf(new GridItem(1,2,1,2)))
-console.log(new GridItem(1,2,1,2).isSubsetOf(new GridItem(1,3,1,3)))
-console.log(new GridItem(1,3,1,3).isSubsetOf(new GridItem(1,2,1,2)))
-
-
-
-
-
-
-
-
 class Machine {
 	#element
 	#stack
@@ -262,17 +228,32 @@ class Machine {
 	}
 }
 
-const element = document.createElement('div')
-element.style.backgroundColor = 'white'
-element.style.width = '100%'
-element.style.height = '100%'
-document.getElementById('grid').appendChild(Machine.createMachine(3,3,element))
 
 
 
 
+document.getElementById('side-menu-width-button').addEventListener('mousedown',e=>{
+	console.log('button clicked')
+	const originalMouseX = e.clientX
+	const originalInventoryWidth = Number(document.getElementById('side-menu').getBoundingClientRect().width)
+	const up = ()=>{
+		window.removeEventListener('mouseup',up)
+		window.removeEventListener('mousemove',move)
+	}
+	const move = e=>{
+		e.clientX
+		console.log(e.clientX)
+		document.getElementById('side-menu-container').style.width = originalInventoryWidth + e.clientX - originalMouseX + 20 + 'px'
+		document.getElementById('side-menu').style.width = originalInventoryWidth + e.clientX - originalMouseX + 'px'
+	}
+	window.addEventListener('mousemove',move);
+	window.addEventListener('mouseup',up)
+});
 
 
+
+
+(async () => {
 async function fetchJSON(url) {
 	return fetch(url).then(response=>{
 		if (!response.ok) {
@@ -282,10 +263,6 @@ async function fetchJSON(url) {
 		return response.json()
 	})
 }
-
-
-
-
 function compile(items, machines, recipes) {
 
 	const checkKeys = (obj,keys)=>{
@@ -381,19 +358,27 @@ function compile(items, machines, recipes) {
 
 	return {items, machines, recipes}
 }
-
-
-
-(async () => {
-	const items = await fetchJSON('items.json')
-	const machines = await fetchJSON('machines.json')
-	const recipes = await fetchJSON('recipes.json')
-	return compile(items, machines, recipes)
+const items = await fetchJSON('items.json')
+const machines = await fetchJSON('machines.json')
+const recipes = await fetchJSON('recipes.json')
+return compile(items, machines, recipes)
 })().then(main)
 
 
 function main(response) {
-	console.log(response)
+	const items = response.items
+	const machines = response.machines
+	const recipes  = response.recipes
+
+	const inventory = items.map(item=>{return{id:item.id,quantity:0}})
+	for(const inventoryItem of inventory){
+		const item = items.find(item=>item.id === inventoryItem.id)
+		const cell = document.createElement('div')
+		cell.className = 'inventory-grid-cell'
+		cell.textContent = item.name + '\n' + inventoryItem.quantity
+		document.getElementById('inventory-grid').appendChild(cell)
+	}
+
 }
 
 

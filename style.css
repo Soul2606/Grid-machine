@@ -16,21 +16,46 @@ body{
     position: absolute;
 }
 
-.inventory{
-    position: relative;
+.side-menu{
+    position: fixed;
     display: flex;
+    flex-direction: row-reverse;
     margin-right: 5px;
-}
-
-.inventory-grid{
-    position: sticky;
-    top: 8px;
-    flex-grow: 1;
-    height: 98vh;
     border: solid white 3px;
     border-radius: 5px;
     background-color: rgb(56, 57, 67);
+    height: 98vh;
+}
+
+.inventory{
+    display: flex;
+    height: 100%;
+}
+
+.inventory-grid{
+    flex-grow: 1;
     display: grid;
+    height: min-content;
+    grid-template-columns: repeat(auto-fit,80px);
+}
+
+.side-menu-width-button{
+    flex-grow: 0;
+    flex-shrink: 0;
+    background-color: rgb(46, 46, 46);
+    border: none;
+    margin: 1px;
+}
+
+.side-menu-width-button:hover{
+    background-color: rgb(99, 103, 114);
+}
+
+.inventory-grid-cell{
+    background-color: rgb(99, 103, 114);
+    margin: 2px;
+    text-align: center;
+    aspect-ratio: 1/1;
 }
 
 .grid-cell{
@@ -65,6 +90,11 @@ body{
     background-color: rgb(191, 203, 211);
     border: 6px rgb(145, 172, 204);
     border-style: inset;
+}
+
+.machine-line{
+    display: grid;
+    height: 500px;
 }
 
 .machine{
