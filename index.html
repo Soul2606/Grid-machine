@@ -8,83 +8,91 @@
 	<script src="script.js" defer></script>
 </head>
 <body>
-	<div class="grid-tiny">
-		<div class="empty-cell-tiny"></div>
-		<div class="empty-cell-tiny"></div>
-		<div class="empty-cell-tiny"></div>
-		<div class="empty-cell-tiny"></div>
-	</div>
-	<br>
-	<br>
-	<br>
-	<div class="grid-small">
-		<div class="empty-cell-small"></div>
-		<div class="empty-cell-small"></div>
-		<div class="empty-cell-small"></div>
-		<div class="empty-cell-small"></div>
-		<div class="empty-cell-small"></div>
-		<div class="empty-cell-small"></div>
-		<div class="empty-cell-small"></div>
-		<div class="empty-cell-small"></div>
-		<div class="empty-cell-small"></div>
-		<div class="empty-cell-small"></div>
-		<div class="empty-cell-small"></div>
-		<div class="empty-cell-small"></div>
-		<div class="empty-cell-small"></div>
-		<div class="empty-cell-small"></div>
-		<div class="empty-cell-small"></div>
-		<div class="empty-cell-small"></div>
-	</div>
-	<br>
-	<br>
-	<div class="machine" style="width: 215px; height: 100px; grid-template-columns: auto 1fr auto; grid-template-rows: auto 1fr auto;">
-		<div style="background-color: white; grid-area: 2/2/3/3;"></div>
-		<button style="grid-area: 1/2/2/3; min-width: 10px; min-height: 10px;"></button>
-		<button style="grid-area: 2/3/3/4; min-width: 10px; min-height: 10px;"></button>
-		<button style="grid-area: 3/2/3/3; min-width: 10px; min-height: 10px;"></button>
-		<button style="grid-area: 2/1/3/2; min-width: 10px; min-height: 10px;"></button>
-	</div>
-	<br>
-	<br>
-	<div style="display: flex; flex-wrap: wrap; gap: 25px;">
-		<div>
-			<h3>Lead</h3>
-			<p>Melting point:327°C</p>
-			<p>Radiation resistant</p>
+	<div style="display: flex;">
+		<div class="inventory" style="width: 300px; flex-shrink: 0;">
+			<div class="inventory-grid"></div>
+			<button style="flex-grow: 0; flex-shrink: 0;"></button>
 		</div>
-		<div>
-			<h3>Tin</h3>
-			<p>Melting point:231°C</p>
-			<p>Water resistant</p>
-		</div>
-		<div>
-			<h3>Aluminum</h3>
-			<p>Melting point:660°C</p>
-			<p>Very High thermal conductivity</p>
-		</div>
-		<div>
-			<h3>Copper</h3>
-			<p>Melting point:1084°C</p>
-			<p>Good electrical conductivity</p>
-		</div>
-		<div>
-			<h3>Iron</h3>
-			<p>Melting point:1538°C</p>
-			<p>Ferromagnetic</p>
-		</div>
-		<div>
-			<h3>Titanium</h3>
-			<p>Melting point:1668°C</p>
-			<p>Weak acid resistance</p>
-		</div>
-		<div>
-			<h3>Tungsten</h3>
-			<p>Melting point:3422°C</p>
-			<p>Brittle</p>
-		</div>
-	</div>
-	<div id="grid" style="display: grid; height: 500px;">
-		<!--Code injected here-->
+		<main>
+			<div class="grid-tiny">
+				<div class="empty-cell-tiny"></div>
+				<div class="empty-cell-tiny"></div>
+				<div class="empty-cell-tiny"></div>
+				<div class="empty-cell-tiny"></div>
+			</div>
+			<br>
+			<br>
+			<br>
+			<div class="grid-small">
+				<div class="empty-cell-small"></div>
+				<div class="empty-cell-small"></div>
+				<div class="empty-cell-small"></div>
+				<div class="empty-cell-small"></div>
+				<div class="empty-cell-small"></div>
+				<div class="empty-cell-small"></div>
+				<div class="empty-cell-small"></div>
+				<div class="empty-cell-small"></div>
+				<div class="empty-cell-small"></div>
+				<div class="empty-cell-small"></div>
+				<div class="empty-cell-small"></div>
+				<div class="empty-cell-small"></div>
+				<div class="empty-cell-small"></div>
+				<div class="empty-cell-small"></div>
+				<div class="empty-cell-small"></div>
+				<div class="empty-cell-small"></div>
+			</div>
+			<br>
+			<br>
+			<div class="machine" style="width: 215px; height: 100px; grid-template-columns: auto 1fr auto; grid-template-rows: auto 1fr auto;">
+				<div style="background-color: white; grid-area: 2/2/3/3;"></div>
+				<button style="grid-area: 1/2/2/3; min-width: 10px; min-height: 10px;"></button>
+				<button style="grid-area: 2/3/3/4; min-width: 10px; min-height: 10px;"></button>
+				<button style="grid-area: 3/2/3/3; min-width: 10px; min-height: 10px;"></button>
+				<button style="grid-area: 2/1/3/2; min-width: 10px; min-height: 10px;"></button>
+			</div>
+			<br>
+			<br>
+			<div style="display: flex; flex-wrap: wrap; gap: 25px;">
+				<div>
+					<h3>Lead</h3>
+					<p>Melting point:327°C</p>
+					<p>Radiation resistant</p>
+				</div>
+				<div>
+					<h3>Tin</h3>
+					<p>Melting point:231°C</p>
+					<p>Water resistant</p>
+				</div>
+				<div>
+					<h3>Aluminum</h3>
+					<p>Melting point:660°C</p>
+					<p>Very High thermal conductivity</p>
+				</div>
+				<div>
+					<h3>Copper</h3>
+					<p>Melting point:1084°C</p>
+					<p>Good electrical conductivity</p>
+				</div>
+				<div>
+					<h3>Iron</h3>
+					<p>Melting point:1538°C</p>
+					<p>Ferromagnetic</p>
+				</div>
+				<div>
+					<h3>Titanium</h3>
+					<p>Melting point:1668°C</p>
+					<p>Weak acid resistance</p>
+				</div>
+				<div>
+					<h3>Tungsten</h3>
+					<p>Melting point:3422°C</p>
+					<p>Brittle</p>
+				</div>
+			</div>
+			<div id="grid" style="display: grid; height: 500px;">
+				<!--Code injected here-->
+			</div>
+		</main>
 	</div>
 </body>
 </html>

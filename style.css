@@ -16,6 +16,23 @@ body{
     position: absolute;
 }
 
+.inventory{
+    position: relative;
+    display: flex;
+    margin-right: 5px;
+}
+
+.inventory-grid{
+    position: sticky;
+    top: 8px;
+    flex-grow: 1;
+    height: 98vh;
+    border: solid white 3px;
+    border-radius: 5px;
+    background-color: rgb(56, 57, 67);
+    display: grid;
+}
+
 .grid-cell{
     background-color: gray;
 }
