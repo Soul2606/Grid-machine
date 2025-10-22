@@ -27,11 +27,6 @@ body{
     height: 98vh;
 }
 
-.inventory{
-    display: flex;
-    height: 100%;
-}
-
 .inventory-grid{
     flex-grow: 1;
     display: grid;
@@ -49,6 +44,19 @@ body{
 
 .side-menu-width-button:hover{
     background-color: rgb(99, 103, 114);
+}
+
+.side-menu-header-button{
+    color: white;
+    background-color: rgb(68, 71, 78);
+    border: 2px;
+    border-style: solid;
+    border-color: rgb(40, 41, 43);
+    border-radius: 5px;
+    margin: 5px;
+    padding: 15px 5px;
+    font-size: large;
+    font-family:'Times New Roman', Times, serif;
 }
 
 .inventory-grid-cell{

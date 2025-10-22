@@ -233,7 +233,7 @@ class Machine {
 
 
 document.getElementById('side-menu-width-button').addEventListener('mousedown',e=>{
-	console.log('button clicked')
+	const minWidth = 200//px
 	const originalMouseX = e.clientX
 	const originalInventoryWidth = Number(document.getElementById('side-menu').getBoundingClientRect().width)
 	const up = ()=>{
@@ -242,9 +242,9 @@ document.getElementById('side-menu-width-button').addEventListener('mousedown',e
 	}
 	const move = e=>{
 		e.clientX
-		console.log(e.clientX)
-		document.getElementById('side-menu-container').style.width = originalInventoryWidth + e.clientX - originalMouseX + 20 + 'px'
-		document.getElementById('side-menu').style.width = originalInventoryWidth + e.clientX - originalMouseX + 'px'
+		const newWidth = Math.max(originalInventoryWidth + e.clientX - originalMouseX, minWidth)
+		document.getElementById('side-menu-container').style.width = newWidth + 20 + 'px'
+		document.getElementById('side-menu').style.width = newWidth + 'px'
 	}
 	window.addEventListener('mousemove',move);
 	window.addEventListener('mouseup',up)
@@ -265,18 +265,18 @@ async function fetchJSON(url) {
 }
 function compile(items, machines, recipes) {
 
-	const checkKeys = (obj,keys)=>{
+	const limitKeysTo = (obj,keys)=>{
 		if (Object.keys(obj).some(key=>!keys.includes(key))) throw new Error(`${obj} has invalid keys, valid keys:${keys}`);	
 	}
 
 	items.forEach(item => {
-		checkKeys(item,['id', 'name', 'tags'])
+		limitKeysTo(item,['id', 'name', 'tags'])
 	})
 	machines.forEach(item => {
-		checkKeys(item,['id', 'name', 'capabilities', 'tier', 'requiresConfiguration'])
+		limitKeysTo(item,['id', 'name', 'capabilities', 'tier', 'requiresConfiguration'])
 	})
 	recipes.forEach(item => {
-		checkKeys(item,['id', 'inputs', 'outputs', 'requiredProcess', 'requiredTier', 'processTimeSeconds'])
+		limitKeysTo(item,['id', 'inputs', 'outputs', 'requiredProcess', 'requiredTier', 'processTimeSeconds'])
 	})
 	
 	const checkType = (obj,type)=>{
@@ -308,31 +308,39 @@ function compile(items, machines, recipes) {
 		checkType(recipe.requiredTier,'number')
 		checkType(recipe.processTimeSeconds,'number')
 		checkType(recipe.inputs,'array')
-		recipe.inputs.forEach(item=>{
-			checkKeys(item,['id','quantity'])
-			checkType(item.id,'string');
-			checkType(item.quantity,'number')
+		recipe.inputs.forEach(input=>{
+			limitKeysTo(input,['id','tag','quantity'])
+			if (input.id) checkType(input.id,'string')
+			if (input.tag) checkType(input.tag,'string')
+			checkType(input.quantity,'number')
 		})
 		checkType(recipe.outputs,'array')
-		recipe.outputs.forEach(item=>{
-			checkKeys(item,['id','quantity'])
-			checkType(item.id,'string');
-			checkType(item.quantity,'number')
+		recipe.outputs.forEach(output=>{
+			limitKeysTo(output,['id','tag','quantity'])
+			if (output.id) checkType(output.id,'string')
+			if (output.tag) checkType(output.tag,'string')
+			checkType(output.quantity,'number')
 		})
 	}
 	
 
 	const hasDuplicateIds = (array)=>{
 		const previousIds = new Set()
+		const duplicates = new Set()
 		for (const item of array) {
-			if (previousIds.has(item.id)) return true
+			if (previousIds.has(item.id)) duplicates.add(item.id)
 			previousIds.add(item.id)
 		}
-		return false
+		return duplicates.size===0? false : duplicates
 	}
-	if (hasDuplicateIds(items)) throw new Error("Items has duplicate IDs");
-	if (hasDuplicateIds(machines)) throw new Error("Machines has duplicate IDs");
-	if (hasDuplicateIds(recipes)) throw new Error("Recipes has duplicate IDs");
+	{
+		const result = hasDuplicateIds(items.concat(machines))
+		if(result) throw new Error(`Machines and Items has duplicate IDs, ${result}`)
+	}
+	{
+		const result = hasDuplicateIds(recipes)
+		if (result) throw new Error(`Recipes has duplicate IDs, ${result}`);
+	}
 
 	/*Some machines do not need to have their recipe set. All recipes used by those machines must me check to make sure they don't conflict.
 	Recipes conflict if they take the same ingredient and produce different things: (a,b,c)→(a) and (a,b,c)→(b). They also conflict if one is a subset of another: (a)→(c) and (a,b)→(d).
