@@ -1,5 +1,10 @@
 [
 	{
+		"id":"stone",
+		"name":"Stone",
+		"tags":["stone"]
+	},
+	{
 		"id":"raw_aluminum",
 		"name":"Raw Aluminum",
 		"tags":["raw_ore"]

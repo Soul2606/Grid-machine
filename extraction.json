@@ -4,7 +4,6 @@
         "name":"Starter",
         "manualPower":12,
         "requiredPower":1,
-        "requiredCapability":null,
         "yields":[
             {"itemId":"stone", "weight":6},
             {"itemId":"water", "weight":1}

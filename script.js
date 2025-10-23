@@ -303,7 +303,7 @@ async function fetchJSON(url) {
 		return response.json()
 	})
 }
-function compile(items, machines, recipes) {
+function compile(items, machines, recipes, extraction) {
 
 	const limitKeysTo = (obj,keys)=>{
 		if (Object.keys(obj).some(key=>!keys.includes(key))) throw new Error(`${obj} has invalid keys, valid keys:${keys}`);	
@@ -404,12 +404,13 @@ function compile(items, machines, recipes) {
 		}
 	}
 
-	return {items, machines, recipes}
+	return {items, machines, recipes, extraction}
 }
 const items = await fetchJSON('items.json')
 const machines = await fetchJSON('machines.json')
 const recipes = await fetchJSON('recipes.json')
-return compile(items, machines, recipes)
+const extraction = await fetchJSON('extraction.json')
+return compile(items, machines, recipes, extraction)
 })().then(main)
 
 
@@ -417,6 +418,7 @@ function main(response) {
 	const items = response.items
 	const machines = response.machines
 	const recipes  = response.recipes
+	const extraction  = response.extraction
 
 	const inventory = items.map(item=>{return{id:item.id,quantity:0}})
 	for(const inventoryItem of inventory){
@@ -438,6 +440,22 @@ function main(response) {
 
 	document.getElementById('extract-starter').addEventListener('click',()=>{
 		
+		const starterMine = extraction.find(item=>item.id==='starter')
+		const totalWeight = starterMine.yields.map(val=>val.weight).reduce((prev,val)=>prev+val,0)
+		for (let i = 0; i < starterMine.manualPower; i++) {
+			const randomNumber = Math.floor(Math.random()*totalWeight)
+			let result
+			let cumulative = 0
+			for (const value of starterMine.yields) {
+				cumulative += value.weight
+				if (randomNumber < cumulative) {
+					result = value.itemId
+					break
+				}
+			}
+			inventory.find(item=>item.id === result).quantity += 1
+		}
+		console.log(inventory)
 	})
 
 }
