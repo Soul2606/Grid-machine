@@ -4,6 +4,12 @@ body{
     background-color: rgb(40, 41, 43);
 }
 
+#mouse-icon{
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+}
+
 .stack{
     position: relative;
 }
@@ -27,8 +33,7 @@ body{
     height: 98vh;
 }
 
-.inventory-grid{
-    flex-grow: 1;
+.side-menu-grid{
     display: grid;
     height: min-content;
     grid-template-columns: repeat(auto-fit,80px);
@@ -57,6 +62,10 @@ body{
     padding: 15px 5px;
     font-size: large;
     font-family:'Times New Roman', Times, serif;
+}
+
+.side-menu-header-button:hover{
+    background-color: rgb(99, 103, 114);
 }
 
 .inventory-grid-cell{

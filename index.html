@@ -8,22 +8,29 @@
 	<script src="script.js" defer></script>
 </head>
 <body>
+	<div id="mouse-icon" style="display: none;"></div>
 	<div style="display: flex;">
 		<div id="side-menu-container" style="width: 320px; flex-shrink: 0; position: relative;">
 			<div id="side-menu" class="side-menu" style="width: 300px;">
 				<button id="side-menu-width-button" class="side-menu-width-button"></button>
 				<div style="flex-grow: 1;">
 					<div style="display: flex;">
-						<button class="side-menu-header-button">Inventory</button>
-						<button class="side-menu-header-button">Recipes</button>
+						<button id="side-menu-inventory-button" class="side-menu-header-button">Inventory</button>
+						<button id="side-menu-machines-button" class="side-menu-header-button">Machines</button>
+						<button id="side-menu-recipes-button" class="side-menu-header-button">Recipes</button>
 					</div>
-					<div id="inventory-grid" class="inventory-grid">
+					<div id="inventory-grid" class="side-menu-grid">
+						<!--Code injected by js-->
+					</div>
+					<div id="machines-grid" class="side-menu-grid" style="display: none;">
 						<!--Code injected by js-->
 					</div>
 				</div>
 			</div>
 		</div>
 		<main>
+			<h2>Exploration</h2>
+			<button id="extract-starter">Starter</button>
 			<div id="grid" class="machine-line">
 				<!--Code injected here-->
 			</div>

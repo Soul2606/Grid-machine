@@ -233,7 +233,7 @@ class Machine {
 
 
 document.getElementById('side-menu-width-button').addEventListener('mousedown',e=>{
-	const minWidth = 200//px
+	const minWidth = 300//px
 	const originalMouseX = e.clientX
 	const originalInventoryWidth = Number(document.getElementById('side-menu').getBoundingClientRect().width)
 	const up = ()=>{
@@ -253,7 +253,47 @@ document.getElementById('side-menu-width-button').addEventListener('mousedown',e
 
 
 
-(async () => {
+document.getElementById('side-menu-inventory-button').addEventListener('click',()=>{
+	document.getElementById('inventory-grid').style.display = ''
+	document.getElementById('machines-grid').style.display = 'none'
+});
+
+document.getElementById('side-menu-machines-button').addEventListener('click',()=>{
+	document.getElementById('inventory-grid').style.display = 'none'
+	document.getElementById('machines-grid').style.display = ''
+});
+
+
+
+
+const MouseIcon = new class {
+	#element
+	constructor(){
+		this.#element = document.getElementById('mouse-icon')
+		window.addEventListener('mousemove',e=>{
+			if (this.#element.style.display === 'none') return
+			this.#element.style.top = e.pageY + 'px'
+			this.#element.style.left = e.pageX + 'px'
+		})
+	}
+
+	show(){
+		this.#element.style.display = ''
+	}
+
+	hide(){
+		this.#element.style.display = 'none'
+	}
+
+	setText(text){
+		this.#element.textContent = text
+	}
+}
+
+
+
+
+;(async () => {
 async function fetchJSON(url) {
 	return fetch(url).then(response=>{
 		if (!response.ok) {
@@ -384,8 +424,21 @@ function main(response) {
 		const cell = document.createElement('div')
 		cell.className = 'inventory-grid-cell'
 		cell.textContent = item.name + '\n' + inventoryItem.quantity
+		cell.style.display = 'none'
 		document.getElementById('inventory-grid').appendChild(cell)
 	}
+
+	for(const machine of machines){
+		const cell = document.createElement('div')
+		cell.className = 'inventory-grid-cell'
+		cell.textContent = machine.name
+		cell.style.display = 'none'
+		document.getElementById('machines-grid').appendChild(cell)
+	}
+
+	document.getElementById('extract-starter').addEventListener('click',()=>{
+		
+	})
 
 }
 
