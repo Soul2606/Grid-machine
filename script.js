@@ -231,6 +231,56 @@ class Machine {
 
 
 
+class Inventory {
+	#itemsEntries
+	#contentChangeCallback
+	constructor(items, contentChangeCallback) {
+		this.#itemsEntries = items.map(item=>{return{item,quantity:0}})
+		this.#contentChangeCallback = contentChangeCallback
+	}
+
+	getItemEntry(id){
+		const itemEntry = this.#itemsEntries.find(value=>value.item.id===id)
+		if (!itemEntry) {
+			throw new Error(`the id:${id} does not exist in this inventory:`, this);
+		}
+		return itemEntry
+	}
+
+	getAllItemEntries(){
+		return Array.from(this.#itemsEntries)
+	}
+
+	setItemEntry(id, quantity){
+		const itemEntry = this.getItemEntry(id)
+		itemEntry.quantity = quantity
+		this.#contentChangeCallback(itemEntry.item, quantity)
+		return this
+	}
+}
+
+
+
+
+function searchJson(obj, fnc){
+	const recursion = (obj)=>{
+		fnc(obj)
+		if (Array.isArray(obj)) {
+			for (const val of obj) {
+				recursion(val)
+			}
+		} else if (typeof obj === "object") {
+			for (let key in obj) {
+				recursion(obj[key])
+			}
+		}
+	}
+	recursion(obj)
+}
+
+
+
+
 
 document.getElementById('side-menu-width-button').addEventListener('mousedown',e=>{
 	const minWidth = 300//px
@@ -419,16 +469,37 @@ function main(response) {
 	const machines = response.machines
 	const recipes  = response.recipes
 	const extraction  = response.extraction
+	{
+		const freeze = (obj)=>{if (typeof obj === 'object') Object.freeze(obj)}
+		searchJson(items, freeze)
+		searchJson(machines, freeze)
+		searchJson(recipes, freeze)
+		searchJson(extraction, freeze)
+	}
 
-	const inventory = items.map(item=>{return{id:item.id,quantity:0}})
-	for(const inventoryItem of inventory){
-		const item = items.find(item=>item.id === inventoryItem.id)
+
+
+	const inventoryCellElements = []
+	for(const item of items){
 		const cell = document.createElement('div')
 		cell.className = 'inventory-grid-cell'
-		cell.textContent = item.name + '\n' + inventoryItem.quantity
+		cell.textContent = item.name + '\n' + 0
 		cell.style.display = 'none'
 		document.getElementById('inventory-grid').appendChild(cell)
+		inventoryCellElements.push({element:cell, itemPointer:item})
 	}
+
+
+
+	const inventory = new Inventory(items, (item, quantity)=>{
+		for(const cellElement of inventoryCellElements){
+			if (cellElement.itemPointer !== item) continue
+			cellElement.element.style.display = ''
+			cellElement.element.textContent = item.name + '\n' + quantity
+		}
+	})
+
+
 
 	for(const machine of machines){
 		const cell = document.createElement('div')
@@ -437,6 +508,8 @@ function main(response) {
 		cell.style.display = 'none'
 		document.getElementById('machines-grid').appendChild(cell)
 	}
+
+
 
 	document.getElementById('extract-starter').addEventListener('click',()=>{
 		
@@ -453,9 +526,8 @@ function main(response) {
 					break
 				}
 			}
-			inventory.find(item=>item.id === result).quantity += 1
+			inventory.setItemEntry(result, inventory.getItemEntry(result).quantity += 1)
 		}
-		console.log(inventory)
 	})
 
 }
