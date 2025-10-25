@@ -1,4 +1,5 @@
 
+//Pure Classes
 class GridItem {
 	#rowStart
 	#rowEnd
@@ -262,6 +263,7 @@ class Inventory {
 
 
 
+//Pure Functions
 function searchJson(obj, fnc){
 	const recursion = (obj)=>{
 		fnc(obj)
@@ -280,39 +282,80 @@ function searchJson(obj, fnc){
 
 
 
+function walkJson(obj, fnc) {
+	const recurse = (current, parent = null, key = null, path = []) => {
+		// Provide a mutator
+		const set = (newValue) => {
+			if (parent !== null && key !== null) {
+				parent[key] = newValue;
+			}
+		};
+		const del = () => {
+			if (parent !== null && key !== null) {
+				if (Array.isArray(parent)) {
+				parent.splice(key, 1);
+				} else {
+				delete parent[key];
+				}
+			}
+		};
+
+		// Call user function with rich context
+		fnc({
+			key,
+			value: current,
+			parent,
+			path,
+			set,
+			delete: del,
+			isLeaf: typeof current !== 'object' || current === null
+		});
+
+		// Recurse into children if object/array
+		if (Array.isArray(current)) {
+			current.forEach((val, idx) => recurse(val, current, idx, [...path, idx]));
+		} else if (current && typeof current === 'object') {
+			for (const k in current) {
+				recurse(current[k], current, k, [...path, k]);
+			}
+		}
+	};
+
+	recurse(obj, null, null, []);
+} /* function parameters {key, value, parent, path, set, delete, isLeaf}*/
 
 
-document.getElementById('side-menu-width-button').addEventListener('mousedown',e=>{
-	const minWidth = 300//px
-	const originalMouseX = e.clientX
-	const originalInventoryWidth = Number(document.getElementById('side-menu').getBoundingClientRect().width)
-	const up = ()=>{
-		window.removeEventListener('mouseup',up)
-		window.removeEventListener('mousemove',move)
+
+
+
+//Global Variables
+const GameStates = (()=>{
+
+	const GameStateLog = []
+
+	const initState = (initial)=>{
+		let value = initial
+		return {
+			set:(string, optionalContext)=>{
+				GameStateLog.push({
+					timestamp: new Date().toISOString(),
+					oldValue:value,
+					newValue:string,
+					context:optionalContext
+				});
+				value = string;
+			},
+			get: () => value
+		}
+	} // returns {set:(string, optionalContext)=>{...}, get:()=>{...}}
+
+	//Game States structure
+	return {
+		ui:{
+			sideMenuSection:initState('hidden')
+		}
 	}
-	const move = e=>{
-		e.clientX
-		const newWidth = Math.max(originalInventoryWidth + e.clientX - originalMouseX, minWidth)
-		document.getElementById('side-menu-container').style.width = newWidth + 20 + 'px'
-		document.getElementById('side-menu').style.width = newWidth + 'px'
-	}
-	window.addEventListener('mousemove',move);
-	window.addEventListener('mouseup',up)
-});
-
-
-
-
-document.getElementById('side-menu-inventory-button').addEventListener('click',()=>{
-	document.getElementById('inventory-grid').style.display = ''
-	document.getElementById('machines-grid').style.display = 'none'
-});
-
-document.getElementById('side-menu-machines-button').addEventListener('click',()=>{
-	document.getElementById('inventory-grid').style.display = 'none'
-	document.getElementById('machines-grid').style.display = ''
-});
-
+})();
 
 
 
@@ -339,6 +382,29 @@ const MouseIcon = new class {
 		this.#element.textContent = text
 	}
 }
+
+
+
+
+
+
+document.getElementById('side-menu-width-button').addEventListener('mousedown',e=>{
+	const minWidth = 300//px
+	const originalMouseX = e.clientX
+	const originalInventoryWidth = Number(document.getElementById('side-menu').getBoundingClientRect().width)
+	const up = ()=>{
+		window.removeEventListener('mouseup',up)
+		window.removeEventListener('mousemove',move)
+	}
+	const move = e=>{
+		e.clientX
+		const newWidth = Math.max(originalInventoryWidth + e.clientX - originalMouseX, minWidth)
+		document.getElementById('side-menu-container').style.width = newWidth + 20 + 'px'
+		document.getElementById('side-menu').style.width = newWidth + 'px'
+	}
+	window.addEventListener('mousemove',move);
+	window.addEventListener('mouseup',up)
+});
 
 
 
@@ -476,6 +542,7 @@ function main(response) {
 		searchJson(recipes, freeze)
 		searchJson(extraction, freeze)
 	}
+	const machinesUnlocked = new Set(['stone_furnace'])
 
 
 
@@ -483,10 +550,15 @@ function main(response) {
 	for(const item of items){
 		const cell = document.createElement('div')
 		cell.className = 'inventory-grid-cell'
-		cell.textContent = item.name + '\n' + 0
+		cell.textContent = item.name
 		cell.style.display = 'none'
+
+		const number = document.createElement('p')
+		number.textContent = 0
+		cell.appendChild(number)
+
 		document.getElementById('inventory-grid').appendChild(cell)
-		inventoryCellElements.push({element:cell, itemPointer:item})
+		inventoryCellElements.push({element:cell, quantityLabel:number, itemPointer:item})
 	}
 
 
@@ -494,19 +566,69 @@ function main(response) {
 	const inventory = new Inventory(items, (item, quantity)=>{
 		for(const cellElement of inventoryCellElements){
 			if (cellElement.itemPointer !== item) continue
+			cellElement.quantityLabel.textContent = quantity // Yes this is correct
+			if (GameStates.ui.sideMenuSection.get() === 'recipes') continue
 			cellElement.element.style.display = ''
-			cellElement.element.textContent = item.name + '\n' + quantity
 		}
 	})
 
 
 
+	const machineCellElements = []
 	for(const machine of machines){
 		const cell = document.createElement('div')
 		cell.className = 'inventory-grid-cell'
 		cell.textContent = machine.name
 		cell.style.display = 'none'
 		document.getElementById('machines-grid').appendChild(cell)
+		machineCellElements.push({element:cell, machinePointer:machine})
+	}
+
+
+
+	{ // Side Menu Header Buttons functionality
+	const showGrid = (showInventory, showMachines) => {
+		document.getElementById('inventory-grid').style.display = showInventory ? '' : 'none';
+		document.getElementById('machines-grid').style.display = showMachines ? '' : 'none';
+	};
+	
+	const repairCells = () => {
+		for (const inventoryCell of inventoryCellElements) {
+			const entry = inventory.getAllItemEntries().find(e => e.item === inventoryCell.itemPointer);
+			inventoryCell.element.style.display = entry && entry.quantity > 0 ? '' : 'none';
+			inventoryCell.quantityLabel.style.display = ''
+		}
+		for (const machineCell of machineCellElements) {
+			machineCell.element.style.display = machinesUnlocked.has(machineCell.machinePointer.id) ? '' : 'none';
+		}
+	};
+	
+	document.getElementById('side-menu-recipes-button')
+	.addEventListener('click', () => {
+		GameStates.ui.sideMenuSection.set('recipes', 'side-menu-recipes-button clicked')
+		showGrid(true, true);
+		for (const inventoryCell of inventoryCellElements) {
+			inventoryCell.element.style.display = '' 
+			inventoryCell.quantityLabel.style.display = 'none'
+		}
+		for (const machineCell of machineCellElements) {
+			machineCell.element.style.display = ''
+		}
+	});
+	
+	document.getElementById('side-menu-inventory-button')
+	.addEventListener('click', () => {
+		GameStates.ui.sideMenuSection.set('inventory', 'side-menu-inventory-button clicked')
+		showGrid(true, false);
+		repairCells();
+	});
+	
+	document.getElementById('side-menu-machines-button')
+	.addEventListener('click', () => {
+		GameStates.ui.sideMenuSection.set('machines', 'side-menu-machines-button clicked')
+		showGrid(false, true);
+		repairCells();
+	});
 	}
 
 
@@ -517,16 +639,16 @@ function main(response) {
 		const totalWeight = starterMine.yields.map(val=>val.weight).reduce((prev,val)=>prev+val,0)
 		for (let i = 0; i < starterMine.manualPower; i++) {
 			const randomNumber = Math.floor(Math.random()*totalWeight)
-			let result
+			let resultId
 			let cumulative = 0
 			for (const value of starterMine.yields) {
 				cumulative += value.weight
 				if (randomNumber < cumulative) {
-					result = value.itemId
+					resultId = value.itemId
 					break
 				}
 			}
-			inventory.setItemEntry(result, inventory.getItemEntry(result).quantity += 1)
+			inventory.setItemEntry(resultId, inventory.getItemEntry(resultId).quantity += 1)
 		}
 	})
 
