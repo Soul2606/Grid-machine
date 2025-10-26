@@ -151,11 +151,11 @@ class GridItem {
 class Machine {
 	#element
 	#stack
-	constructor(element, id){
+	constructor(element, machine){
 		if (!(element instanceof HTMLElement)) throw new Error("element is not an HTMLElement");
 		this.#element = element
 		this.#stack = 1
-		this.id = id
+		this.machine = machine
 	}
 
 	static createMachine(width, height, centerElement){
@@ -351,6 +351,19 @@ function walkJson(obj, fnc) {
 
 
 
+/**
+ * @param {Object} machine 
+ * @returns {HTMLElement}
+ */
+function createMachine(machine) {
+	const cell = document.createElement('div')
+	cell.className = 'inventory-grid-cell'
+	cell.textContent = machine.name
+	return cell
+}
+
+
+
 
 
 //Global Variables
@@ -378,12 +391,16 @@ const GameStates = (()=>{
 	return {
 		ui:{
 			sideMenuSection:initState('hidden')
+		},
+		mouse:{
+			action:initState('none')
 		}
 	}
 })();
 
 
 
+/*This is a singleton for managing the elements that follow the mouse*/
 const MouseOverlay = new class {
 	#element
 	constructor(){
@@ -423,6 +440,12 @@ const MouseOverlay = new class {
 		this.#element.style.display = 'none'
 	}
 }
+
+
+
+/*This variable i here so the machine line and other objects where machines can be placed know what machine and cell is involved
+updateCall should only be called when machine placements is canceled or successful*/
+const MachineBeingPlaced = {machine:null, items:[], cell:null, updateCall:()=>{}}
 
 
 
@@ -607,8 +630,8 @@ function main(response) {
 		const results = []
 		recipe.inputs.forEach(input=>{
 			let item = items.find(item=>item.id === input.id)
-			if (!item) item = items.find(item=>item.tags.includes(input.tag))
-			if (item) results.push(item)
+			if (!item) item = items.filter(item=>item.tags.includes(input.tag))
+			if (item) results.push({item, quantity:input.quantity})
 		})
 		return results
 	}
@@ -617,8 +640,8 @@ function main(response) {
 		const results = []
 		recipe.outputs.forEach(output=>{
 			let item = items.find(item=>item.id === output.id)
-			if (!item) item = items.find(item=>item.tags.includes(output.tag))
-			if (item) results.push(item)
+			if (!item) item = items.filter(item=>item.tags.includes(output.tag))
+			if (item) results.push({item, quantity:input.quantity})
 		})
 		return results
 	}
@@ -727,8 +750,40 @@ function main(response) {
 			MouseOverlay.elements.infoPanel.setText('')
 		})
 
+		cell.addEventListener('click',()=>{
+			if (GameStates.mouse.action.get() !== 'none') {
+				MachineBeingPlaced.items.forEach(item=>inventory.addItem(item.item, item.quantity))
+				MachineBeingPlaced.updateCall(false)
+				GameStates.mouse.action.set('none')
+				return
+			}
+			const recipe = getRecipesProducing(machine)[0]
+			if (!recipe) throw new Error(`The machine: ${machine.id} is not craftable`);
+			if (!isCraftable(recipe, inventory)) return
+			GameStates.mouse.action.set('placing-machine')
+			MachineBeingPlaced.machine = machine
+			const inputs = getRecipeInputs(recipe)
+			const itemsUsed = []
+			inputs.forEach(input=>{
+				if (Array.isArray(input.item)) {
+					const chosen = input.item.find(item=>inventory.getQuantity(item) >= input.quantity)
+					if (!chosen) throw new Error(`could not afford any of the items from: ${JSON.stringify(input.item)}`);
+					inventory.subtractItem(chosen, input.quantity)
+					itemsUsed.push({item:chosen, quantity:input.quantity})
+				}else{
+					inventory.subtractItem(input.item, input.quantity)
+					itemsUsed.push({item:input.item, quantity:input.quantity})
+				}
+			})
+			MachineBeingPlaced.items = itemsUsed
+			MachineBeingPlaced.cell = cell
+			//updateCall is called when placement is canceled or successful
+			MachineBeingPlaced.updateCall = ()=>{cell.style.backgroundColor = ''}
+			cell.style.backgroundColor = 'green'
+		})
+
 		machineCellElements.push({element:cell, machinePointer:machine})
-	}
+		}
 
 
 
@@ -796,6 +851,29 @@ function main(response) {
 			}
 			inventory.changeItem(getItemFromId(resultId), 1)
 		}
+	})
+
+
+
+	document.getElementById('machine-line-cell-button').addEventListener('click',()=>{
+		if (GameStates.mouse.action.get()!=='placing-machine')return
+		
+		const machineCell = createMachine(MachineBeingPlaced.machine)
+		const machine = new Machine(machineCell, MachineBeingPlaced.machine)
+		const stack = document.createElement('p')
+		stack.textContent = 1
+		machineCell.appendChild(stack)
+		machineCell.addEventListener('click',()=>{
+			if (GameStates.mouse.action.get()!=='placing-machine')return
+			machine.setStack(machine.getStack() + 1)
+			stack.textContent = machine.getStack()
+			MachineBeingPlaced.updateCall(true)
+			GameStates.mouse.action.set('none')
+		})
+		document.getElementById('machine-line').appendChild(machineCell)
+		
+		MachineBeingPlaced.updateCall(true)
+		GameStates.mouse.action.set('none')
 	})
 
 }
