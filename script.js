@@ -235,28 +235,66 @@ class Machine {
 class Inventory {
 	#itemsEntries
 	#contentChangeCallback
-	constructor(items, contentChangeCallback) {
-		this.#itemsEntries = items.map(item=>{return{item,quantity:0}})
+	/**
+	 * @typedef {Object} ItemEntry
+	 * @property {Object} item
+	 * @property {Number} quantity
+	 */
+	constructor(contentChangeCallback) {
+		this.#itemsEntries = []
 		this.#contentChangeCallback = contentChangeCallback
 	}
 
-	getItemEntry(id){
-		const itemEntry = this.#itemsEntries.find(value=>value.item.id===id)
-		if (!itemEntry) {
-			throw new Error(`the id:${id} does not exist in this inventory:`, this);
+	hasEntry(item){
+		return Boolean(this.#getEntry(item))
+	}
+
+	/**
+	 * @param {Object} item 
+	 * @returns {ItemEntry}
+	 */
+	#getEntry(item){
+		return this.#itemsEntries.find(entry=>entry.item === item)
+	}
+
+	/**
+	 * @param {object} item 
+	 * @returns {Number}
+	 */
+	getQuantity(item){
+		const itemEntry = this.#itemsEntries.find(value=>value.item===item)
+		if (itemEntry) {
+			return itemEntry.quantity
+		} else {
+			return 0
 		}
-		return itemEntry
 	}
 
 	getAllItemEntries(){
-		return Array.from(this.#itemsEntries)
+		return this.#itemsEntries.map(entry=>{return{item:entry.item, quantity:entry.quantity}})
+	}
+	
+	changeItem(item, amount){
+		let itemEntry = this.#getEntry(item)
+		if (!itemEntry) {
+			/**
+			 * @type {ItemEntry}
+			 */
+			itemEntry = {item, quantity:0}
+			this.#itemsEntries.push(itemEntry)
+		}
+		if (amount < 0 && Math.abs(amount) > itemEntry.quantity) throw new Error("Inventory content cannot go into negatives");
+		itemEntry.quantity += amount
+		this.#contentChangeCallback(itemEntry.item, itemEntry.quantity)
+		return this
 	}
 
-	setItemEntry(id, quantity){
-		const itemEntry = this.getItemEntry(id)
-		itemEntry.quantity = quantity
-		this.#contentChangeCallback(itemEntry.item, quantity)
-		return this
+	addItem(item, amount){
+		return this.changeItem(item, amount)
+	}
+
+	subtractItem(item, amount){
+		return this.changeItem(item, -amount)
 	}
 }
 
@@ -589,25 +627,41 @@ function main(response) {
 		return items.find(item=>item.id === id)
 	}
 
-	function getItemFromTag(tag) {
+	function getItemsFromTag(tag) {
 		return items.filter(item=>item.tags.includes(tag))
 	}
 	
-	function canCraft(craftable, inventory) {
+	function getAffordableRecipes(craftable, inventory) {
 		if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory");
+		const allEntries = inventory.getAllItemEntries()
 		const recipes = getRecipesProducing(craftable)
-		if (recipes.length === 0) return false
+		if (recipes.length === 0) return []
 
 		return recipes.filter(recipe=>{
 			return recipe.inputs.every(input => {
-				let ingredientItems = items.filter(i => i.tags.includes(input.tag))
-				ingredientItems.push(items.find(i => i.id === input.id))
-				if (ingredientItems.length === 0) throw new Error(`recipe:${recipe} has unknown inputs, could not find items for input: ${input}`);
-				
+				let ingredientItems = []
+				if (input.tag) ingredientItems = getItemsFromTag(input.tag)
+				if (input.id) ingredientItems.push(getItemFromId(input.id))
+				if (ingredientItems.length === 0) throw new Error(`recipe:${recipe.id} has unknown inputs, could not find items for input: ${JSON.stringify(input)}`);
 				return ingredientItems.some(item=>{
-					const matchingEntries = inventory.getAllItemEntries().filter(itemEntry=>itemEntry.item===item)
+					const matchingEntries = allEntries.filter(itemEntry=>itemEntry.item===item)
 					return matchingEntries.some(matchingEntry=>matchingEntry.quantity >= input.quantity)
 				})
+			})
+		})
+	}
+
+	function isCraftable(recipe, inventory) {
+		if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory");
+		const allEntries = inventory.getAllItemEntries()
+		return recipe.inputs.every(input => {
+			let ingredientItems = []
+			if (input.tag) ingredientItems = getItemsFromTag(input.tag)
+			if (input.id) ingredientItems.push(getItemFromId(input.id))
+			if (ingredientItems.length === 0) throw new Error(`recipe:${recipe.id} has unknown inputs, could not find items for input: ${JSON.stringify(input)}`);
+			return ingredientItems.some(item=>{
+				const matchingEntries = allEntries.filter(itemEntry=>itemEntry.item===item)
+				return matchingEntries.some(matchingEntry=>matchingEntry.quantity >= input.quantity)
 			})
 		})
 	}
@@ -630,7 +684,7 @@ function main(response) {
 
 
 
-	const inventory = new Inventory(items, (item, quantity)=>{
+	const inventory = new Inventory((item, quantity)=>{
 		for(const cellElement of inventoryCellElements){
 			if (cellElement.itemPointer !== item) continue
 			cellElement.quantityLabel.textContent = quantity // Yes this is correct
@@ -740,7 +794,7 @@ function main(response) {
 					break
 				}
 			}
-			inventory.setItemEntry(resultId, inventory.getItemEntry(resultId).quantity += 1)
+			inventory.changeItem(getItemFromId(resultId), 1)
 		}
 	})
 
