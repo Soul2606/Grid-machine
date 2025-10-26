@@ -264,24 +264,11 @@ class Inventory {
 
 
 //Pure Functions
-function searchJson(obj, fnc){
-	const recursion = (obj)=>{
-		fnc(obj)
-		if (Array.isArray(obj)) {
-			for (const val of obj) {
-				recursion(val)
-			}
-		} else if (typeof obj === "object") {
-			for (let key in obj) {
-				recursion(obj[key])
-			}
-		}
-	}
-	recursion(obj)
-}
 
-
-
+/**
+ * @param {Iterable} obj 
+ * @param {Function} fnc calls fnc with {key, value, parent, path, set, delete, isLeaf}
+ */
 function walkJson(obj, fnc) {
 	const recurse = (current, parent = null, key = null, path = []) => {
 		// Provide a mutator
@@ -322,7 +309,7 @@ function walkJson(obj, fnc) {
 	};
 
 	recurse(obj, null, null, []);
-} /* function parameters {key, value, parent, path, set, delete, isLeaf}*/
+}
 
 
 
@@ -359,15 +346,35 @@ const GameStates = (()=>{
 
 
 
-const MouseIcon = new class {
+const MouseOverlay = new class {
 	#element
 	constructor(){
 		this.#element = document.getElementById('mouse-icon')
+		this.elements = {}
 		window.addEventListener('mousemove',e=>{
 			if (this.#element.style.display === 'none') return
 			this.#element.style.top = e.pageY + 'px'
 			this.#element.style.left = e.pageX + 'px'
 		})
+
+		{// Info panel
+		const root = document.createElement('div')
+		root.className = 'mouse-info-panel'
+		//root.style.display = 'none'
+		this.#element.appendChild(root)
+		const methods = {
+			show:()=>{root.style.display = ''},
+			hide:()=>{root.style.display = 'none'},
+			setText:(text)=>{
+				if (typeof text !== 'string') throw new Error("text is not a string");
+				root.textContent = text
+			}
+		}
+		Object.freeze(methods)
+		this.elements.infoPanel = methods
+		}
+
+		Object.freeze(this.elements)
 	}
 
 	show(){
@@ -376,10 +383,6 @@ const MouseIcon = new class {
 
 	hide(){
 		this.#element.style.display = 'none'
-	}
-
-	setText(text){
-		this.#element.textContent = text
 	}
 }
 
@@ -535,15 +538,79 @@ function main(response) {
 	const machines = response.machines
 	const recipes  = response.recipes
 	const extraction  = response.extraction
-	{
-		const freeze = (obj)=>{if (typeof obj === 'object') Object.freeze(obj)}
-		searchJson(items, freeze)
-		searchJson(machines, freeze)
-		searchJson(recipes, freeze)
-		searchJson(extraction, freeze)
+	{ // Freeze all
+		const freeze = ({value:obj})=>{if (typeof obj === 'object') Object.freeze(obj)}
+		walkJson(items, freeze)
+		walkJson(machines, freeze)
+		walkJson(recipes, freeze)
+		walkJson(extraction, freeze)
 	}
 	const machinesUnlocked = new Set(['stone_furnace'])
 
+
+	// Data utility functions
+	function getRecipesProducing(craftable) {
+		return recipes.filter(recipe=>{
+			return recipe.outputs.some(output=>output.id === craftable.id)
+		})
+	}
+
+	function getRecipesConsuming(ingredient) {
+		return recipes.filter(recipe => {
+			return recipe.inputs.some(input => {
+				if (ingredient.id && input.id === ingredient.id) return true
+				if (ingredient.tag && input.tag === ingredient.tag) return true
+				return false
+			})
+		})
+	}
+
+	function getRecipeInputs(recipe) {
+		const results = []
+		recipe.inputs.forEach(input=>{
+			let item = items.find(item=>item.id === input.id)
+			if (!item) item = items.find(item=>item.tags.includes(input.tag))
+			if (item) results.push(item)
+		})
+		return results
+	}
+
+	function getRecipeOutputs(recipe) {
+		const results = []
+		recipe.outputs.forEach(output=>{
+			let item = items.find(item=>item.id === output.id)
+			if (!item) item = items.find(item=>item.tags.includes(output.tag))
+			if (item) results.push(item)
+		})
+		return results
+	}
+
+	function getItemFromId(id) {
+		return items.find(item=>item.id === id)
+	}
+
+	function getItemFromTag(tag) {
+		return items.filter(item=>item.tags.includes(tag))
+	}
+	
+	function canCraft(craftable, inventory) {
+		if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory");
+		const recipes = getRecipesProducing(craftable)
+		if (recipes.length === 0) return false
+
+		return recipes.filter(recipe=>{
+			return recipe.inputs.every(input => {
+				let ingredientItems = items.filter(i => i.tags.includes(input.tag))
+				ingredientItems.push(items.find(i => i.id === input.id))
+				if (ingredientItems.length === 0) throw new Error(`recipe:${recipe} has unknown inputs, could not find items for input: ${input}`);
+				
+				return ingredientItems.some(item=>{
+					const matchingEntries = inventory.getAllItemEntries().filter(itemEntry=>itemEntry.item===item)
+					return matchingEntries.some(matchingEntry=>matchingEntry.quantity >= input.quantity)
+				})
+			})
+		})
+	}
 
 
 	const inventoryCellElements = []
@@ -581,6 +648,31 @@ function main(response) {
 		cell.textContent = machine.name
 		cell.style.display = 'none'
 		document.getElementById('machines-grid').appendChild(cell)
+
+		cell.addEventListener('mouseenter', ()=>{
+			MouseOverlay.show()
+			MouseOverlay.elements.infoPanel.show()
+
+			const recipe = getRecipesProducing(machine)[0]
+
+			const text = recipe.inputs.map(input=>{
+				let item = items.find(item=>item.id === input.id)
+				if (!item) item = items.find(item=>item.tags.includes(input.tag))
+				if (item) {
+					return `${item.name}: ${input.quantity}, `
+				} else {
+					return 'unknown'
+				}
+			}).join(', ')
+
+			MouseOverlay.elements.infoPanel.setText(`Ingredients:${text}`)
+		})
+		
+		cell.addEventListener('mouseleave', ()=>{
+			MouseOverlay.elements.infoPanel.hide()
+			MouseOverlay.elements.infoPanel.setText('')
+		})
+
 		machineCellElements.push({element:cell, machinePointer:machine})
 	}
 

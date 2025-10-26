@@ -4,6 +4,10 @@ body{
     background-color: rgb(40, 41, 43);
 }
 
+main{
+    flex-grow: 1;
+}
+
 #mouse-icon{
     position: fixed;
     z-index: 9999;
@@ -111,7 +115,11 @@ body{
 
 .machine-line{
     display: grid;
-    height: 500px;
+    gap: 5px;
+    justify-content: start;
+    padding: 5px;
+    border: solid white 2px;
+    border-radius: 5px;
 }
 
 .machine{
