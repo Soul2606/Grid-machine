@@ -1,3 +1,31 @@
+/**
+ * @typedef {Object} Item
+ * @property {String} id
+ * @property {String} name
+ * @property {String[]} tags
+ */
+/**
+ * @typedef {Object} Machine
+ * @property {String} id
+ * @property {String} name
+ * @property {Number} tier
+ * @property {Boolean} requiresConfiguration
+ */
+/**
+ * @typedef {Object} Recipe
+ * @property {String} id
+ * @property {Array} inputs
+ * @property {Array} outputs
+ * @property {String} requiredProcess
+ * @property {Number} requiredTier
+ * @property {Number} processTimeSeconds
+ */
+/**
+ * @typedef {Object} ItemEntry
+ * @property {Item} item
+ * @property {Number} quantity
+ */
+
 
 //Pure Classes
 class GridItem {
@@ -352,7 +380,7 @@ function walkJson(obj, fnc) {
 
 
 /**
- * @param {Object} machine 
+ * @param {Machine} machine 
  * @returns {HTMLElement}
  */
 function createMachine(machine) {
@@ -444,8 +472,60 @@ const MouseOverlay = new class {
 
 
 /*This variable i here so the machine line and other objects where machines can be placed know what machine and cell is involved
-updateCall should only be called when machine placements is canceled or successful*/
-const MachineBeingPlaced = {machine:null, items:[], cell:null, updateCall:()=>{}}
+place should only be called when machine placements is canceled or successful, if it is canceled/failed items are automatically refunded*/
+;const MachineBeingPlaced = (()=>{
+	let _machine = null;
+	let _itemRefund = [];
+	let _placeCallback = null;
+	let _inventory = null;// inventory to refund to
+	function clear(){
+		_machine = null;
+		_itemRefund = [];
+		_placeCallback = null;
+		_inventory = null;
+	};
+	const properties = {
+		/**
+		 * @param {Machine} machine
+		 * @param {ItemEntry[]} itemRefund
+		 * @param {Function} placeCallback
+		 * @param {Inventory} inventory
+		 */
+		set(machine, itemRefund, placeCallback, inventory){
+			if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory");
+			_machine = machine;
+			_itemRefund = itemRefund;
+			_placeCallback = placeCallback;
+			_inventory = inventory;
+			return properties;
+		},
+		/**
+		 * @param {Boolean} success 
+		 */
+		place(success){
+			const results = _placeCallback(success)
+			if (properties.isEmpty()) return results
+			if (!success) {
+				// Refund
+				_itemRefund.forEach(entry=>_inventory.addItem(entry.item, entry.quantity))
+			}
+			clear()
+			return results
+		},
+		getState(){
+			return {machine:_machine, itemRefund:_itemRefund.slice(), placeCallback:_placeCallback}
+		},
+		isEmpty(){
+			return _machine === null || _itemRefund.length === 0 || _placeCallback === null
+		}
+	};
+	return properties
+})();
+
+
+
+/* Used to decide what is shown in the machines tab */
+const machinesUnlocked = new Set(['stone_furnace'])
 
 
 
@@ -595,9 +675,21 @@ return compile(items, machines, recipes, extraction)
 
 
 function main(response) {
+	/**
+	 * @type {Item[]}
+	 */
 	const items = response.items
+
+	/**
+	 * @type {Machine[]}
+	 */
 	const machines = response.machines
+
+	/**
+	 * @type {Recipe[]}
+	 */
 	const recipes  = response.recipes
+
 	const extraction  = response.extraction
 	{ // Freeze all
 		const freeze = ({value:obj})=>{if (typeof obj === 'object') Object.freeze(obj)}
@@ -606,7 +698,8 @@ function main(response) {
 		walkJson(recipes, freeze)
 		walkJson(extraction, freeze)
 	}
-	const machinesUnlocked = new Set(['stone_furnace'])
+	
+
 
 
 	// Data utility functions
@@ -751,18 +844,18 @@ function main(response) {
 		})
 
 		cell.addEventListener('click',()=>{
-			if (GameStates.mouse.action.get() !== 'none') {
-				MachineBeingPlaced.items.forEach(item=>inventory.addItem(item.item, item.quantity))
-				MachineBeingPlaced.updateCall(false)
-				GameStates.mouse.action.set('none')
+			if (!MachineBeingPlaced.isEmpty()) {
+				MachineBeingPlaced.place(false)
 				return
 			}
 			const recipe = getRecipesProducing(machine)[0]
 			if (!recipe) throw new Error(`The machine: ${machine.id} is not craftable`);
 			if (!isCraftable(recipe, inventory)) return
 			GameStates.mouse.action.set('placing-machine')
-			MachineBeingPlaced.machine = machine
 			const inputs = getRecipeInputs(recipe)
+			/**
+			 * @type {ItemEntry}
+			 */
 			const itemsUsed = []
 			inputs.forEach(input=>{
 				if (Array.isArray(input.item)) {
@@ -775,10 +868,7 @@ function main(response) {
 					itemsUsed.push({item:input.item, quantity:input.quantity})
 				}
 			})
-			MachineBeingPlaced.items = itemsUsed
-			MachineBeingPlaced.cell = cell
-			//updateCall is called when placement is canceled or successful
-			MachineBeingPlaced.updateCall = ()=>{cell.style.backgroundColor = ''}
+			MachineBeingPlaced.set(machine, itemsUsed, (success)=>{cell.style.backgroundColor = ''}, inventory)
 			cell.style.backgroundColor = 'green'
 		})
 
@@ -856,10 +946,10 @@ function main(response) {
 
 
 	document.getElementById('machine-line-cell-button').addEventListener('click',()=>{
-		if (GameStates.mouse.action.get()!=='placing-machine')return
+		if (MachineBeingPlaced.isEmpty())return
 		
-		const machineCell = createMachine(MachineBeingPlaced.machine)
-		const machine = new Machine(machineCell, MachineBeingPlaced.machine)
+		const machineCell = createMachine(MachineBeingPlaced.getState().machine)
+		const machine = new Machine(machineCell, MachineBeingPlaced.getState().machine)
 		const stack = document.createElement('p')
 		stack.textContent = 1
 		machineCell.appendChild(stack)
@@ -867,12 +957,12 @@ function main(response) {
 			if (GameStates.mouse.action.get()!=='placing-machine')return
 			machine.setStack(machine.getStack() + 1)
 			stack.textContent = machine.getStack()
-			MachineBeingPlaced.updateCall(true)
+			MachineBeingPlaced.place(true)
 			GameStates.mouse.action.set('none')
 		})
 		document.getElementById('machine-line').appendChild(machineCell)
 		
-		MachineBeingPlaced.updateCall(true)
+		MachineBeingPlaced.place(true)
 		GameStates.mouse.action.set('none')
 	})
 
