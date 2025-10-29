@@ -329,6 +329,94 @@ class Inventory {
 
 
 
+// Work in progress !!!!--- DO NOT USE ---!!!!
+class PhantomInventory extends Inventory {
+	/**
+	 * @typedef {Object} ChildInventory
+	 * @property {Inventory} inventory
+	 * @property {Number} priority
+	 * @property {Boolean} subtract
+	 * @property {Boolean} add
+	 */
+	#childInventories
+	constructor(initialChildInventories) {
+		if (!Array.isArray(initialChildInventories)) throw new Error("initialChildInventories is not an Array");
+		/**
+		 * @type {ChildInventory[]}
+		 */
+		this.#childInventories = Array.from(initialChildInventories)
+	}
+
+	/**
+	 * @returns {ItemEntry[]}
+	 */
+	#partitionInventories(ChildInventories){
+		/**
+		 * @type {ItemEntry[]}
+		 */
+		const itemEntries = []
+		for (const childInv of ChildInventories) {
+			itemEntries.push(childInv.inventory.getAllItemEntries())
+		}
+		itemEntries.flat()
+		return itemEntries
+	}
+
+	hasEntry(item){
+		return Boolean(this.#getEntry(item))
+	}
+
+	/**
+	 * @param {Object} item 
+	 * @returns {ItemEntry}
+	 */
+	#getEntry(item){
+		return this.#partitionInventories(this.#childInventories).find(entry=>entry.item === item)
+	}
+
+	/**
+	 * @param {object} item 
+	 * @returns {Number}
+	 */
+	getQuantity(item){
+		const itemEntry = this.#partitionInventories(this.#childInventories).find(value=>value.item===item)
+		if (itemEntry) {
+			return itemEntry.quantity
+		} else {
+			return 0
+		}
+	}
+
+	getAllItemEntries(){
+		return this.#partitionInventories(this.#childInventories).map(entry=>{return{item:entry.item, quantity:entry.quantity}})
+	}
+	
+	changeItem(item, amount){
+		return amount > 0? this.addItem(item, amount): this.subtractItem(item, amount)
+	}
+
+	addItem(item, amount){
+		const _amount = Math.abs(amount)
+		for(const childInv of this.#childInventories.filter(childInv=>childInv.add).sort((a,b)=>a.priority-b.priority)){
+			// If item change is successful: return
+			if (childInv.inventory.addItem(item, _amount)) return true
+		}
+		return false
+	}
+
+	subtractItem(item, amount){
+		const _amount = Math.abs(amount)
+		for(const childInv of this.#childInventories.filter(childInv=>childInv.subtract).sort((a,b)=>a.priority-b.priority)){
+			// If item change is successful: return
+			if (childInv.inventory.addItem(item, _amount)) return true
+		}
+		return false
+	}
+}
+
+
+
+
 //Pure Functions
 
 /**
