@@ -261,66 +261,111 @@ class Machine {
 
 
 class Inventory {
-	#itemsEntries
+	#itemEntries
 	#contentChangeCallback
-	/**
-	 * @typedef {Object} ItemEntry
-	 * @property {Object} item
-	 * @property {Number} quantity
-	 */
-	constructor(contentChangeCallback) {
-		this.#itemsEntries = []
+	
+	// Cannot be changed after construction
+	#max
+	#itemsFilter
+	#tagsFilter
+	constructor(contentChangeCallback=()=>{}, max=Infinity, itemsFilter=[], tagsFilter=[]) {
+		if (typeof max !== 'number') throw new Error("max must be a number");
+		if (Number.isNaN(max)) throw new Error("max must be not not a number");
+		if (max < 1) throw new Error("max must be a natural number");
+		if (!Array.isArray(itemsFilter)) throw new Error("itemsFilter must be an Array");
+		if (!Array.isArray(tagsFilter)) throw new Error("tagsFilter must be an Array");
+		
+		/**
+		 * @type {ItemEntry[]}
+		 */
+		this.#itemEntries = []
 		this.#contentChangeCallback = contentChangeCallback
+		this.#max = Math.ceil(max)
+		this.#itemsFilter = Array.from(itemsFilter)
+		this.#tagsFilter = Array.from(tagsFilter)
+	}
+
+	getMax(){
+		return this.#max
 	}
 
 	hasEntry(item){
-		return Boolean(this.#getEntry(item))
+		const entry = this.#getEntry(item)
+		if (entry) {
+			return entry.quantity > 0
+		}
+		return false
 	}
 
 	/**
-	 * @param {Object} item 
-	 * @returns {ItemEntry}
+	 * @param {Item} item 
+	 * @returns {ItemEntry | null}
 	 */
 	#getEntry(item){
-		return this.#itemsEntries.find(entry=>entry.item === item)
+		return this.#itemEntries.find(entry=>entry.item === item)
 	}
 
 	/**
-	 * @param {object} item 
+	 * @param {Item} item 
 	 * @returns {Number}
 	 */
 	getQuantity(item){
-		const itemEntry = this.#itemsEntries.find(value=>value.item===item)
-		if (itemEntry) {
-			return itemEntry.quantity
+		const inventoryEntry = this.#getEntry(item)
+		if (inventoryEntry) {
+			return inventoryEntry.quantity
 		} else {
 			return 0
 		}
 	}
 
+	/**
+	 * @returns {ItemEntry}
+	 */
 	getAllItemEntries(){
-		return this.#itemsEntries.map(entry=>{return{item:entry.item, quantity:entry.quantity}})
+		return this.#itemEntries.map(entry=>{return{item:entry.item, quantity:entry.quantity}})
 	}
 	
+	/**
+	 * @param {Item} item 
+	 * @param {Number} amount 
+	 * @returns {Boolean} success?
+	 */
 	changeItem(item, amount){
-		let itemEntry = this.#getEntry(item)
-		if (!itemEntry) {
-			/**
-			 * @type {ItemEntry}
-			 */
-			itemEntry = {item, quantity:0}
-			this.#itemsEntries.push(itemEntry)
+		if (typeof amount !== 'number' || !isFinite(amount)) return false
+		if (amount === 0) return false
+		if (this.#itemsFilter.length > 0 && !this.#itemsFilter.includes(item)) return false
+		if (this.#tagsFilter.length > 0 && !this.#tagsFilter.some(tag=>item.tags.includes(tag))) return false
+		/**
+		 * @type {ItemEntry}
+		 */
+		let inventoryEntry = this.#getEntry(item)
+		if (!inventoryEntry) {
+			inventoryEntry = {item, quantity:0}
+			this.#itemEntries.push(inventoryEntry)
 		}
-		if (amount < 0 && Math.abs(amount) > itemEntry.quantity) throw new Error("Inventory content cannot go into negatives");
-		itemEntry.quantity += amount
-		this.#contentChangeCallback(itemEntry.item, itemEntry.quantity)
-		return this
+		if (amount > 0 && inventoryEntry.quantity + amount > this.#max) return false
+		if (amount < 0 && Math.abs(amount) > inventoryEntry.quantity) return false
+
+		// Item successfully changed
+		inventoryEntry.quantity += amount
+		if (this.#contentChangeCallback) this.#contentChangeCallback(inventoryEntry.item, inventoryEntry.quantity)
+		return true
 	}
 
+	/**
+	 * @param {Item} item 
+	 * @param {Number} amount 
+	 * @returns {Boolean} success?
+	 */
 	addItem(item, amount){
 		return this.changeItem(item, amount)
 	}
 
+	/**
+	 * @param {Item} item 
+	 * @param {Number} amount 
+	 * @returns {Boolean} success?
+	 */
 	subtractItem(item, amount){
 		return this.changeItem(item, -amount)
 	}
