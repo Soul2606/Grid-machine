@@ -842,34 +842,13 @@ function main(response) {
 		})
 	}
 
-	function getRecipesConsuming(ingredient) {
-		return recipes.filter(recipe => {
-			return recipe.inputs.some(input => {
-				if (ingredient.id && input.id === ingredient.id) return true
-				if (ingredient.tag && input.tag === ingredient.tag) return true
-				return false
-			})
-		})
-	}
-
 	function getRecipeInputs(recipe) {
-		const results = []
-		recipe.inputs.forEach(input=>{
-			let item = items.find(item=>item.id === input.id)
-			if (!item) item = items.filter(item=>item.tags.includes(input.tag))
-			if (item) results.push({item, quantity:input.quantity})
+		return recipe.inputs.map(input=>{
+			const inputItems = new Set()
+			items.filter(item=>item.id === input.id).forEach(v=>inputItems.add(v))
+			items.filter(item=>item.tags.includes(input.tag)).forEach(v=>inputItems.add(v))
+			return {items:Array.from(inputItems), quantity:input.quantity}
 		})
-		return results
-	}
-
-	function getRecipeOutputs(recipe) {
-		const results = []
-		recipe.outputs.forEach(output=>{
-			let item = items.find(item=>item.id === output.id)
-			if (!item) item = items.filter(item=>item.tags.includes(output.tag))
-			if (item) results.push({item, quantity:input.quantity})
-		})
-		return results
 	}
 
 	function getItemFromId(id) {
@@ -989,17 +968,11 @@ function main(response) {
 			/**
 			 * @type {ItemEntry}
 			 */
-			const itemsUsed = []
-			inputs.forEach(input=>{
-				if (Array.isArray(input.item)) {
-					const chosen = input.item.find(item=>inventory.getQuantity(item) >= input.quantity)
-					if (!chosen) throw new Error(`could not afford any of the items from: ${JSON.stringify(input.item)}`);
-					inventory.subtractItem(chosen, input.quantity)
-					itemsUsed.push({item:chosen, quantity:input.quantity})
-				}else{
-					inventory.subtractItem(input.item, input.quantity)
-					itemsUsed.push({item:input.item, quantity:input.quantity})
-				}
+			const itemsUsed = inputs.map(input=>{
+				const chosen = input.items.find(item=>inventory.getQuantity(item) >= input.quantity)
+				if (!chosen) throw new Error(`could not afford any of the items from: ${JSON.stringify(input.items)}`);
+				inventory.subtractItem(chosen, input.quantity)
+				return {item:chosen, quantity:input.quantity}
 			})
 			MachineBeingPlaced.set(machine, itemsUsed, (success)=>{cell.style.backgroundColor = ''}, inventory)
 			cell.style.backgroundColor = 'green'
