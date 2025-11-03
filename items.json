@@ -5,6 +5,12 @@
 		"tags":["stone"]
 	},
 	{
+		"id":"coal",
+		"name":"Coal",
+		"tags":["primitive_fuel"],
+		"energy":"4MJ"
+	},
+	{
 		"id":"raw_aluminum",
 		"name":"Raw Aluminum",
 		"tags":["raw_ore"]

@@ -657,6 +657,88 @@ place should only be called when machine placements is canceled or successful, i
 
 
 
+/* This variable is used to store the context for transferring items and functions to be called upon transfer.
+I cant be asked to make a factory singleton this time... */
+const ItemTransferContext = {
+	itemEntry:null,
+	transfer:null // function (success)=>{}
+}
+
+
+
+const itemQuantitySlider = (()=>{// Item quantity slider
+	const root = document.getElementById('item-quantity-slider')
+	
+	const slider = document.getElementById('item-quantity-slider-slider')
+	slider.type = 'range'
+
+	let endCallbackFunction = ()=>{}
+	let inputCallbackFunction = ()=>{}
+	let sliderDisabled = true
+	// Make it follow the mouse without pressing
+	document.addEventListener('mousemove', e => {
+		if (root.style.display === 'none') return
+		const rect = slider.getBoundingClientRect();
+
+		// Map mouse X position to slider range
+		const percent = (e.clientX - rect.left) / rect.width;
+		const clamped = Math.min(Math.max(percent, 0), 1);
+
+		slider.value = Math.round(
+			slider.min * 1 + (slider.max - slider.min) * clamped
+		);
+		inputCallbackFunction(Number(slider.value))
+	});
+
+	document.addEventListener('mouseup', ()=>{
+		if (sliderDisabled) return
+		sliderDisabled = true
+		root.style.display = 'none'
+		endCallbackFunction(Number(slider.value))
+	})
+
+	const setText = (text)=>{
+		if (typeof text !== 'string') throw new Error("text is not a string");
+		document.getElementById('item-quantity-slider-text').textContent = text
+	}
+
+	const methods = {
+		show: (x, y, text, length=15) => {
+			// position is relative to the window, not the page
+			if (typeof length !== 'number' || Number.isNaN(length) || (!Number.isFinite(length))) throw new Error("length is not a valid number");
+			slider.max = length
+			setText(text)
+			sliderDisabled = false
+			root.style.display = '';
+			// Position near mouse 
+			root.style.left = `${x}px`;
+			root.style.top = `${y}px`;
+
+			// Prevent clipping off screen
+			const rect = root.getBoundingClientRect();
+			if (rect.right > window.innerWidth) {
+				root.style.left = `${window.innerWidth - rect.width}px`;
+			}
+			if (rect.bottom > window.innerHeight) {
+				root.style.top = `${window.innerHeight - rect.height}px`;
+			}
+		},
+		setEndCallback:(func)=>{
+			if (typeof func !== 'function') throw new Error("func is not a function");
+			endCallbackFunction = func
+		},
+		setInputCallback:(func)=>{
+			if (typeof func !== 'function') throw new Error("func is not a function");
+			inputCallbackFunction = func
+		},
+		setText
+	}
+	Object.freeze(methods)
+	return methods
+})();
+
+
+
 /* Used to decide what is shown in the machines tab */
 const machinesUnlocked = new Set(['stone_furnace'])
 
@@ -699,11 +781,15 @@ async function fetchJSON(url) {
 function compile(items, machines, recipes, extraction) {
 
 	const limitKeysTo = (obj,keys)=>{
-		if (Object.keys(obj).some(key=>!keys.includes(key))) throw new Error(`${obj} has invalid keys, valid keys:${keys}`);	
+		if (Object.keys(obj).some(key=>!keys.includes(key))) throw new Error(`${obj.id} has invalid keys, object can only have these keys:${keys}`);	
+	}
+
+	const includeKeys = (obj,keys)=>{
+		if (keys.some(key=>!Object.keys(obj).includes(key))) throw new Error(`${obj.id} has invalid keys, object must include these keys:${keys}`);	
 	}
 
 	items.forEach(item => {
-		limitKeysTo(item,['id', 'name', 'tags'])
+		includeKeys(item,['id', 'name', 'tags'])
 	})
 	machines.forEach(item => {
 		limitKeysTo(item,['id', 'name', 'capabilities', 'tier', 'requiresConfiguration'])
@@ -906,6 +992,69 @@ function main(response) {
 		number.textContent = 0
 		cell.appendChild(number)
 
+		cell.addEventListener('mousedown', e => {
+			console.log('mousedown')
+			if (ItemTransferContext.itemEntry !== null) return
+			const quantities = [
+				1,
+				5,
+				10,
+				20,
+				30,
+				40,
+				50,
+				100,
+				200,
+				300,
+				400,
+				500,
+				600,
+				700,
+				800,
+				900,
+				1000,
+				2000,
+				3000,
+				4000,
+				5000,
+				6000,
+				7000,
+				8000,
+				9000,
+				10000,
+				20000,
+				30000,
+				40000,
+				50000,
+				60000,
+				70000,
+				80000,
+				90000,
+				100000,
+				200000,
+				300000,
+				400000,
+				500000,
+				1000000
+			];
+			const current = inventory.getQuantity(item)
+			if (current < 1) return
+			const map = quantities.filter(val=>val<current)
+			map.push(current)
+			const length = map.length
+			itemQuantitySlider.show(e.pageX, e.pageY, `${map[0]}/${current}`, length)
+			itemQuantitySlider.setInputCallback(step=>itemQuantitySlider.setText(`${map[step-1]}/${current}`))
+			itemQuantitySlider.setEndCallback(step=>{
+				const value = map[step-1]
+				if (!inventory.subtractItem(item, value)) return // Try to subtract items, if fail end early
+				ItemTransferContext.itemEntry = {item, quantity:value}
+				ItemTransferContext.transfer = (success)=>{
+					if (success) return // If item was successfully transferred: do nothing, otherwise refund the lost items.  
+					inventory.addItem(item, value)
+				}
+			})
+		})
+
 		document.getElementById('inventory-grid').appendChild(cell)
 		inventoryCellElements.push({element:cell, quantityLabel:number, itemPointer:item})
 	}
@@ -963,7 +1112,6 @@ function main(response) {
 			const recipe = getRecipesProducing(machine)[0]
 			if (!recipe) throw new Error(`The machine: ${machine.id} is not craftable`);
 			if (!isCraftable(recipe, inventory)) return
-			GameStates.mouse.action.set('placing-machine')
 			const inputs = getRecipeInputs(recipe)
 			/**
 			 * @type {ItemEntry}
@@ -1060,16 +1208,14 @@ function main(response) {
 		stack.textContent = 1
 		machineCell.appendChild(stack)
 		machineCell.addEventListener('click',()=>{
-			if (GameStates.mouse.action.get()!=='placing-machine')return
+			if (MachineBeingPlaced.isEmpty())return
 			machine.setStack(machine.getStack() + 1)
 			stack.textContent = machine.getStack()
 			MachineBeingPlaced.place(true)
-			GameStates.mouse.action.set('none')
 		})
 		document.getElementById('machine-line').appendChild(machineCell)
 		
 		MachineBeingPlaced.place(true)
-		GameStates.mouse.action.set('none')
 	})
 
 }

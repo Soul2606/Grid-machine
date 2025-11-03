@@ -141,3 +141,37 @@ main{
     display: grid;
     gap: 5px;
 }
+
+#item-quantity-slider{
+    position: fixed;
+    z-index: 9999;
+    background-color: rgba(10, 10, 10, 0.2);
+    border-radius: 5px;
+}
+
+#item-quantity-slider-slider{
+    width: 250px;
+    pointer-events: none;
+}
+
+#item-quantity-slider-text{
+    margin: 0;
+    text-align: center;
+    font-size: 28px;
+    pointer-events: none;
+}
+
+.text-border {
+    font-size: 48px;
+    font-weight: bold;
+    color: black;
+    text-shadow:
+    2px 0 white,
+    -2px 0 white,
+    0 2px white,
+    0 -2px white,
+    1px 1px white,
+    -1px -1px white,
+    1px -1px white,
+    -1px 1px white;
+}
