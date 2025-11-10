@@ -922,12 +922,22 @@ function main(response) {
 
 
 	// Data utility functions
+	/**
+	 * Get all recipes that crafts the provided item
+	 * @param {Item} craftable 
+	 * @returns {Recipe[]}
+	 */
 	function getRecipesProducing(craftable) {
 		return recipes.filter(recipe=>{
 			return recipe.outputs.some(output=>output.id === craftable.id)
 		})
 	}
 
+	/**
+	 * Returns every input with each item that is valid for that input of the recipe. think of it like this (item||item...)&&(item||item...)...
+	 * @param {Recipe} recipe 
+	 * @returns {Array<Array<Item>>}
+	 */
 	function getRecipeInputs(recipe) {
 		return recipe.inputs.map(input=>{
 			const inputItems = new Set()
@@ -937,10 +947,20 @@ function main(response) {
 		})
 	}
 
+	/**
+	 * This function is for ease of use
+	 * @param {String} id 
+	 * @returns {Item|undefined}
+	 */
 	function getItemFromId(id) {
 		return items.find(item=>item.id === id)
 	}
 
+	/**
+	 * This function is for ease of use
+	 * @param {String} tag 
+	 * @returns {Item[]}
+	 */
 	function getItemsFromTag(tag) {
 		return items.filter(item=>item.tags.includes(tag))
 	}
@@ -965,6 +985,20 @@ function main(response) {
 		})
 	}
 
+	/**
+	 * Checks whether at least one valid item for each input in the recipe is affordable from the inventory.
+	 * 
+	 * ⚠️ This function has significant limitations:
+	 * - It does not expose which items were considered or chosen.
+	 * - It selects only the first viable item per input, ignoring other valid combinations.
+	 * - There is no support for customization, prioritization, or insight into decision logic.
+	 * 
+	 * This function may be deprecated in the future in favor of a more flexible and transparent alternative.
+	 * 
+	 * @param {Recipe} recipe 
+	 * @param {Inventory} inventory 
+	 * @returns {Boolean}
+	 */
 	function isCraftable(recipe, inventory) {
 		if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory");
 		const allEntries = inventory.getAllItemEntries()
