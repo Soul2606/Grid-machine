@@ -404,6 +404,15 @@ class Inventory {
 	subtractItem(item, amount){
 		return this.changeItem(item, -amount)
 	}
+
+	/**
+	 * @param {Function|null} func 
+	 */
+	setContentChangeCallback(func){
+		if (typeof func !== 'function' && func !== null) throw new Error("func is not a function or null");
+		this.#contentChangeCallback = func
+		return this
+	}
 }
 
 
@@ -625,6 +634,11 @@ const GameStates = (()=>{
 
 
 
+/* Players inventory */
+const inventory = new Inventory()
+
+
+
 /*This is a singleton for managing the elements that follow the mouse*/
 const MouseOverlay = new class {
 	#element
@@ -725,7 +739,7 @@ place should only be called when machine placements is canceled or successful, i
 /* This variable is used to store the context for transferring items and functions to be called upon transfer.
 I cant be asked to make a factory singleton this time... */
 const ItemTransferContext = {
-	itemEntry:null,
+	itemInstance:null,
 	transfer:null // function (success)=>{}
 }
 
@@ -789,11 +803,11 @@ const itemQuantitySlider = (()=>{// Item amount slider
 			}
 		},
 		setEndCallback:(func)=>{
-			if (typeof func !== 'function') throw new Error("func is not a function");
+			if (typeof func !== 'function' && func !== null) throw new Error("func is not a function");
 			endCallbackFunction = func
 		},
 		setInputCallback:(func)=>{
-			if (typeof func !== 'function') throw new Error("func is not a function");
+			if (typeof func !== 'function' && func !== null) throw new Error("func is not a function");
 			inputCallbackFunction = func
 		},
 		setText
@@ -991,7 +1005,7 @@ function main(response) {
 
 
 
-	// Data utility functions
+	// Data utility functions / Post compiled functions
 
 	/**
 	 * Get all recipes that crafts the provided item
@@ -1085,6 +1099,95 @@ function main(response) {
 		})
 	}
 
+	/**
+	 * When this function is called it will show the slider and set up events for items transfer of a specified item from the provided inventory into the transfer context
+	 * from there you can resolve the transfer from anywhere in the script since transfer context is a global variable. 
+	 * @param {Event} event event listener event 
+	 * @param {Inventory} inventory inventory class to transfer from
+	 * @param {Item} item the item "class" to transfer
+	 * @param {Function()} initiateTransferCall optional functions to add extra events upon transfer to transfer context
+	 * @param {Function(success:Boolean)} resolveTransferCall optional functions to add extra events upon transfer context resolution
+	 * @returns void
+	 */
+	function itemTransferEvent(event, inventory, item, initiateTransferCall=()=>{}, resolveTransferCall=()=>{}) {
+		// early guards
+		if (!event || !inventory || !item) return
+		if (ItemTransferContext.itemInstance !== null) return
+
+		event.preventDefault()
+		event.stopPropagation()
+
+		const currentQty = Math.max(0, inventory.getQuantity(item) || 0)
+		if (currentQty < 1) return
+
+		// generate candidate quantities (ascending) then ensure the full-current is included
+		const preset = [
+			1,5,10,20,30,40,50,100,200,300,400,500,600,700,800,900,1000,
+			2000,3000,4000,5000,6000,7000,8000,9000,10000,20000,30000,40000,
+			50000,60000,70000,80000,90000,100000,200000,300000,400000,500000,1000000
+		]
+		const candidates = preset.filter(v => v < currentQty)
+		if (candidates[candidates.length - 1] !== currentQty) candidates.push(currentQty)
+
+		const steps = candidates.length
+		if (steps === 0) return
+
+		// prepare UI text helpers
+		const formatLabel = (idx) => `${candidates[idx]}/${currentQty}`
+
+		// set up slider with current page coords
+		itemQuantitySlider.show(event.pageX, event.pageY, formatLabel(0), steps)
+
+		// install callbacks; capture references so we can remove them if needed
+		const onInput = (step) => {
+			const index = Math.max(0, Math.min(steps - 1, step - 1))
+			itemQuantitySlider.setText(formatLabel(index))
+		}
+
+		const onEnd = (step) => {
+			// teardown callbacks immediately to avoid duplicates/stale listeners
+ 		   itemQuantitySlider.setInputCallback(null)
+ 		   itemQuantitySlider.setEndCallback(null)
+
+			const index = Math.max(0, Math.min(steps - 1, step - 1))
+			const amount = candidates[index]
+
+			// try to subtract; if subtraction fails, restore UI and exit
+			const removed = inventory.subtractItem(item, amount)
+			if (!removed) {
+			// optionally show a feedback/error in UI here
+			return
+			}
+
+			// register the pending instance and transfer handler
+			ItemTransferContext.itemInstance = inventory.getInstance(item)
+
+			initiateTransferCall()
+
+			// transfer is expected to call this with success boolean
+			ItemTransferContext.transfer = (success) => {
+				ItemTransferContext.itemInstance = null
+				ItemTransferContext.transfer = null
+				if (success) {
+					return
+				}
+				// on failure attempt refund
+				const added = inventory.addItem(item, amount)
+				if (!added) {
+					//If refund fail default to refunding the players inventory
+					//⚠️Oops looks like the global variable name for the player inventory has been overwritten. Its to much effort to rename a global variable now
+					inventory.addItem(item, amount)
+				}
+
+				resolveTransferCall(success)
+			}
+		}
+
+		itemQuantitySlider.setInputCallback(onInput)
+		itemQuantitySlider.setEndCallback(onEnd)
+	}
+
+
 	const inventoryCellElements = []
 	for(const item of items){
 		const cell = document.createElement('div')
@@ -1097,66 +1200,7 @@ function main(response) {
 		cell.appendChild(number)
 
 		cell.addEventListener('mousedown', e => {
-			console.log('mousedown')
-			if (ItemTransferContext.itemEntry !== null) return
-			const quantities = [
-				1,
-				5,
-				10,
-				20,
-				30,
-				40,
-				50,
-				100,
-				200,
-				300,
-				400,
-				500,
-				600,
-				700,
-				800,
-				900,
-				1000,
-				2000,
-				3000,
-				4000,
-				5000,
-				6000,
-				7000,
-				8000,
-				9000,
-				10000,
-				20000,
-				30000,
-				40000,
-				50000,
-				60000,
-				70000,
-				80000,
-				90000,
-				100000,
-				200000,
-				300000,
-				400000,
-				500000,
-				1000000
-			];
-			const current = inventory.getQuantity(item)
-			if (current < 1) return
-			const map = quantities.filter(val=>val<current)
-			map.push(current)
-			const length = map.length
-			itemQuantitySlider.show(e.pageX, e.pageY, `${map[0]}/${current}`, length)
-			itemQuantitySlider.setInputCallback(step=>itemQuantitySlider.setText(`${map[step-1]}/${current}`))
-			itemQuantitySlider.setEndCallback(step=>{
-				const value = map[step-1]
-				if (!inventory.subtractItem(item, value)) return // Try to subtract items, if fail end early
-				ItemTransferContext.itemEntry = {item, amount:value}
-				ItemTransferContext.transfer = (success)=>{
-					if (success) return // If item was successfully transferred: do nothing, otherwise refund the lost items.  
-					inventory.addItem(item, value)
-				}
-			})
+			itemTransferEvent(e,inventory,item)
 		})
 
 		document.getElementById('inventory-grid').appendChild(cell)
@@ -1165,7 +1209,7 @@ function main(response) {
 
 
 
-	const inventory = new Inventory((item, amount)=>{
+	inventory.setContentChangeCallback((item, amount)=>{
 		for(const cellElement of inventoryCellElements){
 			if (cellElement.itemPointer !== item) continue
 			cellElement.amountLabel.textContent = amount // Yes this is correct
