@@ -23,8 +23,10 @@
 /**
  * @typedef {Object} ItemEntry
  * @property {Item} item
- * @property {Number} quantity
+ * @property {Number} amount
  */
+
+let dataIsCompiled = false
 
 
 //Pure Classes
@@ -261,7 +263,7 @@ class Machine {
 
 
 class Inventory {
-	#itemEntries
+	#itemInstances
 	#contentChangeCallback
 	
 	// Cannot be changed after construction
@@ -276,9 +278,9 @@ class Inventory {
 		if (!Array.isArray(tagsFilter)) throw new Error("tagsFilter must be an Array");
 		
 		/**
-		 * @type {ItemEntry[]}
+		 * @type {ItemInstance[]}
 		 */
-		this.#itemEntries = []
+		this.#itemInstances = []
 		this.#contentChangeCallback = contentChangeCallback
 		this.#max = Math.ceil(max)
 		this.#itemsFilter = Array.from(itemsFilter)
@@ -289,20 +291,30 @@ class Inventory {
 		return this.#max
 	}
 
-	hasEntry(item){
-		const entry = this.#getEntry(item)
+	hasInstance(item){
+		const entry = this.#getInstance(item)
 		if (entry) {
-			return entry.quantity > 0
+			return entry.amount > 0
 		}
 		return false
 	}
 
 	/**
 	 * @param {Item} item 
-	 * @returns {ItemEntry | null}
+	 * @returns {ItemInstance | null}
 	 */
-	#getEntry(item){
-		return this.#itemEntries.find(entry=>entry.item === item)
+	#getInstance(item){
+		return this.#itemInstances.find(entry=>entry.item === item)
+	}
+	
+	/**
+	 * @param {Item} item 
+	 * @returns {ItemInstance | null}
+	 */
+	getInstance(item){
+		const instance = this.#getInstance(item)
+		if (instance) return instance.clone()
+		return null
 	}
 
 	/**
@@ -310,51 +322,74 @@ class Inventory {
 	 * @returns {Number}
 	 */
 	getQuantity(item){
-		const inventoryEntry = this.#getEntry(item)
+		const inventoryEntry = this.#getInstance(item)
 		if (inventoryEntry) {
-			return inventoryEntry.quantity
+			return inventoryEntry.amount
 		} else {
 			return 0
 		}
 	}
 
 	/**
-	 * @returns {ItemEntry}
+	 * @returns {ItemInstance}
 	 */
-	getAllItemEntries(){
-		return this.#itemEntries.map(entry=>{return{item:entry.item, quantity:entry.quantity}})
+	getAllItemInstances(){
+		return this.#itemInstances.map(instance=>instance.clone())
 	}
 	
 	/**
-	 * @param {Item} item 
-	 * @param {Number} amount 
+	 * @param {Item|ItemInstance} item 
+	 * @param {Number?} amount 
 	 * @returns {Boolean} success?
 	 */
-	changeItem(item, amount){
-		if (typeof amount !== 'number' || !isFinite(amount)) return false
-		if (amount === 0) return false
-		if (this.#itemsFilter.length > 0 && !this.#itemsFilter.includes(item)) return false
-		if (this.#tagsFilter.length > 0 && !this.#tagsFilter.some(tag=>item.tags.includes(tag))) return false
-		/**
-		 * @type {ItemEntry}
-		 */
-		let inventoryEntry = this.#getEntry(item)
-		if (!inventoryEntry) {
-			inventoryEntry = {item, quantity:0}
-			this.#itemEntries.push(inventoryEntry)
+	changeItem(item, amount=0){
+		let isDryItem 
+		if (item instanceof ItemInstance) {
+			isDryItem = false
+		} else if (isItem(item)) {
+			isDryItem = true
+		} else {
+			throw new Error("item is not an item or an ItemInstance");
 		}
-		if (amount > 0 && inventoryEntry.quantity + amount > this.#max) return false
-		if (amount < 0 && Math.abs(amount) > inventoryEntry.quantity) return false
+
+		const baseAmount = isDryItem? amount: item.amount
+		if (typeof baseAmount !== 'number' || !isFinite(baseAmount)) return false
+		if (baseAmount === 0) return false
+
+		const baseItem = isDryItem? item : item.item
+		if (this.#itemsFilter.length > 0 && !this.#itemsFilter.includes(baseItem)) return false
+		if (this.#tagsFilter.length > 0 && !this.#tagsFilter.some(tag=>baseItem.tags.includes(tag))) return false
+
+		/**
+		 * @type {ItemInstance}
+		 */
+		let itemInstance
+		if (isDryItem) {
+			itemInstance = this.#getInstance(item)
+		} else {
+			itemInstance = this.#getInstance(item.item)
+		}
+
+		if (!itemInstance) {
+			if (isDryItem) {
+				itemInstance = new ItemInstance(item, baseAmount)
+			} else {
+				itemInstance = item.clone()
+			}
+			this.#itemInstances.push(itemInstance)
+		}
+		if (baseAmount > 0 && itemInstance.amount + baseAmount > this.#max) return false
+		if (baseAmount < 0 && Math.abs(baseAmount) > itemInstance.amount) return false
 
 		// Item successfully changed
-		inventoryEntry.quantity += amount
-		if (this.#contentChangeCallback) this.#contentChangeCallback(inventoryEntry.item, inventoryEntry.quantity)
+		itemInstance.amount += baseAmount
+		if (this.#contentChangeCallback) this.#contentChangeCallback(itemInstance.item, itemInstance.amount)
 		return true
 	}
 
 	/**
-	 * @param {Item} item 
-	 * @param {Number} amount 
+	 * @param {Item|ItemInstance} item 
+	 * @param {Number?} amount 
 	 * @returns {Boolean} success?
 	 */
 	addItem(item, amount){
@@ -362,12 +397,31 @@ class Inventory {
 	}
 
 	/**
-	 * @param {Item} item 
-	 * @param {Number} amount 
+	 * @param {Item|ItemInstance} item 
+	 * @param {Number?} amount 
 	 * @returns {Boolean} success?
 	 */
 	subtractItem(item, amount){
 		return this.changeItem(item, -amount)
+	}
+}
+
+
+
+
+class ItemInstance {
+	constructor(item, amount=0, metadata={}) {
+		if (!dataIsCompiled) throw new Error("This class cannot be used before compilation is complete");
+		if (!isItem(item)) throw new Error("item is not an item");
+		if (typeof amount !== 'number') throw new Error("amount must be a number");
+		if (typeof metadata !== 'object') throw new Error("metadata is not an object");
+		this.item = item
+		this.amount = amount
+		this.metadata = JSON.parse(JSON.stringify(metadata))
+	}
+
+	clone(){
+		return new ItemInstance(this.item, this.amount, this.metadata)
 	}
 }
 
@@ -401,13 +455,13 @@ class PhantomInventory extends Inventory {
 		 */
 		const itemEntries = []
 		for (const childInv of ChildInventories) {
-			itemEntries.push(childInv.inventory.getAllItemEntries())
+			itemEntries.push(childInv.inventory.getAllItemInstances())
 		}
 		itemEntries.flat()
 		return itemEntries
 	}
 
-	hasEntry(item){
+	hasInstance(item){
 		return Boolean(this.#getEntry(item))
 	}
 
@@ -426,14 +480,14 @@ class PhantomInventory extends Inventory {
 	getQuantity(item){
 		const itemEntry = this.#partitionInventories(this.#childInventories).find(value=>value.item===item)
 		if (itemEntry) {
-			return itemEntry.quantity
+			return itemEntry.amount
 		} else {
 			return 0
 		}
 	}
 
-	getAllItemEntries(){
-		return this.#partitionInventories(this.#childInventories).map(entry=>{return{item:entry.item, quantity:entry.quantity}})
+	getAllItemInstances(){
+		return this.#partitionInventories(this.#childInventories).map(entry=>{return{item:entry.item, amount:entry.amount}})
 	}
 	
 	changeItem(item, amount){
@@ -521,6 +575,16 @@ function createMachine(machine) {
 	cell.className = 'inventory-grid-cell'
 	cell.textContent = machine.name
 	return cell
+}
+
+
+
+/**
+ * @param {any} value
+ * @returns {Boolean}
+ */
+function isItem(value) {
+	throw new Error("Do not use isItem before item has been declared");
 }
 
 
@@ -620,12 +684,13 @@ place should only be called when machine placements is canceled or successful, i
 	const properties = {
 		/**
 		 * @param {Machine} machine
-		 * @param {ItemEntry[]} itemRefund
+		 * @param {ItemInstance[]} itemRefund
 		 * @param {Function} placeCallback
 		 * @param {Inventory} inventory
 		 */
 		set(machine, itemRefund, placeCallback, inventory){
 			if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory");
+			if (itemRefund.some(instance=>!(instance instanceof ItemInstance))) throw new Error(`itemRefund has non ItemInstance values, itemRefund:${JSON.stringify(itemRefund)}`);
 			_machine = machine;
 			_itemRefund = itemRefund;
 			_placeCallback = placeCallback;
@@ -640,7 +705,7 @@ place should only be called when machine placements is canceled or successful, i
 			if (properties.isEmpty()) return results
 			if (!success) {
 				// Refund
-				_itemRefund.forEach(entry=>_inventory.addItem(entry.item, entry.quantity))
+				_itemRefund.forEach(entry=>_inventory.addItem(entry.item, entry.amount))
 			}
 			clear()
 			return results
@@ -666,10 +731,10 @@ const ItemTransferContext = {
 
 
 
-const itemQuantitySlider = (()=>{// Item quantity slider
-	const root = document.getElementById('item-quantity-slider')
+const itemQuantitySlider = (()=>{// Item amount slider
+	const root = document.getElementById('item-amount-slider')
 	
-	const slider = document.getElementById('item-quantity-slider-slider')
+	const slider = document.getElementById('item-amount-slider-slider')
 	slider.type = 'range'
 
 	let endCallbackFunction = ()=>{}
@@ -699,7 +764,7 @@ const itemQuantitySlider = (()=>{// Item quantity slider
 
 	const setText = (text)=>{
 		if (typeof text !== 'string') throw new Error("text is not a string");
-		document.getElementById('item-quantity-slider-text').textContent = text
+		document.getElementById('item-amount-slider-text').textContent = text
 	}
 
 	const methods = {
@@ -828,17 +893,17 @@ function compile(items, machines, recipes, extraction) {
 		checkType(recipe.processTimeSeconds,'number')
 		checkType(recipe.inputs,'array')
 		recipe.inputs.forEach(input=>{
-			limitKeysTo(input,['id','tag','quantity'])
+			limitKeysTo(input,['id','tag','amount'])
 			if (input.id) checkType(input.id,'string')
 			if (input.tag) checkType(input.tag,'string')
-			checkType(input.quantity,'number')
+			checkType(input.amount,'number')
 		})
 		checkType(recipe.outputs,'array')
 		recipe.outputs.forEach(output=>{
-			limitKeysTo(output,['id','tag','quantity'])
+			limitKeysTo(output,['id','tag','amount'])
 			if (output.id) checkType(output.id,'string')
 			if (output.tag) checkType(output.tag,'string')
-			checkType(output.quantity,'number')
+			checkType(output.amount,'number')
 		})
 	}
 	
@@ -883,6 +948,11 @@ function compile(items, machines, recipes, extraction) {
 		}
 	}
 
+	isItem = (value)=>{
+		return items.includes(value)
+	}
+	
+	dataIsCompiled = true
 	return {items, machines, recipes, extraction}
 }
 const items = await fetchJSON('items.json')
@@ -922,6 +992,7 @@ function main(response) {
 
 
 	// Data utility functions
+
 	/**
 	 * Get all recipes that crafts the provided item
 	 * @param {Item} craftable 
@@ -943,7 +1014,7 @@ function main(response) {
 			const inputItems = new Set()
 			items.filter(item=>item.id === input.id).forEach(v=>inputItems.add(v))
 			items.filter(item=>item.tags.includes(input.tag)).forEach(v=>inputItems.add(v))
-			return {items:Array.from(inputItems), quantity:input.quantity}
+			return {items:Array.from(inputItems), amount:input.amount}
 		})
 	}
 
@@ -967,7 +1038,7 @@ function main(response) {
 	
 	function getAffordableRecipes(craftable, inventory) {
 		if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory");
-		const allEntries = inventory.getAllItemEntries()
+		const allEntries = inventory.getAllItemInstances()
 		const recipes = getRecipesProducing(craftable)
 		if (recipes.length === 0) return []
 
@@ -979,7 +1050,7 @@ function main(response) {
 				if (ingredientItems.length === 0) throw new Error(`recipe:${recipe.id} has unknown inputs, could not find items for input: ${JSON.stringify(input)}`);
 				return ingredientItems.some(item=>{
 					const matchingEntries = allEntries.filter(itemEntry=>itemEntry.item===item)
-					return matchingEntries.some(matchingEntry=>matchingEntry.quantity >= input.quantity)
+					return matchingEntries.some(matchingEntry=>matchingEntry.amount >= input.amount)
 				})
 			})
 		})
@@ -1001,7 +1072,7 @@ function main(response) {
 	 */
 	function isCraftable(recipe, inventory) {
 		if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory");
-		const allEntries = inventory.getAllItemEntries()
+		const allEntries = inventory.getAllItemInstances()
 		return recipe.inputs.every(input => {
 			let ingredientItems = []
 			if (input.tag) ingredientItems = getItemsFromTag(input.tag)
@@ -1009,11 +1080,10 @@ function main(response) {
 			if (ingredientItems.length === 0) throw new Error(`recipe:${recipe.id} has unknown inputs, could not find items for input: ${JSON.stringify(input)}`);
 			return ingredientItems.some(item=>{
 				const matchingEntries = allEntries.filter(itemEntry=>itemEntry.item===item)
-				return matchingEntries.some(matchingEntry=>matchingEntry.quantity >= input.quantity)
+				return matchingEntries.some(matchingEntry=>matchingEntry.amount >= input.amount)
 			})
 		})
 	}
-
 
 	const inventoryCellElements = []
 	for(const item of items){
@@ -1081,7 +1151,7 @@ function main(response) {
 			itemQuantitySlider.setEndCallback(step=>{
 				const value = map[step-1]
 				if (!inventory.subtractItem(item, value)) return // Try to subtract items, if fail end early
-				ItemTransferContext.itemEntry = {item, quantity:value}
+				ItemTransferContext.itemEntry = {item, amount:value}
 				ItemTransferContext.transfer = (success)=>{
 					if (success) return // If item was successfully transferred: do nothing, otherwise refund the lost items.  
 					inventory.addItem(item, value)
@@ -1090,15 +1160,15 @@ function main(response) {
 		})
 
 		document.getElementById('inventory-grid').appendChild(cell)
-		inventoryCellElements.push({element:cell, quantityLabel:number, itemPointer:item})
+		inventoryCellElements.push({element:cell, amountLabel:number, itemPointer:item})
 	}
 
 
 
-	const inventory = new Inventory((item, quantity)=>{
+	const inventory = new Inventory((item, amount)=>{
 		for(const cellElement of inventoryCellElements){
 			if (cellElement.itemPointer !== item) continue
-			cellElement.quantityLabel.textContent = quantity // Yes this is correct
+			cellElement.amountLabel.textContent = amount // Yes this is correct
 			if (GameStates.ui.sideMenuSection.get() === 'recipes') continue
 			cellElement.element.style.display = ''
 		}
@@ -1124,7 +1194,7 @@ function main(response) {
 				let item = items.find(item=>item.id === input.id)
 				if (!item) item = items.find(item=>item.tags.includes(input.tag))
 				if (item) {
-					return `${item.name}: ${input.quantity}, `
+					return `${item.name}: ${input.amount}, `
 				} else {
 					return 'unknown'
 				}
@@ -1151,10 +1221,10 @@ function main(response) {
 			 * @type {ItemEntry}
 			 */
 			const itemsUsed = inputs.map(input=>{
-				const chosen = input.items.find(item=>inventory.getQuantity(item) >= input.quantity)
+				const chosen = input.items.find(item=>inventory.getQuantity(item) >= input.amount)
 				if (!chosen) throw new Error(`could not afford any of the items from: ${JSON.stringify(input.items)}`);
-				inventory.subtractItem(chosen, input.quantity)
-				return {item:chosen, quantity:input.quantity}
+				inventory.subtractItem(chosen, input.amount)
+				return new ItemInstance(chosen, input.amount)
 			})
 			MachineBeingPlaced.set(machine, itemsUsed, (success)=>{cell.style.backgroundColor = ''}, inventory)
 			cell.style.backgroundColor = 'green'
@@ -1173,9 +1243,9 @@ function main(response) {
 	
 	const repairCells = () => {
 		for (const inventoryCell of inventoryCellElements) {
-			const entry = inventory.getAllItemEntries().find(e => e.item === inventoryCell.itemPointer);
-			inventoryCell.element.style.display = entry && entry.quantity > 0 ? '' : 'none';
-			inventoryCell.quantityLabel.style.display = ''
+			const entry = inventory.getAllItemInstances().find(e => e.item === inventoryCell.itemPointer);
+			inventoryCell.element.style.display = entry && entry.amount > 0 ? '' : 'none';
+			inventoryCell.amountLabel.style.display = ''
 		}
 		for (const machineCell of machineCellElements) {
 			machineCell.element.style.display = machinesUnlocked.has(machineCell.machinePointer.id) ? '' : 'none';
@@ -1188,7 +1258,7 @@ function main(response) {
 		showGrid(true, true);
 		for (const inventoryCell of inventoryCellElements) {
 			inventoryCell.element.style.display = '' 
-			inventoryCell.quantityLabel.style.display = 'none'
+			inventoryCell.amountLabel.style.display = 'none'
 		}
 		for (const machineCell of machineCellElements) {
 			machineCell.element.style.display = ''
