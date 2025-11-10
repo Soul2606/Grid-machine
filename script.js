@@ -300,15 +300,21 @@ class Inventory {
 	}
 
 	/**
-	 * @param {Item} item 
+	 * Returns a pointer to the exact instance in the inventory
+	 * @param {Item|ItemInstance} item 
 	 * @returns {ItemInstance | null}
 	 */
 	#getInstance(item){
-		return this.#itemInstances.find(entry=>entry.item === item)
+		if (isItem(item)) {
+			return this.#itemInstances.find(entry=>new ItemInstance(item).isEqual(entry))
+		}else if (item instanceof ItemInstance) {
+			return this.#itemInstances.find(entry=>entry.isEqual(item))
+		}
 	}
 	
 	/**
-	 * @param {Item} item 
+	 * Returns a new clone of the instance
+	 * @param {Item|ItemInstance} item 
 	 * @returns {ItemInstance | null}
 	 */
 	getInstance(item){
@@ -343,6 +349,7 @@ class Inventory {
 	 * @returns {Boolean} success?
 	 */
 	changeItem(item, amount=0){
+
 		let isDryItem 
 		if (item instanceof ItemInstance) {
 			isDryItem = false
@@ -352,30 +359,20 @@ class Inventory {
 			throw new Error("item is not an item or an ItemInstance");
 		}
 
-		const baseAmount = isDryItem? amount: item.amount
+		const itemInstanceSample = isDryItem ? new ItemInstance(item, amount) : item;
+		const baseAmount = itemInstanceSample.amount 
+		const baseItem = itemInstanceSample.item
+
 		if (typeof baseAmount !== 'number' || !isFinite(baseAmount)) return false
 		if (baseAmount === 0) return false
 
-		const baseItem = isDryItem? item : item.item
 		if (this.#itemsFilter.length > 0 && !this.#itemsFilter.includes(baseItem)) return false
 		if (this.#tagsFilter.length > 0 && !this.#tagsFilter.some(tag=>baseItem.tags.includes(tag))) return false
 
-		/**
-		 * @type {ItemInstance}
-		 */
-		let itemInstance
-		if (isDryItem) {
-			itemInstance = this.#getInstance(item)
-		} else {
-			itemInstance = this.#getInstance(item.item)
-		}
+		let itemInstance = this.#getInstance(itemInstanceSample)
 
 		if (!itemInstance) {
-			if (isDryItem) {
-				itemInstance = new ItemInstance(item, baseAmount)
-			} else {
-				itemInstance = item.clone()
-			}
+			itemInstance = itemInstanceSample.clone()
 			this.#itemInstances.push(itemInstance)
 		}
 		if (baseAmount > 0 && itemInstance.amount + baseAmount > this.#max) return false
@@ -431,6 +428,16 @@ class ItemInstance {
 
 	clone(){
 		return new ItemInstance(this.item, this.amount, this.metadata)
+	}
+
+	/**
+	 * @param {ItemInstance} itemInstance 
+	 * @param {Object} options 
+	 * @returns {Boolean}
+	 */
+	isEqual(itemInstance, options={ignoreAmount:true, ignoreMetadata:false}){
+		if (!(itemInstance instanceof ItemInstance)) throw new Error("itemInstance is not an ItemInstance");
+		return (this.item === itemInstance.item && (options.ignoreMetadata || JSON.stringify(this.metadata) === JSON.stringify(itemInstance.metadata)) && (options.ignoreAmount || this.amount === itemInstance,this.amount))
 	}
 }
 
@@ -634,8 +641,8 @@ const GameStates = (()=>{
 
 
 
-/* Players inventory */
-const inventory = new Inventory()
+// Main global inventory
+const mainInventory = new Inventory()
 
 
 
@@ -1172,11 +1179,10 @@ function main(response) {
 					return
 				}
 				// on failure attempt refund
-				const added = inventory.addItem(item, amount)
-				if (!added) {
+				const removed = inventory.addItem(item, amount)
+				if (!removed) {
 					//If refund fail default to refunding the players inventory
-					//⚠️Oops looks like the global variable name for the player inventory has been overwritten. Its to much effort to rename a global variable now
-					inventory.addItem(item, amount)
+					if (!mainInventory.addItem(item, amount)) throw new Error("could not add items to mainInventory");
 				}
 
 				resolveTransferCall(success)
@@ -1200,7 +1206,7 @@ function main(response) {
 		cell.appendChild(number)
 
 		cell.addEventListener('mousedown', e => {
-			itemTransferEvent(e,inventory,item)
+			itemTransferEvent(e,mainInventory,item)
 		})
 
 		document.getElementById('inventory-grid').appendChild(cell)
@@ -1209,7 +1215,7 @@ function main(response) {
 
 
 
-	inventory.setContentChangeCallback((item, amount)=>{
+	mainInventory.setContentChangeCallback((item, amount)=>{
 		for(const cellElement of inventoryCellElements){
 			if (cellElement.itemPointer !== item) continue
 			cellElement.amountLabel.textContent = amount // Yes this is correct
@@ -1259,18 +1265,18 @@ function main(response) {
 			}
 			const recipe = getRecipesProducing(machine)[0]
 			if (!recipe) throw new Error(`The machine: ${machine.id} is not craftable`);
-			if (!isCraftable(recipe, inventory)) return
+			if (!isCraftable(recipe, mainInventory)) return
 			const inputs = getRecipeInputs(recipe)
 			/**
 			 * @type {ItemEntry}
 			 */
 			const itemsUsed = inputs.map(input=>{
-				const chosen = input.items.find(item=>inventory.getQuantity(item) >= input.amount)
+				const chosen = input.items.find(item=>mainInventory.getQuantity(item) >= input.amount)
 				if (!chosen) throw new Error(`could not afford any of the items from: ${JSON.stringify(input.items)}`);
-				inventory.subtractItem(chosen, input.amount)
+				mainInventory.subtractItem(chosen, input.amount)
 				return new ItemInstance(chosen, input.amount)
 			})
-			MachineBeingPlaced.set(machine, itemsUsed, (success)=>{cell.style.backgroundColor = ''}, inventory)
+			MachineBeingPlaced.set(machine, itemsUsed, (success)=>{cell.style.backgroundColor = ''}, mainInventory)
 			cell.style.backgroundColor = 'green'
 		})
 
@@ -1287,7 +1293,7 @@ function main(response) {
 	
 	const repairCells = () => {
 		for (const inventoryCell of inventoryCellElements) {
-			const entry = inventory.getAllItemInstances().find(e => e.item === inventoryCell.itemPointer);
+			const entry = mainInventory.getAllItemInstances().find(e => e.item === inventoryCell.itemPointer);
 			inventoryCell.element.style.display = entry && entry.amount > 0 ? '' : 'none';
 			inventoryCell.amountLabel.style.display = ''
 		}
@@ -1341,7 +1347,7 @@ function main(response) {
 					break
 				}
 			}
-			inventory.changeItem(getItemFromId(resultId), 1)
+			mainInventory.changeItem(getItemFromId(resultId), 1)
 		}
 	})
 
