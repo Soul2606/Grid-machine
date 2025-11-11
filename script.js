@@ -21,6 +21,14 @@
  * @property {Number} processTimeSeconds
  */
 /**
+ * @typedef {Object} Extraction
+ * @property {String} id
+ * @property {String} name
+ * @property {Number} manualPower
+ * @property {Number} requiredPower
+ * @property {Array<{itemId:String, weight:Number}>} yields
+ */
+/**
  * @typedef {Object} ItemEntry
  * @property {Item} item
  * @property {Number} amount
@@ -599,12 +607,18 @@ function createMachine(machine) {
 
 
 
+
+// Impure global functions
+
 /**
- * @param {any} value
+ * Return weather a object is an item
+ * @param {Item} value
  * @returns {Boolean}
  */
+//Not a pure function. This function is mutated in the compile function 
 function isItem(value) {
-	throw new Error("Do not use isItem before item has been declared");
+	if (!items) throw new Error("Do not use isItem before item has been declared");
+	return items.includes(value)
 }
 
 
@@ -612,6 +626,25 @@ function isItem(value) {
 
 
 //Global Variables
+
+/* These will be assigned after compilation. Should be validated outside the main function*/
+/**
+ * @type {Item[]}
+ */
+var items
+/**
+ * @type {Machine[]}
+ */
+var machines
+/**
+ * @type {Recipe[]}
+ */
+var recipes
+
+var extraction
+
+
+
 const GameStates = (()=>{
 
 	const GameStateLog = []
@@ -973,9 +1006,6 @@ function compile(items, machines, recipes, extraction) {
 		}
 	}
 
-	isItem = (value)=>{
-		return items.includes(value)
-	}
 	
 	dataIsCompiled = true
 	return {items, machines, recipes, extraction}
@@ -989,22 +1019,23 @@ return compile(items, machines, recipes, extraction)
 
 
 function main(response) {
+
 	/**
 	 * @type {Item[]}
 	 */
-	const items = response.items
-
+	items = response.items
 	/**
 	 * @type {Machine[]}
 	 */
-	const machines = response.machines
-
+	machines = response.machines
 	/**
 	 * @type {Recipe[]}
 	 */
-	const recipes  = response.recipes
+	recipes = response.recipes
 
-	const extraction  = response.extraction
+	extraction  = response.extraction
+
+
 	{ // Freeze all
 		const freeze = ({value:obj})=>{if (typeof obj === 'object') Object.freeze(obj)}
 		walkJson(items, freeze)
