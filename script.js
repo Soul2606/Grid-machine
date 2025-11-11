@@ -324,10 +324,10 @@ class Inventory {
 	}
 
 	/**
-	 * @param {Item} item 
+	 * @param {Item|ItemInstance} item 
 	 * @returns {Number}
 	 */
-	getQuantity(item){
+	getAmount(item){
 		const inventoryEntry = this.#getInstance(item)
 		if (inventoryEntry) {
 			return inventoryEntry.amount
@@ -437,7 +437,7 @@ class ItemInstance {
 	 */
 	isEqual(itemInstance, options={ignoreAmount:true, ignoreMetadata:false}){
 		if (!(itemInstance instanceof ItemInstance)) throw new Error("itemInstance is not an ItemInstance");
-		return (this.item === itemInstance.item && (options.ignoreMetadata || JSON.stringify(this.metadata) === JSON.stringify(itemInstance.metadata)) && (options.ignoreAmount || this.amount === itemInstance,this.amount))
+		return (this.item === itemInstance.item && (options.ignoreMetadata || JSON.stringify(this.metadata) === JSON.stringify(itemInstance.metadata)) && (options.ignoreAmount || this.amount === itemInstance.amount))
 	}
 }
 
@@ -493,7 +493,7 @@ class PhantomInventory extends Inventory {
 	 * @param {object} item 
 	 * @returns {Number}
 	 */
-	getQuantity(item){
+	getAmount(item){
 		const itemEntry = this.#partitionInventories(this.#childInventories).find(value=>value.item===item)
 		if (itemEntry) {
 			return itemEntry.amount
@@ -590,6 +590,10 @@ function createMachine(machine) {
 	const cell = document.createElement('div')
 	cell.className = 'inventory-grid-cell'
 	cell.textContent = machine.name
+	cell.addEventListener('click',()=>{
+		if (!MachineBeingPlaced.isEmpty()) return
+		console.log('click')
+	})
 	return cell
 }
 
@@ -1124,7 +1128,7 @@ function main(response) {
 		event.preventDefault()
 		event.stopPropagation()
 
-		const currentQty = Math.max(0, inventory.getQuantity(item) || 0)
+		const currentQty = Math.max(0, inventory.getAmount(item) || 0)
 		if (currentQty < 1) return
 
 		// generate candidate quantities (ascending) then ensure the full-current is included
@@ -1267,11 +1271,8 @@ function main(response) {
 			if (!recipe) throw new Error(`The machine: ${machine.id} is not craftable`);
 			if (!isCraftable(recipe, mainInventory)) return
 			const inputs = getRecipeInputs(recipe)
-			/**
-			 * @type {ItemEntry}
-			 */
 			const itemsUsed = inputs.map(input=>{
-				const chosen = input.items.find(item=>mainInventory.getQuantity(item) >= input.amount)
+				const chosen = input.items.find(item=>mainInventory.getAmount(item) >= input.amount)
 				if (!chosen) throw new Error(`could not afford any of the items from: ${JSON.stringify(input.items)}`);
 				mainInventory.subtractItem(chosen, input.amount)
 				return new ItemInstance(chosen, input.amount)
