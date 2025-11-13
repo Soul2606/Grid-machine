@@ -270,6 +270,13 @@ class Machine {
 
 
 
+/**
+ * Class for managing pure data of item instances. inventory can be constructed and configured before compilation. Do not try to modify or access item instances before compilation.
+ * @param {Function(item:Item, amount:Number)} contentChangeCallback
+ * @param {Number} max per item basis
+ * @param {Item[]} itemsFilter whitelist for items, not item instances
+ * @param {String[]} tagsFilter whitelist for tags, at least one included
+ */
 class Inventory {
 	#itemInstances
 	#contentChangeCallback
@@ -345,7 +352,7 @@ class Inventory {
 	}
 
 	/**
-	 * @returns {ItemInstance}
+	 * @returns {ItemInstance[]}
 	 */
 	getAllItemInstances(){
 		return this.#itemInstances.map(instance=>instance.clone())
@@ -887,6 +894,13 @@ document.getElementById('side-menu-width-button').addEventListener('mousedown',e
 	window.addEventListener('mousemove',move);
 	window.addEventListener('mouseup',up)
 });
+
+
+
+
+document.getElementById('main-window-button').addEventListener('click',()=>{
+	document.getElementById('main-window').style.display = 'none'
+})
 
 
 
