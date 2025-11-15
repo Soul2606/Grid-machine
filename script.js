@@ -283,10 +283,12 @@ class Inventory {
 	
 	// Cannot be changed after construction
 	#max
+	#maxSlots
 	#itemsFilter
 	#tagsFilter
-	constructor(contentChangeCallback=()=>{}, max=Infinity, itemsFilter=[], tagsFilter=[]) {
+	constructor(contentChangeCallback=()=>{}, max=Infinity, itemsFilter=[], tagsFilter=[], maxSlots=Infinity) {
 		if (typeof max !== 'number') throw new Error("max must be a number");
+		if (typeof maxSlots !== 'number') throw new Error("maxSlots must be a number");
 		if (Number.isNaN(max)) throw new Error("max must be not not a number");
 		if (max < 1) throw new Error("max must be a natural number");
 		if (!Array.isArray(itemsFilter)) throw new Error("itemsFilter must be an Array");
@@ -298,12 +300,17 @@ class Inventory {
 		this.#itemInstances = []
 		this.#contentChangeCallback = contentChangeCallback
 		this.#max = Math.ceil(max)
+		this.#maxSlots = Math.ceil(maxSlots)
 		this.#itemsFilter = Array.from(itemsFilter)
 		this.#tagsFilter = Array.from(tagsFilter)
 	}
 
 	getMax(){
 		return this.#max
+	}
+
+	getMaxSlots(){
+		return this.#maxSlots
 	}
 
 	hasInstance(item){
@@ -330,12 +337,12 @@ class Inventory {
 	/**
 	 * Returns a new clone of the instance
 	 * @param {Item|ItemInstance} item 
-	 * @returns {ItemInstance | null}
+	 * @returns {ItemInstance}
 	 */
 	getInstance(item){
 		const instance = this.#getInstance(item)
 		if (instance) return instance.clone()
-		return null
+		return new ItemInstance(item, 0)
 	}
 
 	/**
@@ -387,6 +394,7 @@ class Inventory {
 		let itemInstance = this.#getInstance(itemInstanceSample)
 
 		if (!itemInstance) {
+			if(this.getAllItemInstances().length + 1 > this.#maxSlots) return false
 			itemInstance = itemInstanceSample.clone()
 			this.#itemInstances.push(itemInstance)
 		}
@@ -395,6 +403,7 @@ class Inventory {
 
 		// Item successfully changed
 		itemInstance.amount += baseAmount
+		if(itemInstance.amount === 0) this.#itemInstances.splice(this.#itemInstances.indexOf(itemInstance), 1)
 		if (this.#contentChangeCallback) this.#contentChangeCallback(itemInstance.item, itemInstance.amount)
 		return true
 	}
@@ -597,23 +606,6 @@ function walkJson(obj, fnc) {
 
 
 
-/**
- * @param {Machine} machine 
- * @returns {HTMLElement}
- */
-function createMachine(machine) {
-	const cell = document.createElement('div')
-	cell.className = 'inventory-grid-cell'
-	cell.textContent = machine.name
-	cell.addEventListener('click',()=>{
-		if (!MachineBeingPlaced.isEmpty()) return
-		console.log('click')
-	})
-	return cell
-}
-
-
-
 
 // Impure global functions
 
@@ -626,6 +618,26 @@ function createMachine(machine) {
 function isItem(value) {
 	if (!items) throw new Error("Do not use isItem before item has been declared");
 	return items.includes(value)
+}
+
+
+
+/**
+ * @param {Machine} machine 
+ * @returns {HTMLElement}
+ */
+function createMachine(machine) {
+	const cell = document.createElement('div')
+	cell.className = 'inventory-grid-cell'
+	cell.textContent = machine.name
+	cell.addEventListener('click',()=>{
+		console.log('click')
+		if (!MachineBeingPlaced.isEmpty()) return
+		if (ItemTransferContext.itemInstance === null) return
+
+
+	})
+	return cell
 }
 
 
@@ -695,7 +707,7 @@ const MouseOverlay = new class {
 	#element
 	constructor(){
 		this.#element = document.getElementById('mouse-icon')
-		this.elements = {}
+		const elements = {}
 		window.addEventListener('mousemove',e=>{
 			if (this.#element.style.display === 'none') return
 			this.#element.style.top = e.pageY + 'px'
@@ -703,22 +715,51 @@ const MouseOverlay = new class {
 		})
 
 		{// Info panel
-		const root = document.createElement('div')
-		root.className = 'mouse-info-panel'
-		//root.style.display = 'none'
-		this.#element.appendChild(root)
-		const methods = {
-			show:()=>{root.style.display = ''},
-			hide:()=>{root.style.display = 'none'},
-			setText:(text)=>{
-				if (typeof text !== 'string') throw new Error("text is not a string");
-				root.textContent = text
+			const root = document.createElement('div')
+			root.className = 'mouse-info-panel'
+			root.style.display = 'none'
+			this.#element.appendChild(root)
+			const methods = {
+				show:()=>{root.style.display = ''},
+				hide:()=>{root.style.display = 'none'},
+				setText:(text)=>{
+					if (typeof text !== 'string') throw new Error("text is not a string");
+					root.textContent = text
+				}
 			}
-		}
-		Object.freeze(methods)
-		this.elements.infoPanel = methods
+			Object.freeze(methods)
+			elements.infoPanel = methods
 		}
 
+		{// Held item icon
+			const root = document.createElement('div')
+			root.className = 'held-item-icon'
+			root.style.display = 'none'
+
+			const p = document.createElement('p')
+			root.appendChild(p)
+
+			const img = document.createElement('img')
+			root.appendChild(img)
+
+			this.#element.appendChild(root)
+			const methods = {
+				show:()=>{root.style.display = ''},
+				hide:()=>{root.style.display = 'none'},
+				setText:(text)=>{
+					if (typeof text !== 'string') throw new Error("text is not a string");
+					p.textContent = text
+				},
+				setImage:(src)=>{
+					if (typeof src !== 'string') throw new Error("src is not a string");
+					img.src = src
+				},
+			}
+			Object.freeze(methods)
+			elements.heldItemIcon = methods 
+		}
+
+		this.elements = elements
 		Object.freeze(this.elements)
 	}
 
@@ -1166,7 +1207,6 @@ function main(response) {
 	 * @returns void
 	 */
 	function itemTransferEvent(event, inventory, item, initiateTransferCall=()=>{}, resolveTransferCall=()=>{}) {
-		// early guards
 		if (!event || !inventory || !item) return
 		if (ItemTransferContext.itemInstance !== null) return
 
@@ -1176,7 +1216,6 @@ function main(response) {
 		const currentQty = Math.max(0, inventory.getAmount(item) || 0)
 		if (currentQty < 1) return
 
-		// generate candidate quantities (ascending) then ensure the full-current is included
 		const preset = [
 			1,5,10,20,30,40,50,100,200,300,400,500,600,700,800,900,1000,
 			2000,3000,4000,5000,6000,7000,8000,9000,10000,20000,30000,40000,
@@ -1188,20 +1227,16 @@ function main(response) {
 		const steps = candidates.length
 		if (steps === 0) return
 
-		// prepare UI text helpers
 		const formatLabel = (idx) => `${candidates[idx]}/${currentQty}`
 
-		// set up slider with current page coords
 		itemQuantitySlider.show(event.pageX, event.pageY, formatLabel(0), steps)
 
-		// install callbacks; capture references so we can remove them if needed
 		const onInput = (step) => {
 			const index = Math.max(0, Math.min(steps - 1, step - 1))
 			itemQuantitySlider.setText(formatLabel(index))
 		}
 
 		const onEnd = (step) => {
-			// teardown callbacks immediately to avoid duplicates/stale listeners
  		   itemQuantitySlider.setInputCallback(null)
  		   itemQuantitySlider.setEndCallback(null)
 
@@ -1218,18 +1253,23 @@ function main(response) {
 			// register the pending instance and transfer handler
 			ItemTransferContext.itemInstance = inventory.getInstance(item)
 
+			MouseOverlay.elements.heldItemIcon.setText(`${ItemTransferContext.itemInstance.item.name}:${ItemTransferContext.itemInstance.amount}`)
+			MouseOverlay.elements.heldItemIcon.show()
+			MouseOverlay.show()
+
 			initiateTransferCall()
 
-			// transfer is expected to call this with success boolean
+			// transfer is called to resolve ItemTransferContext
 			ItemTransferContext.transfer = (success) => {
 				ItemTransferContext.itemInstance = null
 				ItemTransferContext.transfer = null
+				MouseOverlay.elements.heldItemIcon.hide()
+				MouseOverlay.hide()
 				if (success) {
 					return
 				}
-				// on failure attempt refund
-				const removed = inventory.addItem(item, amount)
-				if (!removed) {
+				// on failure attempt refund 
+				if (!inventory.addItem(item, amount)) {
 					//If refund fail default to refunding the players inventory
 					if (!mainInventory.addItem(item, amount)) throw new Error("could not add items to mainInventory");
 				}
