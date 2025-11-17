@@ -272,7 +272,7 @@ class Machine {
 
 /**
  * Class for managing pure data of item instances. inventory can be constructed and configured before compilation. Do not try to modify or access item instances before compilation.
- * @param {Function(item:Item, amount:Number)} contentChangeCallback
+ * @param {Function(itemInstance:ItemInstance)} contentChangeCallback
  * @param {Number} max per item basis
  * @param {Item[]} itemsFilter whitelist for items, not item instances
  * @param {String[]} tagsFilter whitelist for tags, at least one included
@@ -332,6 +332,7 @@ class Inventory {
 		}else if (item instanceof ItemInstance) {
 			return this.#itemInstances.find(entry=>entry.isEqual(item))
 		}
+		throw new Error("item is not Item or ItemInstance");
 	}
 	
 	/**
@@ -366,6 +367,7 @@ class Inventory {
 	}
 	
 	/**
+	 * Used to add/subtract an item from inventory. Can either take a Item amount:number pair or an ItemInstance. Filters and restrictions apply. amount cannot go into negatives and must be integers.
 	 * @param {Item|ItemInstance} item 
 	 * @param {Number?} amount 
 	 * @returns {Boolean} success?
@@ -383,28 +385,20 @@ class Inventory {
 
 		const itemInstanceSample = isDryItem ? new ItemInstance(item, amount) : item;
 		const baseAmount = itemInstanceSample.amount 
-		const baseItem = itemInstanceSample.item
 
-		if (typeof baseAmount !== 'number' || !isFinite(baseAmount)) return false
-		if (baseAmount === 0) return false
-
-		if (this.#itemsFilter.length > 0 && !this.#itemsFilter.includes(baseItem)) return false
-		if (this.#tagsFilter.length > 0 && !this.#tagsFilter.some(tag=>baseItem.tags.includes(tag))) return false
+		if (!this.canChange(itemInstanceSample)) return false
 
 		let itemInstance = this.#getInstance(itemInstanceSample)
 
 		if (!itemInstance) {
-			if(this.getAllItemInstances().length + 1 > this.#maxSlots) return false
 			itemInstance = itemInstanceSample.clone()
 			this.#itemInstances.push(itemInstance)
 		}
-		if (baseAmount > 0 && itemInstance.amount + baseAmount > this.#max) return false
-		if (baseAmount < 0 && Math.abs(baseAmount) > itemInstance.amount) return false
 
 		// Item successfully changed
 		itemInstance.amount += baseAmount
 		if(itemInstance.amount === 0) this.#itemInstances.splice(this.#itemInstances.indexOf(itemInstance), 1)
-		if (this.#contentChangeCallback) this.#contentChangeCallback(itemInstance.item, itemInstance.amount)
+		if (this.#contentChangeCallback) this.#contentChangeCallback(itemInstance)
 		return true
 	}
 
@@ -427,7 +421,51 @@ class Inventory {
 	}
 
 	/**
+	 * Tries to change every item at once. if any item cant be changed then nothing gets changed and it returns false
+	 * @param {ItemInstance[]} items 
+	 * @returns {Boolean} success
+	 */
+	changeItems(items){
+		if(items.every(this.canChange)){
+			for (const itemInstance of items) {
+				if (!this.changeItem(itemInstance)) throw new Error("Invariant broken: changeItem failed after validation");
+			}
+			return true
+		}
+		return false
+	}
+
+	/**
+	 * Return weather a change is possible without actually changing the content of the inventory
+	 * @param {ItemInstance} item 
+	 * @returns {Boolean} valid
+	 */
+	canChange(item){
+		const baseAmount = item.amount
+		const baseItem = item.item
+
+		if (!isItem(baseItem)) return false
+
+		if (typeof baseAmount !== 'number' || !Number.isFinite(baseAmount) || Number.isNaN(baseAmount)) return false
+
+		if (this.#itemsFilter.length > 0 && !this.#itemsFilter.includes(baseItem)) return false
+		if (this.#tagsFilter.length > 0 && !this.#tagsFilter.some(tag => baseItem.tags.includes(tag))) return false
+
+		const existing = this.#getInstance(item)
+
+		if (!existing) {
+			if (this.getAllItemInstances().length + 1 > this.#maxSlots) return false
+			if (baseAmount > this.#max) return false
+		} else {
+			if (baseAmount > 0 && existing.amount + baseAmount > this.#max) return false
+			if (baseAmount < 0 && Math.abs(baseAmount) > existing.amount) return false
+		}
+		return true
+	}
+
+	/**
 	 * @param {Function|null} func 
+	 * @returns {ThisType}
 	 */
 	setContentChangeCallback(func){
 		if (typeof func !== 'function' && func !== null) throw new Error("func is not a function or null");
@@ -630,13 +668,6 @@ function createMachine(machine) {
 	const cell = document.createElement('div')
 	cell.className = 'inventory-grid-cell'
 	cell.textContent = machine.name
-	cell.addEventListener('click',()=>{
-		console.log('click')
-		if (!MachineBeingPlaced.isEmpty()) return
-		if (ItemTransferContext.itemInstance === null) return
-
-
-	})
 	return cell
 }
 
@@ -1282,6 +1313,30 @@ function main(response) {
 		itemQuantitySlider.setEndCallback(onEnd)
 	}
 
+	/**
+	 * Attempts to consume items from inventory to fulfill recipe requirements
+	 * @param {Recipe} recipe 
+	 * @param {Inventory} inventory 
+	 * @param {{multiply:Number?, itemPriorityList:Array<Item>?, tagPriorityList:Array<String>?, itemWhitelist:Array<Item>?, tagWhitelist:Array<String>?}} options
+	 * @return {{success:Boolean, itemsUsed:Item[]}} 
+	 */
+	function consumeFromRecipe(recipe, inventory, options={multiply:1}) {
+		const multiplier = Math.max(1, Number.parseInt(options.multiply))
+		if (!(inventory instanceof Inventory)) return {success:false, itemsUsed:[]}
+		const inputs = getRecipeInputs(recipe)
+		const itemsUsed = inputs.map(input=>{
+			const chosen = input.items.find(item=>inventory.getAmount(item) >= input.amount * multiplier)
+			if (!chosen) return null
+			return new ItemInstance(chosen, input.amount * multiplier)
+		})
+
+		if (itemsUsed.some(used=>used===null)) return {success:false, itemsUsed:[]}
+
+		const success = inventory.changeItems(itemsUsed)
+
+		return {success, itemsUsed}
+	}
+
 
 	const inventoryCellElements = []
 	for(const item of items){
@@ -1304,7 +1359,9 @@ function main(response) {
 
 
 
-	mainInventory.setContentChangeCallback((item, amount)=>{
+	mainInventory.setContentChangeCallback((itemInstance)=>{
+		const item = itemInstance.item
+		const amount = itemInstance.amount
 		for(const cellElement of inventoryCellElements){
 			if (cellElement.itemPointer !== item) continue
 			cellElement.amountLabel.textContent = amount // Yes this is correct
@@ -1447,11 +1504,19 @@ function main(response) {
 		const stack = document.createElement('p')
 		stack.textContent = 1
 		machineCell.appendChild(stack)
+		const inputInventory = new Inventory(itemInstance=>{}, Infinity, recipes.filter(recipe=>machine.capabilities.includes(recipe.requiredProcess)).flatMap(recipe=>recipe.inputs))
+		const outputInventory = new Inventory(itemInstance=>{})
 		machineCell.addEventListener('click',()=>{
-			if (MachineBeingPlaced.isEmpty())return
-			machine.setStack(machine.getStack() + 1)
-			stack.textContent = machine.getStack()
-			MachineBeingPlaced.place(true)
+			console.log('click')
+			if (!MachineBeingPlaced.isEmpty()) {
+				machine.setStack(machine.getStack() + 1)
+				stack.textContent = machine.getStack()
+				MachineBeingPlaced.place(true)
+				return
+			}
+			if (ItemTransferContext.itemInstance === null) return
+			const success = inputInventory.addItem(ItemTransferContext.itemInstance)
+			ItemTransferContext.transfer(success)
 		})
 		document.getElementById('machine-line').appendChild(machineCell)
 		
