@@ -33,6 +33,11 @@
  * @property {Item} item
  * @property {Number} amount
  */
+/**
+ * @typedef {Object} Input
+ * @property {Item[]} items - All valid items that can satisfy this input
+ * @property {number} amount - Required quantity of the input
+ */
 
 let dataIsCompiled = false
 
@@ -426,7 +431,7 @@ class Inventory {
 	 * @returns {Boolean} success
 	 */
 	changeItems(items){
-		if(items.every(this.canChange)){
+		if(items.every(item=>this.canChange(item))){
 			for (const itemInstance of items) {
 				if (!this.changeItem(itemInstance)) throw new Error("Invariant broken: changeItem failed after validation");
 			}
@@ -640,6 +645,18 @@ function walkJson(obj, fnc) {
 	};
 
 	recurse(obj, null, null, []);
+}
+
+
+
+/**
+ * Converts a string of energy in joules to a number
+ * @param {string} energyString 
+ * @returns {number} joules
+ */
+function energyToNumber(energyString) {
+	const prefix = energyString.slice(-2)
+	return Number(energyString.slice(0,-2)) * {kJ:1000, MJ:1000000, GJ:1000000000}[prefix]
 }
 
 
@@ -946,6 +963,19 @@ const machinesUnlocked = new Set(['stone_furnace'])
 
 
 
+const pubSubTick = new Set()
+{
+	let now = Date.now()
+	setInterval(()=>{
+		//Milliseconds
+		const deltaMS = Date.now() - now
+		now = Date.now()
+		pubSubTick.forEach((f)=>{f(deltaMS)})
+	},50)
+}
+
+
+
 
 
 
@@ -1149,14 +1179,29 @@ function main(response) {
 	/**
 	 * Returns every input with each item that is valid for that input of the recipe. think of it like this (item||item...)&&(item||item...)...
 	 * @param {Recipe} recipe 
-	 * @returns {Array<Array<Item>>}
+	 * @returns {Input[]}
 	 */
 	function getRecipeInputs(recipe) {
+		if (!Array.isArray(recipe.inputs)) return []
 		return recipe.inputs.map(input=>{
 			const inputItems = new Set()
-			items.filter(item=>item.id === input.id).forEach(v=>inputItems.add(v))
-			items.filter(item=>item.tags.includes(input.tag)).forEach(v=>inputItems.add(v))
+			for (const item of items) {
+				if (item.id === input.id || item.tags.includes(input.tag)) {
+					inputItems.add(item);
+				}
+			}
 			return {items:Array.from(inputItems), amount:input.amount}
+		})
+	}
+
+	/**
+	 * Returns the recipe outputs as an array of item instances
+	 * @param {Recipe} recipe 
+	 * @returns {ItemInstance[]} outputs
+	 */
+	function getRecipeOutputs(recipe) {
+		return recipe.outputs.map(output=>{
+			return new ItemInstance(getItemFromId(output.id), output.amount)
 		})
 	}
 
@@ -1199,32 +1244,93 @@ function main(response) {
 	}
 
 	/**
-	 * Checks whether at least one valid item for each input in the recipe is affordable from the inventory.
-	 * 
-	 * ⚠️ This function has significant limitations:
-	 * - It does not expose which items were considered or chosen.
-	 * - It selects only the first viable item per input, ignoring other valid combinations.
-	 * - There is no support for customization, prioritization, or insight into decision logic.
-	 * 
-	 * This function may be deprecated in the future in favor of a more flexible and transparent alternative.
-	 * 
+	 * Calculates the maximum number of times a recipe can be crafted
+	 * given the current inventory.
+	 * @param {Input[]} inputs
+	 * @param {Inventory} inventory
+	 * @returns {number} maxCrafts
+	 */
+	function maxCraftableCount(inputs, inventory) {
+		if (!(inventory instanceof Inventory)) return 0;
+		if (!inputs.length) return 0;
+
+		const counts = inputs.map(input => {
+			const totalAvailable = input.items.reduce((sum, item) => {
+				return sum + inventory.getAmount(item);
+			}, 0);
+
+			return Math.floor(totalAvailable / input.amount);
+		});
+
+		const limitingReagent = Math.min(...counts);
+		if (!Number.isInteger(limitingReagent)) return 0;
+		return limitingReagent
+	}
+
+	/**
+	 * Returns items affordable from inventory to fulfill recipe requirements
 	 * @param {Recipe} recipe 
 	 * @param {Inventory} inventory 
-	 * @returns {Boolean}
+	 * @param {{multiply?:Number, itemPriorityList?:Array<Item>, tagPriorityList?:Array<String>, itemWhitelist?:Array<Item>, tagWhitelist?:Array<String>, maximize?:true, capAtMax?:true}} options
+	 * @return {ItemInstance[]|false} itemsUsed
 	 */
-	function isCraftable(recipe, inventory) {
-		if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory");
-		const allEntries = inventory.getAllItemInstances()
-		return recipe.inputs.every(input => {
-			let ingredientItems = []
-			if (input.tag) ingredientItems = getItemsFromTag(input.tag)
-			if (input.id) ingredientItems.push(getItemFromId(input.id))
-			if (ingredientItems.length === 0) throw new Error(`recipe:${recipe.id} has unknown inputs, could not find items for input: ${JSON.stringify(input)}`);
-			return ingredientItems.some(item=>{
-				const matchingEntries = allEntries.filter(itemEntry=>itemEntry.item===item)
-				return matchingEntries.some(matchingEntry=>matchingEntry.amount >= input.amount)
-			})
+	function affordableInputsFromInventory(recipe, inventory, options={multiply:1}) {
+		if (!(inventory instanceof Inventory)) return false
+		const inputs = getRecipeInputs(recipe).map(input=>{
+			
+			// Apply whitelist filters
+			const whitelisted = input.items.filter(item =>
+				(!options.itemWhitelist || options.itemWhitelist.includes(item)) &&
+				(!options.tagWhitelist || item.tags.some(tag => options.tagWhitelist.includes(tag)))
+			);
+			
+			// Apply priority ordering
+			if (options.itemPriorityList) {
+				whitelisted.sort((a, b) => {
+					const ai = options.itemPriorityList.indexOf(a);
+					const bi = options.itemPriorityList.indexOf(b);
+					return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
+				});
+			} else if (options.tagPriorityList) {
+				whitelisted.sort((a, b) => {
+					const ai = a.tags.findIndex(tag => options.tagPriorityList.includes(tag));
+					const bi = b.tags.findIndex(tag => options.tagPriorityList.includes(tag));
+					return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
+				});
+			}
+			
+			return {items:whitelisted, amount:input.amount}
 		})
+		
+		const maxCraftable = maxCraftableCount(inputs, inventory)
+
+		let multiplier = 1
+		if (options.maximize) {
+			multiplier = maxCraftable
+		} else if (options.capAtMax) {
+			multiplier = Math.min(maxCraftable, Math.max(1, Number.parseInt(options.multiply)))
+		} else {
+			multiplier = Math.max(1, Number.parseInt(options.multiply))
+		}
+
+		// Build chosen ItemInstances
+		const chosenInstances = [];
+		for (const input of inputs) {
+			let remaining = input.amount * multiplier;
+			for (const item of input.items) {
+				if (remaining <= 0) break;
+				const available = inventory.getAmount(item);
+				const take = Math.min(available, remaining);
+				if (take > 0) {
+					chosenInstances.push(new ItemInstance(item, take));
+					remaining -= take;
+				}
+			}
+			if (remaining > 0) return false; // not enough items
+		}
+		if (chosenInstances.some(used=>!inventory.canChange(used))) return false
+
+		return chosenInstances
 	}
 
 	/**
@@ -1313,29 +1419,6 @@ function main(response) {
 		itemQuantitySlider.setEndCallback(onEnd)
 	}
 
-	/**
-	 * Attempts to consume items from inventory to fulfill recipe requirements
-	 * @param {Recipe} recipe 
-	 * @param {Inventory} inventory 
-	 * @param {{multiply:Number?, itemPriorityList:Array<Item>?, tagPriorityList:Array<String>?, itemWhitelist:Array<Item>?, tagWhitelist:Array<String>?}} options
-	 * @return {{success:Boolean, itemsUsed:Item[]}} 
-	 */
-	function consumeFromRecipe(recipe, inventory, options={multiply:1}) {
-		const multiplier = Math.max(1, Number.parseInt(options.multiply))
-		if (!(inventory instanceof Inventory)) return {success:false, itemsUsed:[]}
-		const inputs = getRecipeInputs(recipe)
-		const itemsUsed = inputs.map(input=>{
-			const chosen = input.items.find(item=>inventory.getAmount(item) >= input.amount * multiplier)
-			if (!chosen) return null
-			return new ItemInstance(chosen, input.amount * multiplier)
-		})
-
-		if (itemsUsed.some(used=>used===null)) return {success:false, itemsUsed:[]}
-
-		const success = inventory.changeItems(itemsUsed)
-
-		return {success, itemsUsed}
-	}
 
 
 	const inventoryCellElements = []
@@ -1411,14 +1494,9 @@ function main(response) {
 			}
 			const recipe = getRecipesProducing(machine)[0]
 			if (!recipe) throw new Error(`The machine: ${machine.id} is not craftable`);
-			if (!isCraftable(recipe, mainInventory)) return
-			const inputs = getRecipeInputs(recipe)
-			const itemsUsed = inputs.map(input=>{
-				const chosen = input.items.find(item=>mainInventory.getAmount(item) >= input.amount)
-				if (!chosen) throw new Error(`could not afford any of the items from: ${JSON.stringify(input.items)}`);
-				mainInventory.subtractItem(chosen, input.amount)
-				return new ItemInstance(chosen, input.amount)
-			})
+			const itemsUsed = affordableInputsFromInventory(recipe, mainInventory)
+			if (!itemsUsed) return
+			if (!mainInventory.changeItems(itemsUsed.map(item=>new ItemInstance(item.item, -item.amount)))) return
 			MachineBeingPlaced.set(machine, itemsUsed, (success)=>{cell.style.backgroundColor = ''}, mainInventory)
 			cell.style.backgroundColor = 'green'
 		})
@@ -1499,13 +1577,20 @@ function main(response) {
 	document.getElementById('machine-line-cell-button').addEventListener('click',()=>{
 		if (MachineBeingPlaced.isEmpty())return
 		
-		const machineCell = createMachine(MachineBeingPlaced.getState().machine)
-		const machine = new Machine(machineCell, MachineBeingPlaced.getState().machine)
+		const machineObject = MachineBeingPlaced.getState().machine
+		const machineCell = createMachine(machineObject)
+		const machine = new Machine(machineCell, machineObject)
 		const stack = document.createElement('p')
 		stack.textContent = 1
 		machineCell.appendChild(stack)
-		const inputInventory = new Inventory(itemInstance=>{}, Infinity, recipes.filter(recipe=>machine.capabilities.includes(recipe.requiredProcess)).flatMap(recipe=>recipe.inputs))
-		const outputInventory = new Inventory(itemInstance=>{})
+		let idle = false
+		const capableRecipes = recipes.filter(recipe=>machineObject.capabilities.includes(recipe.requiredProcess))
+		console.log('capableRecipes', capableRecipes)
+		console.log('capableRecipes inputs', capableRecipes.map(recipe=>getRecipeInputs(recipe)).flat().flatMap(v=>v.items))
+		const inputInventory = new Inventory(()=>{idle = false}, Infinity, capableRecipes.map(recipe=>getRecipeInputs(recipe)).flat().flatMap(v=>v.items))
+		const outputInventory = new Inventory(()=>{})
+		const fuelInventory = new Inventory(()=>{idle = false},Infinity,[],['primitive_fuel']);
+
 		machineCell.addEventListener('click',()=>{
 			console.log('click')
 			if (!MachineBeingPlaced.isEmpty()) {
@@ -1515,12 +1600,47 @@ function main(response) {
 				return
 			}
 			if (ItemTransferContext.itemInstance === null) return
-			const success = inputInventory.addItem(ItemTransferContext.itemInstance)
+			let success
+			success = fuelInventory.addItem(ItemTransferContext.itemInstance)
+			if (!success) success = inputInventory.addItem(ItemTransferContext.itemInstance)
 			ItemTransferContext.transfer(success)
+			console.log(inputInventory, outputInventory, fuelInventory)
 		})
 		document.getElementById('machine-line').appendChild(machineCell)
 		
 		MachineBeingPlaced.place(true)
+
+		// Idle is set to false when the content of inputInventory changes
+		let workSeconds = 0
+		let energy = 0
+		let workingOn = null
+		pubSubTick.add(deltaMS=>{
+			if (workingOn === null) {
+				if (idle) return
+				let itemsUsed
+				for (const recipe of capableRecipes) {
+					itemsUsed = affordableInputsFromInventory(recipe, inputInventory)
+					if (itemsUsed) {
+						workingOn = recipe
+						break
+					}
+				}
+				if (workingOn === null) idle = true
+			} else {
+				workSeconds += deltaMS/1000
+				if (workSeconds < workingOn.processTimeSeconds) return
+				const maxCraftable = maxCraftableCount(getRecipeInputs(workingOn), inputInventory)
+				const multiplier = Math.min(Math.floor(workSeconds / workingOn.processTimeSeconds), maxCraftable)
+				const itemsUsed = affordableInputsFromInventory(workingOn, inputInventory, {multiply:multiplier})
+				if (!itemsUsed || maxCraftable===0) {
+					workingOn = null
+					return
+				}
+				if (!inputInventory.changeItems(itemsUsed.map(v=>new ItemInstance(v.item, -v.amount)))) throw new Error("Failed to subtract items from input inventory");
+				if (!outputInventory.changeItems(getRecipeOutputs(workingOn).map(v=>new ItemInstance(v.item, v.amount * multiplier)))) throw new Error("Somehow failed to add items to output inventory");
+				workSeconds -= multiplier * workingOn.processTimeSeconds
+			}
+		})
 	})
 
 }

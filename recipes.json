@@ -1,8 +1,8 @@
 [
     {
-        "id":"smelt_aluminum",
-        "inputs":[{"id":"raw_aluminum", "amount":1}],
-        "outputs":[{"id":"aluminum", "amount":1}],
+        "id":"smelt_iron",
+        "inputs":[{"id":"raw_iron", "amount":1}],
+        "outputs":[{"id":"iron_ingot", "amount":1}],
         "requiredProcess":"smelt",
         "requiredTier":0,
         "processTimeSeconds":5

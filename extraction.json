@@ -6,6 +6,8 @@
         "requiredPower":1,
         "yields":[
             {"itemId":"stone", "weight":6},
+            {"itemId":"coal", "weight":2},
+            {"itemId":"raw_iron", "weight":1},
             {"itemId":"water", "weight":1}
         ]
     }
