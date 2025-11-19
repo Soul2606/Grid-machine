@@ -4,27 +4,43 @@
         "name":"Stone furnace",
         "capabilities":["smelt"],
         "tier":0,
-        "requiresConfiguration":false
+        "requiresConfiguration":false,
+        "fuelNeeds":{
+            "tags":["primitive_fuel"],
+            "energy":"90kJ"
+        }
     },
     {
         "id":"water_pump",
         "name":"Water Pump",
         "capabilities":["extract_water"],
         "tier":0,
-        "requiresConfiguration":false
+        "requiresConfiguration":false,
+        "energyNeeds":{
+            "voltageTier":1,
+            "energy":"2kJ"
+        }
     },
     {
         "id":"chemical_reactor_1",
         "name":"Chemical Reactor",
         "capabilities":["chemical_reactor"],
         "tier":1,
-        "requiresConfiguration":true
+        "requiresConfiguration":true,
+        "energyNeeds":{
+            "voltageTier":1,
+            "energy":"10kJ"
+        }
     },
     {
         "id":"electrolyses_chamber_1",
         "name":"Electrolyses Chamber",
         "capabilities":["electrolyze"],
         "tier":1,
-        "requiresConfiguration":false
+        "requiresConfiguration":false,
+        "energyNeeds":{
+            "voltageTier":1,
+            "energy":"10kJ"
+        }
     }
 ]

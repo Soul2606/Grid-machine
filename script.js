@@ -433,11 +433,29 @@ class Inventory {
 	changeItems(items){
 		if(items.every(item=>this.canChange(item))){
 			for (const itemInstance of items) {
-				if (!this.changeItem(itemInstance)) throw new Error("Invariant broken: changeItem failed after validation");
+				if (!this.changeItem(itemInstance)) throw new Error("Invariant broken: inventory may be unpredictably mutated");
 			}
 			return true
 		}
 		return false
+	}
+
+	/**
+	 * Tries to add every item at once. if any item cant be changed then nothing gets changed and it returns false
+	 * @param {ItemInstance[]} items 
+	 * @returns {Boolean} success
+	 */
+	addItems(items){
+		return this.changeItems(items)
+	}
+
+	/**
+	 * Tries to subtract every item at once. if any item cant be changed then nothing gets changed and it returns false
+	 * @param {ItemInstance[]} items 
+	 * @returns {Boolean} success
+	 */
+	subtractItems(items){
+		return this.changeItems(items.map(v=>new ItemInstance(v.item, -v.amount, v.metadata)))
 	}
 
 	/**
@@ -656,7 +674,9 @@ function walkJson(obj, fnc) {
  */
 function energyToNumber(energyString) {
 	const prefix = energyString.slice(-2)
-	return Number(energyString.slice(0,-2)) * {kJ:1000, MJ:1000000, GJ:1000000000}[prefix]
+	const value = energyString.slice(0,-2)
+	if ({kJ:1000, MJ:1000000, GJ:1000000000}[prefix] === undefined || !Number.isFinite(Number(value))) throw new Error("error");
+	return Number(value) * {kJ:1000, MJ:1000000, GJ:1000000000}[prefix]
 }
 
 
@@ -1030,9 +1050,14 @@ function compile(items, machines, recipes, extraction) {
 	items.forEach(item => {
 		includeKeys(item,['id', 'name', 'tags'])
 	})
+
 	machines.forEach(item => {
-		limitKeysTo(item,['id', 'name', 'capabilities', 'tier', 'requiresConfiguration'])
+		includeKeys(item,['id', 'name', 'capabilities', 'tier', 'requiresConfiguration'])
 	})
+	machines.forEach(item => {
+		limitKeysTo(item,['id', 'name', 'capabilities', 'tier', 'requiresConfiguration', 'energyNeeds', 'fuelNeeds'])
+	})
+
 	recipes.forEach(item => {
 		limitKeysTo(item,['id', 'inputs', 'outputs', 'requiredProcess', 'requiredTier', 'processTimeSeconds'])
 	})
@@ -1058,6 +1083,15 @@ function compile(items, machines, recipes, extraction) {
 		checkType(machine.requiresConfiguration,'boolean')
 		checkType(machine.capabilities,'array')
 		machine.capabilities.forEach(item=>checkType(item,'string'))
+		if (machine.fuelNeeds) {
+			checkType(machine.fuelNeeds.tags, 'array')
+			machine.fuelNeeds.tags.forEach(v=>checkType(v,'string'))
+			checkType(machine.fuelNeeds.energy,'string')
+		}
+		if (machine.energyNeeds) {
+			checkType(machine.energyNeeds.voltageTier, 'number')
+			checkType(machine.energyNeeds.energy,'string')
+		}
 	}
 
 	for (const recipe of recipes) {
@@ -1388,7 +1422,7 @@ function main(response) {
 			}
 
 			// register the pending instance and transfer handler
-			ItemTransferContext.itemInstance = inventory.getInstance(item)
+			ItemTransferContext.itemInstance = new ItemInstance(item, amount)
 
 			MouseOverlay.elements.heldItemIcon.setText(`${ItemTransferContext.itemInstance.item.name}:${ItemTransferContext.itemInstance.amount}`)
 			MouseOverlay.elements.heldItemIcon.show()
@@ -1588,8 +1622,8 @@ function main(response) {
 		console.log('capableRecipes', capableRecipes)
 		console.log('capableRecipes inputs', capableRecipes.map(recipe=>getRecipeInputs(recipe)).flat().flatMap(v=>v.items))
 		const inputInventory = new Inventory(()=>{idle = false}, Infinity, capableRecipes.map(recipe=>getRecipeInputs(recipe)).flat().flatMap(v=>v.items))
-		const outputInventory = new Inventory(()=>{})
-		const fuelInventory = new Inventory(()=>{idle = false},Infinity,[],['primitive_fuel']);
+		const outputInventory = new Inventory()
+		const fuelInventory = new Inventory(()=>{idle = false},Infinity,[],machineObject.fuelNeeds.tags);
 
 		machineCell.addEventListener('click',()=>{
 			console.log('click')
@@ -1610,10 +1644,11 @@ function main(response) {
 		
 		MachineBeingPlaced.place(true)
 
-		// Idle is set to false when the content of inputInventory changes
+
 		let workSeconds = 0
 		let energy = 0
 		let workingOn = null
+		// Declare setInterval machine logic
 		pubSubTick.add(deltaMS=>{
 			if (workingOn === null) {
 				if (idle) return
@@ -1628,17 +1663,52 @@ function main(response) {
 				if (workingOn === null) idle = true
 			} else {
 				workSeconds += deltaMS/1000
-				if (workSeconds < workingOn.processTimeSeconds) return
+				const seconds = workingOn.processTimeSeconds
+				if (workSeconds < seconds) return
+
+				const amountOfCrafts = Math.floor(workSeconds / seconds)
+				const energyPerSecond = energyToNumber(machineObject.fuelNeeds.energy)
+				const energyPerCraft = energyPerSecond * seconds
+				const energyPerBatch = energyPerCraft * amountOfCrafts
+
+				if (energy < energyPerBatch) {
+					let energyMissing = energyPerBatch - energy
+					for (const itemInstance of fuelInventory.getAllItemInstances()) {
+						if (energyMissing <= 0) break
+
+						const itemEnergy = energyToNumber(itemInstance.item.energy)
+						const amountNeeded = Math.ceil(energyMissing / itemEnergy)
+						const amountChanged = Math.min(amountNeeded, itemInstance.amount)
+
+						energy += itemEnergy * amountChanged
+						energyMissing = energyPerBatch - energy
+
+						if (!fuelInventory.subtractItem(itemInstance.item, amountChanged)) {
+							throw new Error(`Could not find or subtract item after validation. item:${itemInstance}, ${itemInstance.item.id}, ${itemInstance.amount}, ${itemInstance.metadata}`);
+						}
+					}
+				}
+
+				const affordableCrafts = Math.floor(energy / energyPerCraft)
 				const maxCraftable = maxCraftableCount(getRecipeInputs(workingOn), inputInventory)
-				const multiplier = Math.min(Math.floor(workSeconds / workingOn.processTimeSeconds), maxCraftable)
-				const itemsUsed = affordableInputsFromInventory(workingOn, inputInventory, {multiply:multiplier})
-				if (!itemsUsed || maxCraftable===0) {
+				const multiplier = Math.min(amountOfCrafts, maxCraftable, affordableCrafts)
+
+				if (multiplier === 0) {
 					workingOn = null
 					return
 				}
-				if (!inputInventory.changeItems(itemsUsed.map(v=>new ItemInstance(v.item, -v.amount)))) throw new Error("Failed to subtract items from input inventory");
-				if (!outputInventory.changeItems(getRecipeOutputs(workingOn).map(v=>new ItemInstance(v.item, v.amount * multiplier)))) throw new Error("Somehow failed to add items to output inventory");
-				workSeconds -= multiplier * workingOn.processTimeSeconds
+
+				const itemsUsed = affordableInputsFromInventory(workingOn, inputInventory, {multiply:multiplier})
+
+				if (!itemsUsed || !inputInventory.subtractItems(itemsUsed)) {
+					throw new Error("Failed to subtract items from input inventory");
+				}
+				if (!outputInventory.changeItems(getRecipeOutputs(workingOn))) {
+					throw new Error("Failed to add items to output inventory");
+				}
+
+				workSeconds -= seconds * multiplier
+				energy -= energyPerCraft * multiplier
 			}
 		})
 	})
