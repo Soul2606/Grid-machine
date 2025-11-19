@@ -13,7 +13,7 @@
 		<input type="range" id="item-amount-slider-slider" min="1" max="40">
 		<p id="item-amount-slider-text" class="text-border">-</p>
 	</div>
-	<div style="display: flex;">
+	<div style="display: flex; height: 100%;">
 		<div id="side-menu-container" style="width: 320px; flex-shrink: 0; position: relative;">
 			<div id="side-menu" class="side-menu" style="width: 300px;">
 				<button id="side-menu-width-button" class="side-menu-width-button"></button>
@@ -35,6 +35,26 @@
 		<main>
 			<div id="main-window" class="main-window" style="display: none;">
 				<button id="main-window-button">x</button>
+				<div style="display: flex; align-items: center; justify-content: center;">
+					<div id="main-window-machine-input" style="min-width: 200px; min-height: 200px;">
+						<!--Code injected here-->
+					</div>
+					<p id="main-window-machine-progress"></p>
+					<svg width="134" height="112" xmlns="http://www.w3.org/2000/svg">
+						<g transform="scale(0.5)">
+						<path stroke="#000" id="svg_4" d="m120.8144,173.64987l38.12984,-38.26008l-73.72219,0l-73.72203,0l0,-23.6848l0,-23.68482l72.87629,0l78.48578,-0.2684l-41.06835,-40.65937l-35.45891,-35.59241l32.77487,0l32.77475,0l50.05447,50.15049l50.05445,50.15046l-50.15047,50.05451l-50.15046,50.0545l-34.50397,0l-34.50405,0l38.12995,-38.26009l0.00002,0.00001z" stroke-width="23" fill="none"/>
+						</g>
+					</svg>
+					<div id="main-window-machine-output" style="min-width: 200px; min-height: 200px;">
+						<!--Code injected here-->
+					</div>
+				</div>
+				<div style="display: flex; align-items: center; justify-content: center;">
+					<div id="main-window-machine-fuel" style="min-width: 200px; min-height: 200px;">
+						<!--Code injected here-->
+					</div>
+					<p id="main-window-machine-energy"></p>
+				</div>
 			</div>
 			<h2>Exploration</h2>
 			<button id="extract-starter">Starter</button>
