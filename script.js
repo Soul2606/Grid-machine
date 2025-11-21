@@ -294,7 +294,7 @@ class Inventory {
 	constructor(contentChangeCallback=()=>{}, max=Infinity, itemsFilter=[], tagsFilter=[], maxSlots=Infinity) {
 		if (typeof max !== 'number') throw new Error("max must be a number");
 		if (typeof maxSlots !== 'number') throw new Error("maxSlots must be a number");
-		if (Number.isNaN(max)) throw new Error("max must be not not a number");
+		if (Number.isNaN(max)) throw new Error("max must be a valid number");
 		if (max < 1) throw new Error("max must be a natural number");
 		if (!Array.isArray(itemsFilter)) throw new Error("itemsFilter must be an Array");
 		if (!Array.isArray(tagsFilter)) throw new Error("tagsFilter must be an Array");
@@ -468,6 +468,7 @@ class Inventory {
 		const baseItem = item.item
 
 		if (!isItem(baseItem)) return false
+		if (!Number.isInteger(baseAmount)) return false
 
 		if (typeof baseAmount !== 'number' || !Number.isFinite(baseAmount) || Number.isNaN(baseAmount)) return false
 
@@ -527,92 +528,6 @@ class ItemInstance {
 }
 
 
-
-
-// Work in progress !!!!--- DO NOT USE ---!!!!
-class PhantomInventory extends Inventory {
-	/**
-	 * @typedef {Object} ChildInventory
-	 * @property {Inventory} inventory
-	 * @property {Number} priority
-	 * @property {Boolean} subtract
-	 * @property {Boolean} add
-	 */
-	#childInventories
-	constructor(initialChildInventories) {
-		if (!Array.isArray(initialChildInventories)) throw new Error("initialChildInventories is not an Array");
-		/**
-		 * @type {ChildInventory[]}
-		 */
-		this.#childInventories = Array.from(initialChildInventories)
-	}
-
-	/**
-	 * @returns {ItemEntry[]}
-	 */
-	#partitionInventories(ChildInventories){
-		/**
-		 * @type {ItemEntry[]}
-		 */
-		const itemEntries = []
-		for (const childInv of ChildInventories) {
-			itemEntries.push(childInv.inventory.getAllItemInstances())
-		}
-		itemEntries.flat()
-		return itemEntries
-	}
-
-	hasInstance(item){
-		return Boolean(this.#getEntry(item))
-	}
-
-	/**
-	 * @param {Object} item 
-	 * @returns {ItemEntry}
-	 */
-	#getEntry(item){
-		return this.#partitionInventories(this.#childInventories).find(entry=>entry.item === item)
-	}
-
-	/**
-	 * @param {object} item 
-	 * @returns {Number}
-	 */
-	getAmount(item){
-		const itemEntry = this.#partitionInventories(this.#childInventories).find(value=>value.item===item)
-		if (itemEntry) {
-			return itemEntry.amount
-		} else {
-			return 0
-		}
-	}
-
-	getAllItemInstances(){
-		return this.#partitionInventories(this.#childInventories).map(entry=>{return{item:entry.item, amount:entry.amount}})
-	}
-	
-	changeItem(item, amount){
-		return amount > 0? this.addItem(item, amount): this.subtractItem(item, amount)
-	}
-
-	addItem(item, amount){
-		const _amount = Math.abs(amount)
-		for(const childInv of this.#childInventories.filter(childInv=>childInv.add).sort((a,b)=>a.priority-b.priority)){
-			// If item change is successful: return
-			if (childInv.inventory.addItem(item, _amount)) return true
-		}
-		return false
-	}
-
-	subtractItem(item, amount){
-		const _amount = Math.abs(amount)
-		for(const childInv of this.#childInventories.filter(childInv=>childInv.subtract).sort((a,b)=>a.priority-b.priority)){
-			// If item change is successful: return
-			if (childInv.inventory.addItem(item, _amount)) return true
-		}
-		return false
-	}
-}
 
 
 
@@ -697,15 +612,74 @@ function isItem(value) {
 
 
 
+function clamp(val, min, max) {
+	const validate = (n) => {
+		if (Number.isNaN(n)) throw new Error("type error. value must be a number");
+		if (typeof n !== 'number') throw new Error("type error. value must be a number");
+	}
+	validate(val)
+	validate(min)
+	validate(max)
+	return Math.max(min, Math.min(max, val))
+}
+
+
+
 /**
  * @param {Machine} machine 
- * @returns {HTMLElement}
+ * @returns {{element:HTMLElement, setStack:Function, setProgress:Function, setWarning:Function}}
  */
 function createMachine(machine) {
 	const cell = document.createElement('div')
-	cell.className = 'inventory-grid-cell'
+	cell.className = 'inventory-grid-cell machine'
 	cell.textContent = machine.name
-	return cell
+
+	const stack = document.createElement('p')
+	stack.textContent = 1
+	
+	const setStack = text=>{
+		stack.textContent = text
+	}
+	
+	cell.appendChild(stack)
+
+	const progressBar = document.createElement('div')
+	progressBar.className = 'progress-bar'
+	cell.appendChild(progressBar)
+
+	const progressBarFill = document.createElement('div')
+	progressBarFill.className = 'progress-bar-fill'
+
+	const setProgress = n=>{
+		progressBarFill.style.width = clamp(n, 0, 100) + '%'
+		if (n>100) {
+			progressBarFill.classList.add('rainbow')
+		} else {
+			progressBarFill.classList.remove('rainbow')
+		}
+	}
+
+	progressBar.appendChild(progressBarFill)
+
+	const warning = document.createElement('div')
+	warning.className = 'warning-icon'
+	const noFuel = document.createElement('img')
+	noFuel.src = 'img/Fuel-icon-red.png'
+	noFuel.style.display = 'none'
+	warning.appendChild(noFuel)
+	const setWarning = string=>{
+		switch (string) {
+			case 'no_fuel':
+				noFuel.style.display = ''
+			break;
+			default:
+				noFuel.style.display = 'none'
+			break;
+		}
+	}
+	cell.appendChild(warning)
+
+	return {element:cell, setStack, setProgress, setWarning}
 }
 
 
@@ -1612,24 +1586,25 @@ function main(response) {
 		if (MachineBeingPlaced.isEmpty())return
 		
 		const machineObject = MachineBeingPlaced.getState().machine
-		const machineCell = createMachine(machineObject)
-		const machine = new Machine(machineCell, machineObject)
-		const stack = document.createElement('p')
-		stack.textContent = 1
-		machineCell.appendChild(stack)
+		const {element:machineCell, setStack, setProgress, setWarning} = createMachine(machineObject)
+		setWarning('no_fuel')
+		let stack = 1
 		let idle = false
 		const capableRecipes = recipes.filter(recipe=>machineObject.capabilities.includes(recipe.requiredProcess))
-		console.log('capableRecipes', capableRecipes)
-		console.log('capableRecipes inputs', capableRecipes.map(recipe=>getRecipeInputs(recipe)).flat().flatMap(v=>v.items))
 		const inputInventory = new Inventory(()=>{idle = false}, Infinity, capableRecipes.map(recipe=>getRecipeInputs(recipe)).flat().flatMap(v=>v.items))
-		const outputInventory = new Inventory()
-		const fuelInventory = new Inventory(()=>{idle = false},Infinity,[],machineObject.fuelNeeds.tags);
+		const outputInventory = mainInventory
+		const fuelInventory = new Inventory(()=>{
+			idle = false;
+			if (fuelInventory.getAllItemInstances().length > 0) {
+				setWarning('')
+			}
+		},Infinity,[],machineObject.fuelNeeds.tags);
 
 		machineCell.addEventListener('click',()=>{
 			console.log('click')
 			if (!MachineBeingPlaced.isEmpty()) {
-				machine.setStack(machine.getStack() + 1)
-				stack.textContent = machine.getStack()
+				stack++
+				setStack(stack)
 				MachineBeingPlaced.place(true)
 				return
 			}
@@ -1662,8 +1637,9 @@ function main(response) {
 				}
 				if (workingOn === null) idle = true
 			} else {
-				workSeconds += deltaMS/1000
+				workSeconds += deltaMS/1000 * stack
 				const seconds = workingOn.processTimeSeconds
+				setProgress(workSeconds / seconds * 100)
 				if (workSeconds < seconds) return
 
 				const amountOfCrafts = Math.floor(workSeconds / seconds)
@@ -1687,6 +1663,11 @@ function main(response) {
 							throw new Error(`Could not find or subtract item after validation. item:${itemInstance}, ${itemInstance.item.id}, ${itemInstance.amount}, ${itemInstance.metadata}`);
 						}
 					}
+					if (energyMissing > 0) {
+						setWarning('no_fuel')
+					} else {
+						setWarning('')
+					}
 				}
 
 				const affordableCrafts = Math.floor(energy / energyPerCraft)
@@ -1695,6 +1676,7 @@ function main(response) {
 
 				if (multiplier === 0) {
 					workingOn = null
+					setProgress(0)
 					return
 				}
 
