@@ -310,6 +310,17 @@ class Inventory {
 		this.#tagsFilter = Array.from(tagsFilter)
 	}
 
+	/**
+	 * Returns a new inventory with a clone of all its content
+	 * @param {...any} args parameters for the constructor of the new Inventory
+	 * @returns {Inventory}
+	 */
+	copy(...args){
+		const inventory = new Inventory(...args);
+		inventory.addItems(this.getAllItemInstances())
+		return inventory
+	}
+
 	getMax(){
 		return this.#max
 	}
@@ -393,15 +404,15 @@ class Inventory {
 
 		if (!this.canChange(itemInstanceSample)) return false
 
+		// Item successfully changed
 		let itemInstance = this.#getInstance(itemInstanceSample)
-
 		if (!itemInstance) {
 			itemInstance = itemInstanceSample.clone()
 			this.#itemInstances.push(itemInstance)
+		}else{
+			itemInstance.amount += baseAmount
 		}
 
-		// Item successfully changed
-		itemInstance.amount += baseAmount
 		if(itemInstance.amount === 0) this.#itemInstances.splice(this.#itemInstances.indexOf(itemInstance), 1)
 		if (this.#contentChangeCallback) this.#contentChangeCallback(itemInstance)
 		return true
@@ -578,6 +589,12 @@ function walkJson(obj, fnc) {
 	};
 
 	recurse(obj, null, null, []);
+}
+
+
+
+function relu(x) {
+	return Math.max(x,0)
 }
 
 
@@ -1318,7 +1335,7 @@ function main(response) {
 		} else if (options.capAtMax) {
 			multiplier = Math.min(maxCraftable, Math.max(1, Number.parseInt(options.multiply)))
 		} else {
-			multiplier = Math.max(1, Number.parseInt(options.multiply))
+			multiplier = Math.max(0, Number.parseInt(options.multiply))
 		}
 
 		// Build chosen ItemInstances
@@ -1591,17 +1608,13 @@ function main(response) {
 		let stack = 1
 		let idle = false
 		const capableRecipes = recipes.filter(recipe=>machineObject.capabilities.includes(recipe.requiredProcess))
+
 		const inputInventory = new Inventory(()=>{idle = false}, Infinity, capableRecipes.map(recipe=>getRecipeInputs(recipe)).flat().flatMap(v=>v.items))
 		const outputInventory = mainInventory
-		const fuelInventory = new Inventory(()=>{
-			idle = false;
-			if (fuelInventory.getAllItemInstances().length > 0) {
-				setWarning('')
-			}
-		},Infinity,[],machineObject.fuelNeeds.tags);
+
+		let energy = 0
 
 		machineCell.addEventListener('click',()=>{
-			console.log('click')
 			if (!MachineBeingPlaced.isEmpty()) {
 				stack++
 				setStack(stack)
@@ -1609,89 +1622,83 @@ function main(response) {
 				return
 			}
 			if (ItemTransferContext.itemInstance === null) return
-			let success
-			success = fuelInventory.addItem(ItemTransferContext.itemInstance)
-			if (!success) success = inputInventory.addItem(ItemTransferContext.itemInstance)
+			let success = machineObject.fuelNeeds.tags.some(tag=>ItemTransferContext.itemInstance.item.tags.includes(tag))
+			if (success) {
+				energy += energyToNumber(ItemTransferContext.itemInstance.item.energy) * ItemTransferContext.itemInstance.amount
+				setWarning('')
+				idle = false;
+			} else {
+				success = inputInventory.addItem(ItemTransferContext.itemInstance)
+			}
 			ItemTransferContext.transfer(success)
-			console.log(inputInventory, outputInventory, fuelInventory)
+			ItemTransferContext.itemInstance = null
 		})
 		document.getElementById('machine-line').appendChild(machineCell)
 		
 		MachineBeingPlaced.place(true)
 
+		let work = 0
+		/**
+		 * @type {Recipe[]}
+		 */
+		let workingOn = []
 
-		let workSeconds = 0
-		let energy = 0
-		let workingOn = null
+		const craft = (amount, recipe)=>{
+			const maxCraftable = maxCraftableCount(getRecipeInputs(recipe), inputInventory)
+			const multiplier = Math.min(amount, maxCraftable)
+			const itemsUsed = affordableInputsFromInventory(recipe, inputInventory, {multiply:multiplier})
+			if (!itemsUsed || !inputInventory.subtractItems(itemsUsed)) {
+				throw new Error("Failed to subtract items from input inventory");
+			}
+			if (!outputInventory.changeItems(getRecipeOutputs(recipe).map(itemInst=>{itemInst.amount *= multiplier; return itemInst}))) {
+				throw new Error("Failed to add items to output inventory");
+			}
+			return multiplier
+		}
+
 		// Declare setInterval machine logic
 		pubSubTick.add(deltaMS=>{
-			if (workingOn === null) {
-				if (idle) return
-				let itemsUsed
-				for (const recipe of capableRecipes) {
-					itemsUsed = affordableInputsFromInventory(recipe, inputInventory)
-					if (itemsUsed) {
-						workingOn = recipe
-						break
-					}
-				}
-				if (workingOn === null) idle = true
-			} else {
-				workSeconds += deltaMS/1000 * stack
-				const seconds = workingOn.processTimeSeconds
-				setProgress(workSeconds / seconds * 100)
-				if (workSeconds < seconds) return
-
-				const amountOfCrafts = Math.floor(workSeconds / seconds)
-				const energyPerSecond = energyToNumber(machineObject.fuelNeeds.energy)
-				const energyPerCraft = energyPerSecond * seconds
-				const energyPerBatch = energyPerCraft * amountOfCrafts
-
-				if (energy < energyPerBatch) {
-					let energyMissing = energyPerBatch - energy
-					for (const itemInstance of fuelInventory.getAllItemInstances()) {
-						if (energyMissing <= 0) break
-
-						const itemEnergy = energyToNumber(itemInstance.item.energy)
-						const amountNeeded = Math.ceil(energyMissing / itemEnergy)
-						const amountChanged = Math.min(amountNeeded, itemInstance.amount)
-
-						energy += itemEnergy * amountChanged
-						energyMissing = energyPerBatch - energy
-
-						if (!fuelInventory.subtractItem(itemInstance.item, amountChanged)) {
-							throw new Error(`Could not find or subtract item after validation. item:${itemInstance}, ${itemInstance.item.id}, ${itemInstance.amount}, ${itemInstance.metadata}`);
-						}
-					}
-					if (energyMissing > 0) {
-						setWarning('no_fuel')
-					} else {
-						setWarning('')
-					}
-				}
-
-				const affordableCrafts = Math.floor(energy / energyPerCraft)
-				const maxCraftable = maxCraftableCount(getRecipeInputs(workingOn), inputInventory)
-				const multiplier = Math.min(amountOfCrafts, maxCraftable, affordableCrafts)
-
-				if (multiplier === 0) {
-					workingOn = null
-					setProgress(0)
-					return
-				}
-
-				const itemsUsed = affordableInputsFromInventory(workingOn, inputInventory, {multiply:multiplier})
-
-				if (!itemsUsed || !inputInventory.subtractItems(itemsUsed)) {
-					throw new Error("Failed to subtract items from input inventory");
-				}
-				if (!outputInventory.changeItems(getRecipeOutputs(workingOn))) {
-					throw new Error("Failed to add items to output inventory");
-				}
-
-				workSeconds -= seconds * multiplier
-				energy -= energyPerCraft * multiplier
+			
+			//Idle is set to false when anything is added to the inputInventory
+			if (idle) return
+			workingOn = capableRecipes.filter(recipe=>Boolean(affordableInputsFromInventory(recipe, inputInventory)))
+			if (workingOn.length === 0) {
+				idle = true
+				return
 			}
+		
+			const energyPerWork = energyToNumber(machineObject.fuelNeeds.energy)
+			const maxWorkAdded = Math.min(deltaMS/1000 * stack, energy/energyPerWork)
+			let workUsed = 0
+			let workDemand = 0 // total demand, used and unfulfilled
+			let lowestSeconds = Infinity
+			
+			for (let i=0; i<workingOn.length; i++) {
+				const recipe = workingOn[i]
+				const workAvailable = maxWorkAdded + work - workUsed
+				const seconds = recipe.processTimeSeconds
+				const amountOfCrafts = Math.floor(workAvailable / seconds)
+				const amountCrafted = craft(amountOfCrafts, recipe)
+				const maxCraftable = maxCraftableCount(getRecipeInputs(recipe), inputInventory)
+				
+				workDemand += maxCraftable * seconds
+				workUsed += seconds * amountCrafted
+				
+				if (seconds < lowestSeconds) {
+					lowestSeconds = seconds
+					setProgress(workAvailable / seconds * 100)
+				}
+			}
+			
+			const workAdded = Math.min(relu(workDemand - work), maxWorkAdded)
+			const energyNeeded = workAdded * energyPerWork
+			if (energy < workDemand) {
+				setWarning('no_fuel')
+			} else {
+				setWarning('')
+			}
+			energy -= energyNeeded
+			work += workAdded - workUsed
 		})
 	})
 
