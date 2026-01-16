@@ -1,48 +1,43 @@
-/**
- * @typedef {Object} Item
- * @property {String} id
- * @property {String} name
- * @property {String[]} tags
- */
-/**
- * @typedef {Object} Machine
- * @property {String} id
- * @property {String} name
- * @property {Number} tier
- * @property {Boolean} requiresConfiguration
- */
-/**
- * @typedef {Object} Recipe
- * @property {String} id
- * @property {Array} inputs
- * @property {Array} outputs
- * @property {String} requiredProcess
- * @property {Number} requiredTier
- * @property {Number} processTimeSeconds
- */
-/**
- * @typedef {Object} Extraction
- * @property {String} id
- * @property {String} name
- * @property {Number} manualPower
- * @property {Number} requiredPower
- * @property {Array<{itemId:String, weight:Number}>} yields
- */
-/**
- * @typedef {Object} ItemEntry
- * @property {Item} item
- * @property {Number} amount
- */
-/**
- * @typedef {Object} Input
- * @property {Item[]} items - All valid items that can satisfy this input
- * @property {number} amount - Required quantity of the input
- */
+
+import type { Item, Machine, Recipe, Extraction, ItemEntry, Input } from './types'
+
+
+type AffordableOptions = {
+	multiply?: number
+	itemPriorityList?: Item[]
+	tagPriorityList?: string[]
+	itemWhitelist?: Item[]
+	tagWhitelist?: string[]
+	maximize?: true
+	capAtMax?: true
+}
+
+type InfoPanelMethods = {
+	show: () => void
+	hide: () => void
+	setText: (text: string) => void
+}
+
+type HeldItemIconMethods = {
+	show: () => void
+	hide: () => void
+	setText: (text: string) => void
+	setImage: (src: string) => void
+}
+
+type MouseOverlayElements = {
+	infoPanel: InfoPanelMethods
+	heldItemIcon: HeldItemIconMethods
+}
+
+
+
 
 let dataIsCompiled = false
 
 
 //Pure Classes
+/*
 class GridItem {
 	#rowStart
 	#rowEnd
@@ -187,13 +182,16 @@ class GridItem {
 
 
 }
+*/
 
 
 
 
+/*
 class Machine {
 	#element
 	#stack
+	machine
 	constructor(element, machine){
 		if (!(element instanceof HTMLElement)) throw new Error("element is not an HTMLElement");
 		this.#element = element
@@ -271,27 +269,30 @@ class Machine {
 		return this.#stack
 	}
 }
+*/
 
 
 
 
 /**
  * Class for managing pure data of item instances. inventory can be constructed and configured before compilation. Do not try to modify or access item instances before compilation.
- * @param {Function(itemInstance:ItemInstance)} contentChangeCallback
- * @param {Number} max per item basis
- * @param {Item[]} itemsFilter whitelist for items, not item instances
- * @param {String[]} tagsFilter whitelist for tags, at least one included
  */
 class Inventory {
-	#itemInstances
-	#contentChangeCallback
+	#itemInstances: ItemInstance[]
+	#contentChangeCallback: Function|null
 	
 	// Cannot be changed after construction
-	#max
-	#maxSlots
-	#itemsFilter
-	#tagsFilter
-	constructor(contentChangeCallback=()=>{}, max=Infinity, itemsFilter=[], tagsFilter=[], maxSlots=Infinity) {
+	#max: number
+	#maxSlots: number
+	#itemsFilter: Item[]
+	#tagsFilter: string[]
+	constructor(
+		contentChangeCallback: Function|((itemInstance:ItemInstance)=>void)=()=>{}, 
+		max: number=Infinity, 
+		itemsFilter: Item[] = [], 
+		tagsFilter: string[] = [], 
+		maxSlots: number = Infinity
+	) {
 		if (typeof max !== 'number') throw new Error("max must be a number");
 		if (typeof maxSlots !== 'number') throw new Error("maxSlots must be a number");
 		if (Number.isNaN(max)) throw new Error("max must be a valid number");
@@ -310,12 +311,7 @@ class Inventory {
 		this.#tagsFilter = Array.from(tagsFilter)
 	}
 
-	/**
-	 * Returns a new inventory with a clone of all its content
-	 * @param {...any} args parameters for the constructor of the new Inventory
-	 * @returns {Inventory}
-	 */
-	copy(...args){
+	copy(...args:any){
 		const inventory = new Inventory(...args);
 		inventory.addItems(this.getAllItemInstances())
 		return inventory
@@ -329,7 +325,7 @@ class Inventory {
 		return this.#maxSlots
 	}
 
-	hasInstance(item){
+	hasInstance(item: Item){
 		const entry = this.#getInstance(item)
 		if (entry) {
 			return entry.amount > 0
@@ -337,36 +333,22 @@ class Inventory {
 		return false
 	}
 
-	/**
-	 * Returns a pointer to the exact instance in the inventory
-	 * @param {Item|ItemInstance} item 
-	 * @returns {ItemInstance | null}
-	 */
-	#getInstance(item){
+	#getInstance(item: Item|ItemInstance): ItemInstance | undefined{
 		if (isItem(item)) {
-			return this.#itemInstances.find(entry=>new ItemInstance(item).isEqual(entry))
+			return this.#itemInstances.find(entry=>new ItemInstance(item instanceof ItemInstance ? item.item : item).isEqual(entry))
 		}else if (item instanceof ItemInstance) {
 			return this.#itemInstances.find(entry=>entry.isEqual(item))
 		}
 		throw new Error("item is not Item or ItemInstance");
 	}
 	
-	/**
-	 * Returns a new clone of the instance
-	 * @param {Item|ItemInstance} item 
-	 * @returns {ItemInstance}
-	 */
-	getInstance(item){
+	getInstance(item: Item|ItemInstance): ItemInstance{
 		const instance = this.#getInstance(item)
 		if (instance) return instance.clone()
-		return new ItemInstance(item, 0)
+		return new ItemInstance(item instanceof ItemInstance ? item.item : item, 0)
 	}
 
-	/**
-	 * @param {Item|ItemInstance} item 
-	 * @returns {Number}
-	 */
-	getAmount(item){
+	getAmount(item: Item|ItemInstance): number{
 		const inventoryEntry = this.#getInstance(item)
 		if (inventoryEntry) {
 			return inventoryEntry.amount
@@ -375,20 +357,14 @@ class Inventory {
 		}
 	}
 
-	/**
-	 * @returns {ItemInstance[]}
-	 */
-	getAllItemInstances(){
+	getAllItemInstances(): ItemInstance[]{
 		return this.#itemInstances.map(instance=>instance.clone())
 	}
 	
 	/**
 	 * Used to add/subtract an item from inventory. Can either take a Item amount:number pair or an ItemInstance. Filters and restrictions apply. amount cannot go into negatives and must be integers.
-	 * @param {Item|ItemInstance} item 
-	 * @param {Number?} amount 
-	 * @returns {Boolean} success?
 	 */
-	changeItem(item, amount=0){
+	changeItem(item: Item|ItemInstance, amount=0):boolean{
 
 		let isDryItem 
 		if (item instanceof ItemInstance) {
@@ -399,7 +375,7 @@ class Inventory {
 			throw new Error("item is not an item or an ItemInstance");
 		}
 
-		const itemInstanceSample = isDryItem ? new ItemInstance(item, amount) : item;
+		const itemInstanceSample = isDryItem ? new ItemInstance(item as Item, amount) : item as ItemInstance;
 		const baseAmount = itemInstanceSample.amount 
 
 		if (!this.canChange(itemInstanceSample)) return false
@@ -418,30 +394,18 @@ class Inventory {
 		return true
 	}
 
-	/**
-	 * @param {Item|ItemInstance} item 
-	 * @param {Number?} amount 
-	 * @returns {Boolean} success?
-	 */
-	addItem(item, amount){
+	addItem(item: Item|ItemInstance, amount: number): boolean{
 		return this.changeItem(item, amount)
 	}
 
-	/**
-	 * @param {Item|ItemInstance} item 
-	 * @param {Number?} amount 
-	 * @returns {Boolean} success?
-	 */
-	subtractItem(item, amount){
+	subtractItem(item: Item|ItemInstance, amount: number): boolean{
 		return this.changeItem(item, -amount)
 	}
 
 	/**
-	 * Tries to change every item at once. if any item cant be changed then nothing gets changed and it returns false
-	 * @param {ItemInstance[]} items 
-	 * @returns {Boolean} success
+	 * Tries to change every item at once. if any item can't be changed then nothing gets changed and it returns false
 	 */
-	changeItems(items){
+	changeItems(items:ItemInstance[]):boolean{
 		if(items.every(item=>this.canChange(item))){
 			for (const itemInstance of items) {
 				if (!this.changeItem(itemInstance)) throw new Error("Invariant broken: inventory may be unpredictably mutated");
@@ -452,29 +416,23 @@ class Inventory {
 	}
 
 	/**
-	 * Tries to add every item at once. if any item cant be changed then nothing gets changed and it returns false
-	 * @param {ItemInstance[]} items 
-	 * @returns {Boolean} success
+	 * Tries to add every item at once. if any item can't be added then nothing gets added and it returns false
 	 */
-	addItems(items){
+	addItems(items:ItemInstance[]):boolean{
 		return this.changeItems(items)
 	}
 
 	/**
-	 * Tries to subtract every item at once. if any item cant be changed then nothing gets changed and it returns false
-	 * @param {ItemInstance[]} items 
-	 * @returns {Boolean} success
+	 * Tries to subtract every item at once. if any item can't be subtracted then nothing gets subtracted and it returns false
 	 */
-	subtractItems(items){
+	subtractItems(items: ItemInstance[]):boolean{
 		return this.changeItems(items.map(v=>new ItemInstance(v.item, -v.amount, v.metadata)))
 	}
 
 	/**
 	 * Return weather a change is possible without actually changing the content of the inventory
-	 * @param {ItemInstance} item 
-	 * @returns {Boolean} valid
 	 */
-	canChange(item){
+	canChange(item: ItemInstance): boolean{
 		const baseAmount = item.amount
 		const baseItem = item.item
 
@@ -502,7 +460,7 @@ class Inventory {
 	 * @param {Function|null} func 
 	 * @returns {ThisType}
 	 */
-	setContentChangeCallback(func){
+	setContentChangeCallback(func: Function|null){
 		if (typeof func !== 'function' && func !== null) throw new Error("func is not a function or null");
 		this.#contentChangeCallback = func
 		return this
@@ -513,11 +471,11 @@ class Inventory {
 
 
 class ItemInstance {
-	constructor(item, amount=0, metadata={}) {
+	item
+	amount
+	metadata
+	constructor(item:Item, amount=0, metadata:object={}) {
 		if (!dataIsCompiled) throw new Error("This class cannot be used before compilation is complete");
-		if (!isItem(item)) throw new Error("item is not an item");
-		if (typeof amount !== 'number') throw new Error("amount must be a number");
-		if (typeof metadata !== 'object') throw new Error("metadata is not an object");
 		this.item = item
 		this.amount = amount
 		this.metadata = JSON.parse(JSON.stringify(metadata))
@@ -527,12 +485,7 @@ class ItemInstance {
 		return new ItemInstance(this.item, this.amount, this.metadata)
 	}
 
-	/**
-	 * @param {ItemInstance} itemInstance 
-	 * @param {Object} options 
-	 * @returns {Boolean}
-	 */
-	isEqual(itemInstance, options={ignoreAmount:true, ignoreMetadata:false}){
+	isEqual(itemInstance: ItemInstance, options={ignoreAmount:true, ignoreMetadata:false}){
 		if (!(itemInstance instanceof ItemInstance)) throw new Error("itemInstance is not an ItemInstance");
 		return (this.item === itemInstance.item && (options.ignoreMetadata || JSON.stringify(this.metadata) === JSON.stringify(itemInstance.metadata)) && (options.ignoreAmount || this.amount === itemInstance.amount))
 	}
@@ -546,13 +499,12 @@ class ItemInstance {
 //Pure Functions
 
 /**
- * @param {Iterable} obj 
  * @param {Function} fnc calls fnc with {key, value, parent, path, set, delete, isLeaf}
  */
-function walkJson(obj, fnc) {
-	const recurse = (current, parent = null, key = null, path = []) => {
+function walkJson(obj: Record<string, any>, fnc: Function) {
+	const recurse = (current:Record<string, any>, parent: Record<string, any>|null = null, key: string|number|null = null, path: Array<string|number> = []) => {
 		// Provide a mutator
-		const set = (newValue) => {
+		const set = (newValue: any) => {
 			if (parent !== null && key !== null) {
 				parent[key] = newValue;
 			}
@@ -560,7 +512,7 @@ function walkJson(obj, fnc) {
 		const del = () => {
 			if (parent !== null && key !== null) {
 				if (Array.isArray(parent)) {
-				parent.splice(key, 1);
+				parent.splice(key as number, 1);
 				} else {
 				delete parent[key];
 				}
@@ -583,7 +535,7 @@ function walkJson(obj, fnc) {
 			current.forEach((val, idx) => recurse(val, current, idx, [...path, idx]));
 		} else if (current && typeof current === 'object') {
 			for (const k in current) {
-				recurse(current[k], current, k, [...path, k]);
+				recurse(current[k] as Record<string, any>, current, k, [...path, k]);
 			}
 		}
 	};
@@ -593,7 +545,7 @@ function walkJson(obj, fnc) {
 
 
 
-function relu(x) {
+function relu(x: number) {
 	return Math.max(x,0)
 }
 
@@ -601,14 +553,14 @@ function relu(x) {
 
 /**
  * Converts a string of energy in joules to a number
- * @param {string} energyString 
- * @returns {number} joules
  */
-function energyToNumber(energyString) {
+function energyToNumber(energyString:string): number {
 	const prefix = energyString.slice(-2)
 	const value = energyString.slice(0,-2)
 	if ({kJ:1000, MJ:1000000, GJ:1000000000}[prefix] === undefined || !Number.isFinite(Number(value))) throw new Error("error");
-	return Number(value) * {kJ:1000, MJ:1000000, GJ:1000000000}[prefix]
+	const multiplier = {kJ:1000, MJ:1000000, GJ:1000000000}[prefix]
+	if (!multiplier) throw new Error("Invalid energy prefix, must be 'kJ, MJ or GJ'");
+	return Number(value) * multiplier
 }
 
 
@@ -622,15 +574,15 @@ function energyToNumber(energyString) {
  * @returns {Boolean}
  */
 //Not a pure function. This function is mutated in the compile function 
-function isItem(value) {
+function isItem(value:any) {
 	if (!items) throw new Error("Do not use isItem before item has been declared");
 	return items.includes(value)
 }
 
 
 
-function clamp(val, min, max) {
-	const validate = (n) => {
+function clamp(val: number, min: number, max: number) {
+	const validate = (n: number) => {
 		if (Number.isNaN(n)) throw new Error("type error. value must be a number");
 		if (typeof n !== 'number') throw new Error("type error. value must be a number");
 	}
@@ -642,19 +594,16 @@ function clamp(val, min, max) {
 
 
 
-/**
- * @param {Machine} machine 
- * @returns {{element:HTMLElement, setStack:Function, setProgress:Function, setWarning:Function}}
- */
-function createMachine(machine) {
+
+function createMachine(machine: Machine): {element:HTMLElement, setStack:Function, setProgress:Function, setWarning:Function} {
 	const cell = document.createElement('div')
 	cell.className = 'inventory-grid-cell machine'
 	cell.textContent = machine.name
 
 	const stack = document.createElement('p')
-	stack.textContent = 1
+	stack.textContent = String(1)
 	
-	const setStack = text=>{
+	const setStack = (text:string)=>{
 		stack.textContent = text
 	}
 	
@@ -667,7 +616,7 @@ function createMachine(machine) {
 	const progressBarFill = document.createElement('div')
 	progressBarFill.className = 'progress-bar-fill'
 
-	const setProgress = n=>{
+	const setProgress = (n: number)=>{
 		progressBarFill.style.width = clamp(n, 0, 100) + '%'
 		if (n>100) {
 			progressBarFill.classList.add('rainbow')
@@ -684,7 +633,7 @@ function createMachine(machine) {
 	noFuel.src = 'img/Fuel-icon-red.png'
 	noFuel.style.display = 'none'
 	warning.appendChild(noFuel)
-	const setWarning = string=>{
+	const setWarning = (string: string)=>{
 		switch (string) {
 			case 'no_fuel':
 				noFuel.style.display = ''
@@ -706,20 +655,14 @@ function createMachine(machine) {
 //Global Variables
 
 /* These will be assigned after compilation. Should be validated outside the main function*/
-/**
- * @type {Item[]}
- */
-var items
-/**
- * @type {Machine[]}
- */
-var machines
-/**
- * @type {Recipe[]}
- */
-var recipes
 
-var extraction
+var items: Item[]
+
+var machines: Machine[]
+
+var recipes: Recipe[]
+
+var extraction: any
 
 
 
@@ -727,10 +670,10 @@ const GameStates = (()=>{
 
 	const GameStateLog = []
 
-	const initState = (initial)=>{
+	const initState = (initial:string)=>{
 		let value = initial
 		return {
-			set:(string, optionalContext)=>{
+			set:(string:string, optionalContext:string)=>{
 				GameStateLog.push({
 					timestamp: new Date().toISOString(),
 					oldValue:value,
@@ -764,9 +707,10 @@ const mainInventory = new Inventory()
 /*This is a singleton for managing the elements that follow the mouse*/
 const MouseOverlay = new class {
 	#element
+	elements: MouseOverlayElements
 	constructor(){
-		this.#element = document.getElementById('mouse-icon')
-		const elements = {}
+		this.#element = document.getElementById('mouse-icon')!
+		const elements = {} as MouseOverlayElements
 		window.addEventListener('mousemove',e=>{
 			if (this.#element.style.display === 'none') return
 			this.#element.style.top = e.pageY + 'px'
@@ -781,12 +725,10 @@ const MouseOverlay = new class {
 			const methods = {
 				show:()=>{root.style.display = ''},
 				hide:()=>{root.style.display = 'none'},
-				setText:(text)=>{
-					if (typeof text !== 'string') throw new Error("text is not a string");
+				setText:(text:string)=>{
 					root.textContent = text
 				}
-			}
-			Object.freeze(methods)
+			} as const
 			elements.infoPanel = methods
 		}
 
@@ -805,16 +747,13 @@ const MouseOverlay = new class {
 			const methods = {
 				show:()=>{root.style.display = ''},
 				hide:()=>{root.style.display = 'none'},
-				setText:(text)=>{
-					if (typeof text !== 'string') throw new Error("text is not a string");
+				setText:(text: string)=>{
 					p.textContent = text
 				},
-				setImage:(src)=>{
-					if (typeof src !== 'string') throw new Error("src is not a string");
+				setImage:(src: string)=>{
 					img.src = src
 				},
-			}
-			Object.freeze(methods)
+			} as const
 			elements.heldItemIcon = methods 
 		}
 
@@ -836,10 +775,10 @@ const MouseOverlay = new class {
 /*This variable i here so the machine line and other objects where machines can be placed know what machine and cell is involved
 place should only be called when machine placements is canceled or successful, if it is canceled/failed items are automatically refunded*/
 ;const MachineBeingPlaced = (()=>{
-	let _machine = null;
-	let _itemRefund = [];
-	let _placeCallback = null;
-	let _inventory = null;// inventory to refund to
+	let _machine: null|Machine = null;
+	let _itemRefund: ItemInstance[] = [];
+	let _placeCallback: null|Function = null;
+	let _inventory: null|Inventory = null;// inventory to refund to
 	function clear(){
 		_machine = null;
 		_itemRefund = [];
@@ -847,13 +786,7 @@ place should only be called when machine placements is canceled or successful, i
 		_inventory = null;
 	};
 	const properties = {
-		/**
-		 * @param {Machine} machine
-		 * @param {ItemInstance[]} itemRefund
-		 * @param {Function} placeCallback
-		 * @param {Inventory} inventory
-		 */
-		set(machine, itemRefund, placeCallback, inventory){
+		set(machine: Machine, itemRefund: ItemInstance[], placeCallback: Function, inventory: Inventory){
 			if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory");
 			if (itemRefund.some(instance=>!(instance instanceof ItemInstance))) throw new Error(`itemRefund has non ItemInstance values, itemRefund:${JSON.stringify(itemRefund)}`);
 			_machine = machine;
@@ -862,15 +795,15 @@ place should only be called when machine placements is canceled or successful, i
 			_inventory = inventory;
 			return properties;
 		},
-		/**
-		 * @param {Boolean} success 
-		 */
-		place(success){
-			const results = _placeCallback(success)
+
+		place(success: boolean):void{
+			const results = _placeCallback ? _placeCallback(success) : null
 			if (properties.isEmpty()) return results
 			if (!success) {
 				// Refund
-				_itemRefund.forEach(entry=>_inventory.addItem(entry.item, entry.amount))
+				if (_inventory) {
+					_itemRefund.forEach(entry=>(_inventory as Inventory).addItem(entry.item, entry.amount))
+				}
 			}
 			clear()
 			return results
@@ -881,7 +814,7 @@ place should only be called when machine placements is canceled or successful, i
 		isEmpty(){
 			return _machine === null || _itemRefund.length === 0 || _placeCallback === null
 		}
-	};
+	} as const;
 	return properties
 })();
 
@@ -897,13 +830,13 @@ const ItemTransferContext = {
 
 
 const itemQuantitySlider = (()=>{// Item amount slider
-	const root = document.getElementById('item-amount-slider')
+	const root = document.getElementById('item-amount-slider')!
 	
-	const slider = document.getElementById('item-amount-slider-slider')
+	const slider = document.getElementById('item-amount-slider-slider') as HTMLInputElement
 	slider.type = 'range'
 
-	let endCallbackFunction = ()=>{}
-	let inputCallbackFunction = ()=>{}
+	let endCallbackFunction:Function|null = ()=>{}
+	let inputCallbackFunction:Function|null = ()=>{}
 	let sliderDisabled = true
 	// Make it follow the mouse without pressing
 	document.addEventListener('mousemove', e => {
@@ -914,29 +847,29 @@ const itemQuantitySlider = (()=>{// Item amount slider
 		const percent = (e.clientX - rect.left) / rect.width;
 		const clamped = Math.min(Math.max(percent, 0), 1);
 
-		slider.value = Math.round(
-			slider.min * 1 + (slider.max - slider.min) * clamped
-		);
-		inputCallbackFunction(Number(slider.value))
+		slider.value = String(Math.round(
+			Number(slider.min) * 1 + (Number(slider.max) - Number(slider.min)) * clamped
+		));
+		if (inputCallbackFunction) inputCallbackFunction(Number(slider.value))
 	});
 
 	document.addEventListener('mouseup', ()=>{
 		if (sliderDisabled) return
 		sliderDisabled = true
 		root.style.display = 'none'
-		endCallbackFunction(Number(slider.value))
+		if (endCallbackFunction) endCallbackFunction(Number(slider.value))
 	})
 
-	const setText = (text)=>{
+	const setText = (text: string)=>{
 		if (typeof text !== 'string') throw new Error("text is not a string");
-		document.getElementById('item-amount-slider-text').textContent = text
+		document.getElementById('item-amount-slider-text')!.textContent = text
 	}
 
 	const methods = {
-		show: (x, y, text, length=15) => {
+		show: (x: number, y: number, text: string, length=15) => {
 			// position is relative to the window, not the page
 			if (typeof length !== 'number' || Number.isNaN(length) || (!Number.isFinite(length))) throw new Error("length is not a valid number");
-			slider.max = length
+			slider.max = String(length)
 			setText(text)
 			sliderDisabled = false
 			root.style.display = '';
@@ -953,17 +886,14 @@ const itemQuantitySlider = (()=>{// Item amount slider
 				root.style.top = `${window.innerHeight - rect.height}px`;
 			}
 		},
-		setEndCallback:(func)=>{
-			if (typeof func !== 'function' && func !== null) throw new Error("func is not a function");
+		setEndCallback:(func: Function|null)=>{
 			endCallbackFunction = func
 		},
-		setInputCallback:(func)=>{
-			if (typeof func !== 'function' && func !== null) throw new Error("func is not a function");
+		setInputCallback:(func: Function|null)=>{
 			inputCallbackFunction = func
 		},
 		setText
-	}
-	Object.freeze(methods)
+	} as const
 	return methods
 })();
 
@@ -974,14 +904,14 @@ const machinesUnlocked = new Set(['stone_furnace'])
 
 
 
-const pubSubTick = new Set()
+const pubSubTick = new Set<Function>()
 {
 	let now = Date.now()
 	setInterval(()=>{
 		//Milliseconds
 		const deltaMS = Date.now() - now
 		now = Date.now()
-		pubSubTick.forEach((f)=>{f(deltaMS)})
+		pubSubTick.forEach((f:Function)=>{f(deltaMS)})
 	},50)
 }
 
@@ -990,19 +920,19 @@ const pubSubTick = new Set()
 
 
 
-document.getElementById('side-menu-width-button').addEventListener('mousedown',e=>{
+document.getElementById('side-menu-width-button')!.addEventListener('mousedown',e=>{
 	const minWidth = 300//px
 	const originalMouseX = e.clientX
-	const originalInventoryWidth = Number(document.getElementById('side-menu').getBoundingClientRect().width)
+	const originalInventoryWidth = Number(document.getElementById('side-menu')!.getBoundingClientRect().width)
 	const up = ()=>{
 		window.removeEventListener('mouseup',up)
 		window.removeEventListener('mousemove',move)
 	}
-	const move = e=>{
+	const move = (e:MouseEvent)=>{
 		e.clientX
 		const newWidth = Math.max(originalInventoryWidth + e.clientX - originalMouseX, minWidth)
-		document.getElementById('side-menu-container').style.width = newWidth + 20 + 'px'
-		document.getElementById('side-menu').style.width = newWidth + 'px'
+		document.getElementById('side-menu-container')!.style.width = newWidth + 20 + 'px'
+		document.getElementById('side-menu')!.style.width = newWidth + 'px'
 	}
 	window.addEventListener('mousemove',move);
 	window.addEventListener('mouseup',up)
@@ -1011,15 +941,15 @@ document.getElementById('side-menu-width-button').addEventListener('mousedown',e
 
 
 
-document.getElementById('main-window-button').addEventListener('click',()=>{
-	document.getElementById('main-window').style.display = 'none'
+document.getElementById('main-window-button')!.addEventListener('click',()=>{
+	document.getElementById('main-window')!.style.display = 'none'
 })
 
 
 
 
 ;(async () => {
-async function fetchJSON(url) {
+async function fetchJSON(url: string) {
 	return fetch(url).then(response=>{
 		if (!response.ok) {
 			throw new Error("Network response was not ok" + response.statusText);
@@ -1028,13 +958,19 @@ async function fetchJSON(url) {
 		return response.json()
 	})
 }
-function compile(items, machines, recipes, extraction) {
+function compile(items:unknown, machines:unknown, recipes:unknown, extraction:unknown) {
 
-	const limitKeysTo = (obj,keys)=>{
+	if (!Array.isArray(items)) throw new Error("error");
+	if (!Array.isArray(machines)) throw new Error("error");
+	if (!Array.isArray(recipes)) throw new Error("error");
+	if (!Array.isArray(extraction)) throw new Error("error");
+	
+
+	const limitKeysTo = (obj:any, keys:string[])=>{
 		if (Object.keys(obj).some(key=>!keys.includes(key))) throw new Error(`${obj.id} has invalid keys, object can only have these keys:${keys}`);	
 	}
 
-	const includeKeys = (obj,keys)=>{
+	const includeKeys = (obj:any, keys:string[])=>{
 		if (keys.some(key=>!Object.keys(obj).includes(key))) throw new Error(`${obj.id} has invalid keys, object must include these keys:${keys}`);	
 	}
 
@@ -1053,7 +989,7 @@ function compile(items, machines, recipes, extraction) {
 		limitKeysTo(item,['id', 'inputs', 'outputs', 'requiredProcess', 'requiredTier', 'processTimeSeconds'])
 	})
 	
-	const checkType = (obj,type)=>{
+	const checkType = (obj:object, type:string)=>{
 		if (type === 'array'){
 			if (!Array.isArray(obj)) throw new Error(`${obj} is not of an array`);
 		}
@@ -1064,7 +1000,7 @@ function compile(items, machines, recipes, extraction) {
 		checkType(item.id,'string')
 		checkType(item.name,'string')
 		checkType(item.tags,'array')
-		item.tags.forEach(tag=>checkType(tag,'string'))
+		item.tags.forEach((tag:any)=>checkType(tag,'string'))
 	}
 	
 	for (const machine of machines) {
@@ -1073,10 +1009,10 @@ function compile(items, machines, recipes, extraction) {
 		checkType(machine.tier,'number')
 		checkType(machine.requiresConfiguration,'boolean')
 		checkType(machine.capabilities,'array')
-		machine.capabilities.forEach(item=>checkType(item,'string'))
+		machine.capabilities.forEach((item:any)=>checkType(item,'string'))
 		if (machine.fuelNeeds) {
 			checkType(machine.fuelNeeds.tags, 'array')
-			machine.fuelNeeds.tags.forEach(v=>checkType(v,'string'))
+			machine.fuelNeeds.tags.forEach((v:any)=>checkType(v,'string'))
 			checkType(machine.fuelNeeds.energy,'string')
 		}
 		if (machine.energyNeeds) {
@@ -1091,14 +1027,14 @@ function compile(items, machines, recipes, extraction) {
 		checkType(recipe.requiredTier,'number')
 		checkType(recipe.processTimeSeconds,'number')
 		checkType(recipe.inputs,'array')
-		recipe.inputs.forEach(input=>{
+		recipe.inputs.forEach((input:any)=>{
 			limitKeysTo(input,['id','tag','amount'])
 			if (input.id) checkType(input.id,'string')
 			if (input.tag) checkType(input.tag,'string')
 			checkType(input.amount,'number')
 		})
 		checkType(recipe.outputs,'array')
-		recipe.outputs.forEach(output=>{
+		recipe.outputs.forEach((output:any)=>{
 			limitKeysTo(output,['id','tag','amount'])
 			if (output.id) checkType(output.id,'string')
 			if (output.tag) checkType(output.tag,'string')
@@ -1107,7 +1043,7 @@ function compile(items, machines, recipes, extraction) {
 	}
 	
 
-	const hasDuplicateIds = (array)=>{
+	const hasDuplicateIds = (array:any[])=>{
 		const previousIds = new Set()
 		const duplicates = new Set()
 		for (const item of array) {
@@ -1129,12 +1065,12 @@ function compile(items, machines, recipes, extraction) {
 	Recipes conflict if they take the same ingredient and produce different things: (a,b,c)→(a) and (a,b,c)→(b). They also conflict if one is a subset of another: (a)→(c) and (a,b)→(d).
 	The outputs do not matter, only the input, even if they produce the exact same thing as long as the input conflict the entire recipe conflict. Conflict: (a)→(b) and (a)→(b). Don't conflict: (a)→(b) and (b)→(b).*/
 	//Check if setA is a subset of setB
-	const isSubset = (setA, setB) => [...setA].every(x => setB.has(x));
+	const isSubset = (setA:any, setB:any) => [...setA].every(x => setB.has(x));
 
 	for (const machine of machines) {
 		if (machine.requiresConfiguration) continue
 		const relevantRecipes = recipes.filter(recipe=>machine.capabilities.includes(recipe.requiredProcess) && recipe.requiredTier <= machine.tier)
-		const inputIdsSets = relevantRecipes.map(recipe=>new Set(recipe.inputs.map(input=>input.itemId)))
+		const inputIdsSets = relevantRecipes.map(recipe=>new Set(recipe.inputs.map((input:any)=>input.itemId)))
 		for (let i = 0; i < inputIdsSets.length; i++) {
 			for (let j = i + 1; j < inputIdsSets.length; j++) {
 				const setA = inputIdsSets[i];
@@ -1159,19 +1095,10 @@ return compile(items, machines, recipes, extraction)
 })().then(main)
 
 
-function main(response) {
+function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extraction:unknown[]}) {
 
-	/**
-	 * @type {Item[]}
-	 */
 	items = response.items
-	/**
-	 * @type {Machine[]}
-	 */
 	machines = response.machines
-	/**
-	 * @type {Recipe[]}
-	 */
 	recipes = response.recipes
 
 	extraction  = response.extraction
@@ -1299,7 +1226,11 @@ function main(response) {
 	 * @param {{multiply?:Number, itemPriorityList?:Array<Item>, tagPriorityList?:Array<String>, itemWhitelist?:Array<Item>, tagWhitelist?:Array<String>, maximize?:true, capAtMax?:true}} options
 	 * @return {ItemInstance[]|false} itemsUsed
 	 */
-	function affordableInputsFromInventory(recipe, inventory, options={multiply:1}) {
+	function affordableInputsFromInventory(
+		recipe:Recipe, 
+		inventory:Inventory, 
+		options:AffordableOptions={multiply:1}
+	) {
 		if (!(inventory instanceof Inventory)) return false
 		const inputs = getRecipeInputs(recipe).map(input=>{
 			
@@ -1333,9 +1264,9 @@ function main(response) {
 		if (options.maximize) {
 			multiplier = maxCraftable
 		} else if (options.capAtMax) {
-			multiplier = Math.min(maxCraftable, Math.max(1, Number.parseInt(options.multiply)))
+			multiplier = Math.min(maxCraftable, Math.max(1, Math.floor(options.multiply)))
 		} else {
-			multiplier = Math.max(0, Number.parseInt(options.multiply))
+			multiplier = Math.max(0, Math.floor(options.multiply))
 		}
 
 		// Build chosen ItemInstances
@@ -1368,7 +1299,7 @@ function main(response) {
 	 * @param {Function(success:Boolean)} resolveTransferCall optional functions to add extra events upon transfer context resolution
 	 * @returns void
 	 */
-	function itemTransferEvent(event, inventory, item, initiateTransferCall=()=>{}, resolveTransferCall=()=>{}) {
+	function itemTransferEvent(event:MouseEvent, inventory:Inventory, item:Item, initiateTransferCall:Function=()=>{}, resolveTransferCall:Function|((success:boolean)=>void)=()=>{}) {
 		if (!event || !inventory || !item) return
 		if (ItemTransferContext.itemInstance !== null) return
 
@@ -1454,7 +1385,7 @@ function main(response) {
 		cell.style.display = 'none'
 
 		const number = document.createElement('p')
-		number.textContent = 0
+		number.textContent = '0'
 		cell.appendChild(number)
 
 		cell.addEventListener('mousedown', e => {
