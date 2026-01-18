@@ -1,4 +1,5 @@
-import { Inventory, ItemInstance, items } from "./script";
+import { ItemInstance } from './classes';
+import { Inventory } from './classes';
 import type { Craftable, CraftingOptions, Input, Item, Recipe } from "./types";
 
 
@@ -104,7 +105,7 @@ export function getRecipesProducing(craftable: Craftable, recipes: readonly Reci
 /**
  * Returns every input with each item that is valid for that input of the recipe. think of it like this (item||item...)&&(item||item...)...
  */
-export function getRecipeInputs(recipe: Recipe): Input[] {
+export function getRecipeInputs(recipe: Recipe, items: readonly Item[]): Input[] {
 	if (!Array.isArray(recipe.inputs)) return []
 	return recipe.inputs.map(input => {
 		const inputItems = new Set<Item>()
@@ -258,9 +259,11 @@ export function maxCraftableCount(inputs: readonly Input[], inventory: Inventory
 export function resolveCraftingCosts(
 	recipe: Recipe,
 	inventory: Inventory,
-	options: CraftingOptions = { multiply: 1 }): readonly ItemInstance[] | false {
+	items: readonly Item[],
+	options: CraftingOptions = { multiply: 1 }
+	): readonly ItemInstance[] | false {
 	if (!(inventory instanceof Inventory)) return false
-	const inputs = applyCraftingOptions(options, getRecipeInputs(recipe))
+	const inputs = applyCraftingOptions(options, getRecipeInputs(recipe, items))
 
 	const maxCraftable = maxCraftableCount(inputs, inventory)
 
