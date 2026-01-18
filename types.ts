@@ -3,6 +3,7 @@ export type Item = {
 	id: string
 	name: string
 	tags: string[]
+	energy?: string
 }
 
 export type Machine = {
@@ -10,18 +11,33 @@ export type Machine = {
 	name: string
 	tier: number
 	requiresConfiguration: boolean
+	capabilities: string[]
+	fuelNeeds?: {
+		tags: string[],
+		energy: string
+	}
+	energyNeeds?: {
+		voltageTier: number,
+		energy: string
+	}
+}
+
+export type RecipeIO = {
+	id?:string
+	tag?:string
+	amount:number
 }
 
 export type Recipe = {
 	id: string
-	inputs: any[]
-	outputs: any[]
+	inputs: RecipeIO[]
+	outputs: RecipeIO[]
 	requiredProcess: string
 	requiredTier: number
 	processTimeSeconds: number
 }
 
-export type Extraction = {
+export type Extractor = {
 	id: string
 	name: string
 	manualPower: number
@@ -41,3 +57,6 @@ export type Input = {
 	items: Item[]
 	amount: number
 }
+
+// brand type
+export type Craftable = (Item|Machine) & { readonly __brand_craftable?: unique symbol }

@@ -1,16 +1,16 @@
 
-import type { Item, Machine, Recipe, Extraction, ItemEntry, Input } from './types'
+import type { Item, Machine, Recipe, Extractor, ItemEntry, Input, Craftable } from './types'
 
 
-type AffordableOptions = {
+type AffordableOptions = Readonly<{
 	multiply?: number
-	itemPriorityList?: Item[]
-	tagPriorityList?: string[]
-	itemWhitelist?: Item[]
-	tagWhitelist?: string[]
+	itemPriorityList?: readonly Item[]
+	tagPriorityList?: readonly string[]
+	itemWhitelist?: readonly Item[]
+	tagWhitelist?: readonly string[]
 	maximize?: true
 	capAtMax?: true
-}
+}>
 
 type InfoPanelMethods = {
 	show: () => void
@@ -325,7 +325,7 @@ class Inventory {
 		return this.#maxSlots
 	}
 
-	hasInstance(item: Item){
+	hasInstance(item: ItemInstance){
 		const entry = this.#getInstance(item)
 		if (entry) {
 			return entry.amount > 0
@@ -333,7 +333,7 @@ class Inventory {
 		return false
 	}
 
-	#getInstance(item: Item|ItemInstance): ItemInstance | undefined{
+	#getInstance(item: ItemInstance): ItemInstance | undefined{
 		if (isItem(item)) {
 			return this.#itemInstances.find(entry=>new ItemInstance(item instanceof ItemInstance ? item.item : item).isEqual(entry))
 		}else if (item instanceof ItemInstance) {
@@ -342,13 +342,13 @@ class Inventory {
 		throw new Error("item is not Item or ItemInstance");
 	}
 	
-	getInstance(item: Item|ItemInstance): ItemInstance{
+	getInstance(item: ItemInstance): ItemInstance{
 		const instance = this.#getInstance(item)
 		if (instance) return instance.clone()
 		return new ItemInstance(item instanceof ItemInstance ? item.item : item, 0)
 	}
 
-	getAmount(item: Item|ItemInstance): number{
+	getAmount(item: ItemInstance): number{
 		const inventoryEntry = this.#getInstance(item)
 		if (inventoryEntry) {
 			return inventoryEntry.amount
@@ -364,18 +364,9 @@ class Inventory {
 	/**
 	 * Used to add/subtract an item from inventory. Can either take a Item amount:number pair or an ItemInstance. Filters and restrictions apply. amount cannot go into negatives and must be integers.
 	 */
-	changeItem(item: Item|ItemInstance, amount=0):boolean{
+	changeItem(item: ItemInstance):boolean{
 
-		let isDryItem 
-		if (item instanceof ItemInstance) {
-			isDryItem = false
-		} else if (isItem(item)) {
-			isDryItem = true
-		} else {
-			throw new Error("item is not an item or an ItemInstance");
-		}
-
-		const itemInstanceSample = isDryItem ? new ItemInstance(item as Item, amount) : item as ItemInstance;
+		const itemInstanceSample = item
 		const baseAmount = itemInstanceSample.amount 
 
 		if (!this.canChange(itemInstanceSample)) return false
@@ -394,12 +385,14 @@ class Inventory {
 		return true
 	}
 
-	addItem(item: Item|ItemInstance, amount: number): boolean{
-		return this.changeItem(item, amount)
+	addItem(item: ItemInstance): boolean{
+		return this.changeItem(item)
 	}
 
-	subtractItem(item: Item|ItemInstance, amount: number): boolean{
-		return this.changeItem(item, -amount)
+	subtractItem(item: ItemInstance): boolean{
+		const cItem = item.clone()
+		cItem.amount *= -1
+		return this.changeItem(cItem)
 	}
 
 	/**
@@ -456,10 +449,6 @@ class Inventory {
 		return true
 	}
 
-	/**
-	 * @param {Function|null} func 
-	 * @returns {ThisType}
-	 */
 	setContentChangeCallback(func: Function|null){
 		if (typeof func !== 'function' && func !== null) throw new Error("func is not a function or null");
 		this.#contentChangeCallback = func
@@ -471,14 +460,17 @@ class Inventory {
 
 
 class ItemInstance {
+	static fromItem(item: Item, amount?: number): ItemInstance{
+		return new ItemInstance(item, amount??0)
+	}
+
 	item
 	amount
 	metadata
 	constructor(item:Item, amount=0, metadata:object={}) {
-		if (!dataIsCompiled) throw new Error("This class cannot be used before compilation is complete");
 		this.item = item
 		this.amount = amount
-		this.metadata = JSON.parse(JSON.stringify(metadata))
+		this.metadata = structuredClone(metadata)
 	}
 
 	clone(){
@@ -557,7 +549,7 @@ function relu(x: number) {
 function energyToNumber(energyString:string): number {
 	const prefix = energyString.slice(-2)
 	const value = energyString.slice(0,-2)
-	if ({kJ:1000, MJ:1000000, GJ:1000000000}[prefix] === undefined || !Number.isFinite(Number(value))) throw new Error("error");
+	if ({kJ:1000, MJ:1000000, GJ:1000000000}[prefix] === undefined || !Number.isFinite(Number(value))) return 0
 	const multiplier = {kJ:1000, MJ:1000000, GJ:1000000000}[prefix]
 	if (!multiplier) throw new Error("Invalid energy prefix, must be 'kJ, MJ or GJ'");
 	return Number(value) * multiplier
@@ -656,13 +648,13 @@ function createMachine(machine: Machine): {element:HTMLElement, setStack:Functio
 
 /* These will be assigned after compilation. Should be validated outside the main function*/
 
-var items: Item[]
+var items: readonly Item[]
 
-var machines: Machine[]
+var machines: readonly Machine[]
 
-var recipes: Recipe[]
+var recipes: readonly Recipe[]
 
-var extraction: any
+var extraction: Extractor[]
 
 
 
@@ -802,7 +794,7 @@ place should only be called when machine placements is canceled or successful, i
 			if (!success) {
 				// Refund
 				if (_inventory) {
-					_itemRefund.forEach(entry=>(_inventory as Inventory).addItem(entry.item, entry.amount))
+					_itemRefund.forEach(entry=>(_inventory as Inventory).addItem(entry))
 				}
 			}
 			clear()
@@ -821,8 +813,11 @@ place should only be called when machine placements is canceled or successful, i
 
 
 /* This variable is used to store the context for transferring items and functions to be called upon transfer.
-I cant be asked to make a factory singleton this time... */
-const ItemTransferContext = {
+How do i even type this? */
+const ItemTransferContext: {
+	itemInstance: ItemInstance | null
+	transfer: ((success: boolean) => void) | null
+} = {
 	itemInstance:null,
 	transfer:null // function (success)=>{}
 }
@@ -904,7 +899,7 @@ const machinesUnlocked = new Set(['stone_furnace'])
 
 
 
-const pubSubTick = new Set<Function>()
+const pubSubTick = new Set<(deltaMS:number)=>void>()
 {
 	let now = Date.now()
 	setInterval(()=>{
@@ -1087,15 +1082,15 @@ function compile(items:unknown, machines:unknown, recipes:unknown, extraction:un
 	dataIsCompiled = true
 	return {items, machines, recipes, extraction}
 }
-const items = await fetchJSON('items.json')
-const machines = await fetchJSON('machines.json')
-const recipes = await fetchJSON('recipes.json')
-const extraction = await fetchJSON('extraction.json')
+const items = await fetchJSON('game-data/items.json')
+const machines = await fetchJSON('game-data/machines.json')
+const recipes = await fetchJSON('game-data/recipes.json')
+const extraction = await fetchJSON('game-data/extraction.json')
 return compile(items, machines, recipes, extraction)
 })().then(main)
 
 
-function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extraction:unknown[]}) {
+function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extraction:Extractor[]}) {
 
 	items = response.items
 	machines = response.machines
@@ -1105,6 +1100,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 
 	{ // Freeze all
+		// @ts-ignore
 		const freeze = ({value:obj})=>{if (typeof obj === 'object') Object.freeze(obj)}
 		walkJson(items, freeze)
 		walkJson(machines, freeze)
@@ -1119,10 +1115,8 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 	/**
 	 * Get all recipes that crafts the provided item
-	 * @param {Item} craftable 
-	 * @returns {Recipe[]}
 	 */
-	function getRecipesProducing(craftable) {
+	function getRecipesProducing(craftable:Craftable) {
 		return recipes.filter(recipe=>{
 			return recipe.outputs.some(output=>output.id === craftable.id)
 		})
@@ -1130,15 +1124,13 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 	/**
 	 * Returns every input with each item that is valid for that input of the recipe. think of it like this (item||item...)&&(item||item...)...
-	 * @param {Recipe} recipe 
-	 * @returns {Input[]}
 	 */
-	function getRecipeInputs(recipe) {
+	function getRecipeInputs(recipe:Recipe): Input[] {
 		if (!Array.isArray(recipe.inputs)) return []
 		return recipe.inputs.map(input=>{
-			const inputItems = new Set()
+			const inputItems = new Set<Item>()
 			for (const item of items) {
-				if (item.id === input.id || item.tags.includes(input.tag)) {
+				if (item.id === input.id || (input.tag && item.tags.includes(input.tag))) {
 					inputItems.add(item);
 				}
 			}
@@ -1148,34 +1140,29 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 	/**
 	 * Returns the recipe outputs as an array of item instances
-	 * @param {Recipe} recipe 
-	 * @returns {ItemInstance[]} outputs
 	 */
-	function getRecipeOutputs(recipe) {
-		return recipe.outputs.map(output=>{
-			return new ItemInstance(getItemFromId(output.id), output.amount)
+	function getRecipeOutputs(recipe:Recipe): ItemInstance[] {
+		return recipe.outputs.flatMap(output=>{
+			return [
+				output.id ? new ItemInstance(getItemFromId(output.id), output.amount) : [],
+				output.tag ? getItemsFromTag(output.tag).map(item=>new ItemInstance(item, output.amount)) : []
+			].flat()
 		})
 	}
 
-	/**
-	 * This function is for ease of use
-	 * @param {String} id 
-	 * @returns {Item|undefined}
-	 */
-	function getItemFromId(id) {
-		return items.find(item=>item.id === id)
+
+	function getItemFromId(id:string):Item {
+		const item = items.find(item=>item.id === id)
+		if (!item) throw new Error("Could not find item from id");
+		return item
 	}
 
-	/**
-	 * This function is for ease of use
-	 * @param {String} tag 
-	 * @returns {Item[]}
-	 */
-	function getItemsFromTag(tag) {
+
+	function getItemsFromTag(tag:string):Item[] {
 		return items.filter(item=>item.tags.includes(tag))
 	}
 	
-	function getAffordableRecipes(craftable, inventory) {
+	function getAffordableRecipes(craftable:Craftable, inventory:Inventory):Recipe[] {
 		if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory");
 		const allEntries = inventory.getAllItemInstances()
 		const recipes = getRecipesProducing(craftable)
@@ -1183,7 +1170,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 		return recipes.filter(recipe=>{
 			return recipe.inputs.every(input => {
-				let ingredientItems = []
+				let ingredientItems:Item[] = []
 				if (input.tag) ingredientItems = getItemsFromTag(input.tag)
 				if (input.id) ingredientItems.push(getItemFromId(input.id))
 				if (ingredientItems.length === 0) throw new Error(`recipe:${recipe.id} has unknown inputs, could not find items for input: ${JSON.stringify(input)}`);
@@ -1198,17 +1185,14 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 	/**
 	 * Calculates the maximum number of times a recipe can be crafted
 	 * given the current inventory.
-	 * @param {Input[]} inputs
-	 * @param {Inventory} inventory
-	 * @returns {number} maxCrafts
 	 */
-	function maxCraftableCount(inputs, inventory) {
+	function maxCraftableCount(inputs:Input[], inventory:Inventory):number {
 		if (!(inventory instanceof Inventory)) return 0;
 		if (!inputs.length) return 0;
 
 		const counts = inputs.map(input => {
 			const totalAvailable = input.items.reduce((sum, item) => {
-				return sum + inventory.getAmount(item);
+				return sum + inventory.getAmount(ItemInstance.fromItem(item));
 			}, 0);
 
 			return Math.floor(totalAvailable / input.amount);
@@ -1221,36 +1205,33 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 	/**
 	 * Returns items affordable from inventory to fulfill recipe requirements
-	 * @param {Recipe} recipe 
-	 * @param {Inventory} inventory 
-	 * @param {{multiply?:Number, itemPriorityList?:Array<Item>, tagPriorityList?:Array<String>, itemWhitelist?:Array<Item>, tagWhitelist?:Array<String>, maximize?:true, capAtMax?:true}} options
-	 * @return {ItemInstance[]|false} itemsUsed
 	 */
 	function affordableInputsFromInventory(
 		recipe:Recipe, 
 		inventory:Inventory, 
 		options:AffordableOptions={multiply:1}
-	) {
+	): ItemInstance[]|false 
+	{
 		if (!(inventory instanceof Inventory)) return false
 		const inputs = getRecipeInputs(recipe).map(input=>{
 			
 			// Apply whitelist filters
 			const whitelisted = input.items.filter(item =>
 				(!options.itemWhitelist || options.itemWhitelist.includes(item)) &&
-				(!options.tagWhitelist || item.tags.some(tag => options.tagWhitelist.includes(tag)))
+				(!options.tagWhitelist || item.tags.some(tag => options.tagWhitelist?.includes(tag)))
 			);
 			
 			// Apply priority ordering
 			if (options.itemPriorityList) {
 				whitelisted.sort((a, b) => {
-					const ai = options.itemPriorityList.indexOf(a);
-					const bi = options.itemPriorityList.indexOf(b);
+					const ai = options.itemPriorityList!.indexOf(a);
+					const bi = options.itemPriorityList!.indexOf(b);
 					return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
 				});
 			} else if (options.tagPriorityList) {
 				whitelisted.sort((a, b) => {
-					const ai = a.tags.findIndex(tag => options.tagPriorityList.includes(tag));
-					const bi = b.tags.findIndex(tag => options.tagPriorityList.includes(tag));
+					const ai = a.tags.findIndex(tag => options.tagPriorityList!.includes(tag));
+					const bi = b.tags.findIndex(tag => options.tagPriorityList!.includes(tag));
 					return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
 				});
 			}
@@ -1264,9 +1245,9 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		if (options.maximize) {
 			multiplier = maxCraftable
 		} else if (options.capAtMax) {
-			multiplier = Math.min(maxCraftable, Math.max(1, Math.floor(options.multiply)))
+			multiplier = Math.min(maxCraftable, Math.max(1, Math.floor(options.multiply??1)))
 		} else {
-			multiplier = Math.max(0, Math.floor(options.multiply))
+			multiplier = Math.max(0, Math.floor(options.multiply??1))
 		}
 
 		// Build chosen ItemInstances
@@ -1275,7 +1256,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 			let remaining = input.amount * multiplier;
 			for (const item of input.items) {
 				if (remaining <= 0) break;
-				const available = inventory.getAmount(item);
+				const available = inventory.getAmount(ItemInstance.fromItem(item));
 				const take = Math.min(available, remaining);
 				if (take > 0) {
 					chosenInstances.push(new ItemInstance(item, take));
@@ -1299,14 +1280,14 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 	 * @param {Function(success:Boolean)} resolveTransferCall optional functions to add extra events upon transfer context resolution
 	 * @returns void
 	 */
-	function itemTransferEvent(event:MouseEvent, inventory:Inventory, item:Item, initiateTransferCall:Function=()=>{}, resolveTransferCall:Function|((success:boolean)=>void)=()=>{}) {
+	function itemTransferEvent(event:MouseEvent, inventory:Inventory, item:Item, initiateTransferCall:Function=()=>{}, resolveTransferCall:Function|((success:boolean)=>void)=()=>{}): void {
 		if (!event || !inventory || !item) return
 		if (ItemTransferContext.itemInstance !== null) return
 
 		event.preventDefault()
 		event.stopPropagation()
 
-		const currentQty = Math.max(0, inventory.getAmount(item) || 0)
+		const currentQty = Math.max(0, inventory.getAmount(ItemInstance.fromItem(item)) || 0)
 		if (currentQty < 1) return
 
 		const preset = [
@@ -1320,24 +1301,24 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		const steps = candidates.length
 		if (steps === 0) return
 
-		const formatLabel = (idx) => `${candidates[idx]}/${currentQty}`
+		const formatLabel = (idx: number) => `${candidates[idx]}/${currentQty}`
 
 		itemQuantitySlider.show(event.pageX, event.pageY, formatLabel(0), steps)
 
-		const onInput = (step) => {
+		const onInput = (step: number) => {
 			const index = Math.max(0, Math.min(steps - 1, step - 1))
 			itemQuantitySlider.setText(formatLabel(index))
 		}
 
-		const onEnd = (step) => {
+		const onEnd = (step: number) => {
  		   itemQuantitySlider.setInputCallback(null)
  		   itemQuantitySlider.setEndCallback(null)
 
 			const index = Math.max(0, Math.min(steps - 1, step - 1))
-			const amount = candidates[index]
+			const amount = candidates[index] ? candidates[index] : preset[preset.length-1] as number
 
 			// try to subtract; if subtraction fails, restore UI and exit
-			const removed = inventory.subtractItem(item, amount)
+			const removed = inventory.subtractItem(ItemInstance.fromItem(item, amount))
 			if (!removed) {
 			// optionally show a feedback/error in UI here
 			return
@@ -1362,9 +1343,9 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 					return
 				}
 				// on failure attempt refund 
-				if (!inventory.addItem(item, amount)) {
+				if (!inventory.addItem(ItemInstance.fromItem(item, amount))) {
 					//If refund fail default to refunding the players inventory
-					if (!mainInventory.addItem(item, amount)) throw new Error("could not add items to mainInventory");
+					if (!mainInventory.addItem(ItemInstance.fromItem(item, amount))) throw new Error("could not add items to mainInventory");
 				}
 
 				resolveTransferCall(success)
@@ -1377,7 +1358,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 
 
-	const inventoryCellElements = []
+	const inventoryCellElements: {element:HTMLDivElement, amountLabel:HTMLParagraphElement, itemPointer:Item}[] = []
 	for(const item of items){
 		const cell = document.createElement('div')
 		cell.className = 'inventory-grid-cell'
@@ -1392,18 +1373,18 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 			itemTransferEvent(e,mainInventory,item)
 		})
 
-		document.getElementById('inventory-grid').appendChild(cell)
+		document.getElementById('inventory-grid')!.appendChild(cell)
 		inventoryCellElements.push({element:cell, amountLabel:number, itemPointer:item})
 	}
 
 
 
-	mainInventory.setContentChangeCallback((itemInstance)=>{
+	mainInventory.setContentChangeCallback((itemInstance: ItemInstance)=>{
 		const item = itemInstance.item
 		const amount = itemInstance.amount
 		for(const cellElement of inventoryCellElements){
 			if (cellElement.itemPointer !== item) continue
-			cellElement.amountLabel.textContent = amount // Yes this is correct
+			cellElement.amountLabel.textContent = String(amount) // Yes this is correct
 			if (GameStates.ui.sideMenuSection.get() === 'recipes') continue
 			cellElement.element.style.display = ''
 		}
@@ -1411,23 +1392,24 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 
 
-	const machineCellElements = []
+	const machineCellElements: {element:HTMLDivElement, machinePointer:Machine}[] = []
 	for(const machine of machines){
 		const cell = document.createElement('div')
 		cell.className = 'inventory-grid-cell'
 		cell.textContent = machine.name
 		cell.style.display = 'none'
-		document.getElementById('machines-grid').appendChild(cell)
+		document.getElementById('machines-grid')!.appendChild(cell)
 
 		cell.addEventListener('mouseenter', ()=>{
+			const recipe = getRecipesProducing(machine)[0]
+			if (!recipe) return
+
 			MouseOverlay.show()
 			MouseOverlay.elements.infoPanel.show()
 
-			const recipe = getRecipesProducing(machine)[0]
-
 			const text = recipe.inputs.map(input=>{
 				let item = items.find(item=>item.id === input.id)
-				if (!item) item = items.find(item=>item.tags.includes(input.tag))
+				if (!item) item = items.find(item=>input.tag && item.tags.includes(input.tag))
 				if (item) {
 					return `${item.name}: ${input.amount}, `
 				} else {
@@ -1453,7 +1435,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 			const itemsUsed = affordableInputsFromInventory(recipe, mainInventory)
 			if (!itemsUsed) return
 			if (!mainInventory.changeItems(itemsUsed.map(item=>new ItemInstance(item.item, -item.amount)))) return
-			MachineBeingPlaced.set(machine, itemsUsed, (success)=>{cell.style.backgroundColor = ''}, mainInventory)
+			MachineBeingPlaced.set(machine, itemsUsed, (success:boolean)=>{cell.style.backgroundColor = ''}, mainInventory)
 			cell.style.backgroundColor = 'green'
 		})
 
@@ -1463,9 +1445,9 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 
 	{ // Side Menu Header Buttons functionality
-	const showGrid = (showInventory, showMachines) => {
-		document.getElementById('inventory-grid').style.display = showInventory ? '' : 'none';
-		document.getElementById('machines-grid').style.display = showMachines ? '' : 'none';
+	const showGrid = (showInventory: boolean, showMachines: boolean) => {
+		document.getElementById('inventory-grid')!.style.display = showInventory ? '' : 'none';
+		document.getElementById('machines-grid')!.style.display = showMachines ? '' : 'none';
 	};
 	
 	const repairCells = () => {
@@ -1479,7 +1461,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		}
 	};
 	
-	document.getElementById('side-menu-recipes-button')
+	document.getElementById('side-menu-recipes-button')!
 	.addEventListener('click', () => {
 		GameStates.ui.sideMenuSection.set('recipes', 'side-menu-recipes-button clicked')
 		showGrid(true, true);
@@ -1492,14 +1474,14 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		}
 	});
 	
-	document.getElementById('side-menu-inventory-button')
+	document.getElementById('side-menu-inventory-button')!
 	.addEventListener('click', () => {
 		GameStates.ui.sideMenuSection.set('inventory', 'side-menu-inventory-button clicked')
 		showGrid(true, false);
 		repairCells();
 	});
 	
-	document.getElementById('side-menu-machines-button')
+	document.getElementById('side-menu-machines-button')!
 	.addEventListener('click', () => {
 		GameStates.ui.sideMenuSection.set('machines', 'side-menu-machines-button clicked')
 		showGrid(false, true);
@@ -1509,13 +1491,14 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 
 
-	document.getElementById('extract-starter').addEventListener('click',()=>{
+	document.getElementById('extract-starter')!.addEventListener('click',()=>{
 		
 		const starterMine = extraction.find(item=>item.id==='starter')
+		if (!starterMine) throw new Error("Could not find the starter extractor");
 		const totalWeight = starterMine.yields.map(val=>val.weight).reduce((prev,val)=>prev+val,0)
 		for (let i = 0; i < starterMine.manualPower; i++) {
 			const randomNumber = Math.floor(Math.random()*totalWeight)
-			let resultId
+			let resultId: string|null = null
 			let cumulative = 0
 			for (const value of starterMine.yields) {
 				cumulative += value.weight
@@ -1524,16 +1507,18 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 					break
 				}
 			}
-			mainInventory.changeItem(getItemFromId(resultId), 1)
+			if (resultId === null) continue
+			mainInventory.changeItem(ItemInstance.fromItem(getItemFromId(resultId), 1))
 		}
 	})
 
 
 
-	document.getElementById('machine-line-cell-button').addEventListener('click',()=>{
+	document.getElementById('machine-line-cell-button')!.addEventListener('click',()=>{
 		if (MachineBeingPlaced.isEmpty())return
 		
 		const machineObject = MachineBeingPlaced.getState().machine
+		if (!machineObject) return
 		const {element:machineCell, setStack, setProgress, setWarning} = createMachine(machineObject)
 		setWarning('no_fuel')
 		let stack = 1
@@ -1552,29 +1537,30 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 				MachineBeingPlaced.place(true)
 				return
 			}
-			if (ItemTransferContext.itemInstance === null) return
-			let success = machineObject.fuelNeeds.tags.some(tag=>ItemTransferContext.itemInstance.item.tags.includes(tag))
+			const incomingItem = ItemTransferContext.itemInstance 
+			console.log('incomingItem', incomingItem)
+			if (incomingItem === null) return
+			let success = false
+			if (machineObject.fuelNeeds) success = machineObject.fuelNeeds.tags.some(tag=>incomingItem.item.tags.includes(tag))
+			console.log('success', success)
 			if (success) {
-				energy += energyToNumber(ItemTransferContext.itemInstance.item.energy) * ItemTransferContext.itemInstance.amount
+				energy += energyToNumber(incomingItem.item.energy??'') * incomingItem.amount
 				setWarning('')
 				idle = false;
 			} else {
-				success = inputInventory.addItem(ItemTransferContext.itemInstance)
+				success = inputInventory.addItem(incomingItem)
 			}
-			ItemTransferContext.transfer(success)
-			ItemTransferContext.itemInstance = null
+			if (ItemTransferContext.transfer) ItemTransferContext.transfer(success)
+			ItemTransferContext.itemInstance  = null
 		})
-		document.getElementById('machine-line').appendChild(machineCell)
+		document.getElementById('machine-line')!.appendChild(machineCell)
 		
 		MachineBeingPlaced.place(true)
 
 		let work = 0
-		/**
-		 * @type {Recipe[]}
-		 */
-		let workingOn = []
+		let workingOn: Recipe[] = []
 
-		const craft = (amount, recipe)=>{
+		const craft = (amount: number, recipe: Recipe)=>{
 			const maxCraftable = maxCraftableCount(getRecipeInputs(recipe), inputInventory)
 			const multiplier = Math.min(amount, maxCraftable)
 			const itemsUsed = affordableInputsFromInventory(recipe, inputInventory, {multiply:multiplier})
@@ -1598,14 +1584,20 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 				return
 			}
 		
-			const energyPerWork = energyToNumber(machineObject.fuelNeeds.energy)
+			const energyPerWork: number = (()=>{
+				return machineObject.fuelNeeds ?
+				energyToNumber(machineObject.fuelNeeds.energy) :
+				machineObject.energyNeeds ?
+				energyToNumber(machineObject.energyNeeds.energy) * machineObject.energyNeeds.voltageTier :
+				0
+			})()
+
 			const maxWorkAdded = Math.min(deltaMS/1000 * stack, energy/energyPerWork)
 			let workUsed = 0
 			let workDemand = 0 // total demand, used and unfulfilled
 			let lowestSeconds = Infinity
 			
-			for (let i=0; i<workingOn.length; i++) {
-				const recipe = workingOn[i]
+			for (const recipe of workingOn) {
 				const workAvailable = maxWorkAdded + work - workUsed
 				const seconds = recipe.processTimeSeconds
 				const amountOfCrafts = Math.floor(workAvailable / seconds)
