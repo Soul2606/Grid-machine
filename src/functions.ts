@@ -1,6 +1,6 @@
-import { ItemInstance } from './classes';
-import { Inventory } from './classes';
-import type { Craftable, CraftingOptions, Input, Item, Recipe } from "./types";
+import { ItemInstance } from './classes.js';
+import { Inventory } from './classes.js';
+import type { Craftable, CraftingOptions, Input, Item, Recipe } from "./types.js";
 
 
 

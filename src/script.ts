@@ -1,7 +1,7 @@
 
-import type { Item, Machine, Recipe, Extractor } from './types'
-import { clamp, energyToNumber, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, maxCraftableCount, relu, resolveCraftingCosts, walkJson } from './functions'
-import { Inventory, ItemInstance } from './classes'
+import type { Item, Machine, Recipe, Extractor } from './types.js'
+import { clamp, energyToNumber, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, maxCraftableCount, relu, resolveCraftingCosts, walkJson } from './functions.js'
+import { Inventory, ItemInstance } from './classes.js'
 
 type InfoPanelMethods = {
 	show: () => void
@@ -533,10 +533,10 @@ function compile(items:unknown, machines:unknown, recipes:unknown, extraction:un
 	dataIsCompiled = true
 	return {items, machines, recipes, extraction}
 }
-const items = await fetchJSON('game-data/items.json')
-const machines = await fetchJSON('game-data/machines.json')
-const recipes = await fetchJSON('game-data/recipes.json')
-const extraction = await fetchJSON('game-data/extraction.json')
+const items = await fetchJSON('src/game-data/items.json')
+const machines = await fetchJSON('src/game-data/machines.json')
+const recipes = await fetchJSON('src/game-data/recipes.json')
+const extraction = await fetchJSON('src/game-data/extraction.json')
 return compile(items, machines, recipes, extraction)
 })().then(main)
 

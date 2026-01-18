@@ -1,5 +1,5 @@
-import { isItem } from './script';
-import type { Item } from './types';
+import { isItem } from './script.js';
+import type { Item } from './types.js';
 
 
 
