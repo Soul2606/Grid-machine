@@ -60,3 +60,18 @@ export type Input = {
 
 // brand type
 export type Craftable = (Item|Machine) & { readonly __brand_craftable?: unique symbol }
+
+
+/*
+	Type for the configuration of how the crafting algorithm should try to craft items from a given Inventory.
+	If you want to cross check recipes and crafts from an inventory then it is important that all the related functions have the same crafting options otherwise they could give inconstant results.
+*/
+export type CraftingOptions = Readonly<{ // defaults:
+	multiply?:        number              // 1
+	itemPriorityList?:readonly Item[]     // []
+	tagPriorityList?: readonly string[]   // []
+	itemWhitelist?:   readonly Item[]     // []
+	tagWhitelist?:    readonly string[]   // []
+	maximize?:        true                // undefined
+	capAtMax?:        true                // undefined
+}>

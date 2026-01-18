@@ -1,16 +1,5 @@
 
-import type { Item, Machine, Recipe, Extractor, ItemEntry, Input, Craftable } from './types'
-
-
-type AffordableOptions = Readonly<{
-	multiply?: number
-	itemPriorityList?: readonly Item[]
-	tagPriorityList?: readonly string[]
-	itemWhitelist?: readonly Item[]
-	tagWhitelist?: readonly string[]
-	maximize?: true
-	capAtMax?: true
-}>
+import type { Item, Machine, Recipe, Extractor, ItemEntry, Input, Craftable, CraftingOptions } from './types'
 
 type InfoPanelMethods = {
 	show: () => void
@@ -1209,7 +1198,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 	function affordableInputsFromInventory(
 		recipe:Recipe, 
 		inventory:Inventory, 
-		options:AffordableOptions={multiply:1}
+		options:CraftingOptions={multiply:1}
 	): ItemInstance[]|false 
 	{
 		if (!(inventory instanceof Inventory)) return false
