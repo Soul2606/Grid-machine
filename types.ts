@@ -1,4 +1,8 @@
 // types.ts
+
+
+
+// Game data schema
 export type Item = {
 	id: string
 	name: string
@@ -47,15 +51,20 @@ export type Extractor = {
 		weight: number
 	}>
 }
+// Game data schema end
 
+
+
+// this type is occasionally useful if metadata and ItemInstance is not needed
 export type ItemEntry = {
 	item: Item
 	amount: number
 }
 
+// type represents a Recipe input slot, because multiple different items can are valid in a single input, then items is an array of Items
 export type Input = {
-	items: Item[]
-	amount: number
+	readonly items: readonly Item[]
+	readonly amount: number
 }
 
 // brand type

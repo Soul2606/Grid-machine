@@ -1,5 +1,6 @@
 
-import type { Item, Machine, Recipe, Extractor, ItemEntry, Input, Craftable, CraftingOptions } from './types'
+import type { Item, Machine, Recipe, Extractor, ItemEntry } from './types'
+import { clamp, energyToNumber, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, maxCraftableCount, relu, resolveCraftingCosts, walkJson } from './functions'
 
 type InfoPanelMethods = {
 	show: () => void
@@ -26,247 +27,12 @@ let dataIsCompiled = false
 
 
 //Pure Classes
-/*
-class GridItem {
-	#rowStart
-	#rowEnd
-	#colStart
-	#colEnd
-	constructor(rowStart, rowEnd, colStart, colEnd) {
-		if (![colStart, colEnd, rowStart, rowEnd].every(item=>Number.isFinite(item))) throw new Error("Grid area contains invalid data")
-		this.#rowStart = rowStart
-		this.#rowEnd = rowEnd
-		this.#colStart = colStart
-		this.#colEnd = colEnd
-	}
-
-	static fromElement(element) {
-		if (!(element instanceof HTMLElement)) {
-			throw new Error("Argument is not an HTMLElement");
-		}
-		const gridArea = this.#parseGridArea(element);
-		if (!gridArea) throw new Error("Element has an invalid grid area");
-		return new GridItem(gridArea.rowStart, gridArea.rowEnd, gridArea.colStart, gridArea.colEnd);
-	}
-
-	static #parseGridArea(element) {
-		const area = getComputedStyle(element).getPropertyValue('grid-area').trim().split('/');
-		if (area.length !== 4) return null
-		if (area.includes('auto')) return null
-		// Example area = "1 / 2 / 4 / 5"
-		const [rowStart, colStart, rowEnd, colEnd] = area.map(s => parseInt(s, 10) || 0);
-		return { rowStart, rowEnd, colStart, colEnd };
-	}
-
-	clone(){
-		return new GridItem(this.#rowStart, this.#rowEnd, this.#colStart, this.#colEnd)
-	}
-
-	getGridArea(){
-		return {rowStart:this.#rowStart, rowEnd:this.#rowEnd, colStart:this.#colStart, colEnd:this.#colEnd}
-	}
-
-	setGridArea(rowStart, rowEnd, colStart, colEnd){
-		if (![colStart, colEnd, rowStart, rowEnd].every(item=>Number.isFinite(item))) throw new Error("Grid area contains invalid data")
-		this.#rowStart = rowStart
-		this.#rowEnd = rowEnd
-		this.#colStart = colStart
-		this.#colEnd = colEnd
-		return this
-	}
-
-	applyGrid(element) {
-		if (!(element instanceof HTMLElement)) throw new Error("element is not an HTMLElement");
-		element.style.gridRowStart = this.#rowStart
-		element.style.gridRowEnd = this.#rowEnd
-		element.style.gridColumnStart = this.#colStart
-		element.style.gridColumnEnd = this.#colEnd
-	}
-
-	isOverlapping(...otherItem) {
-		if (otherItem.some(item => !(item instanceof GridItem))) throw new Error("Array contains non GridItem");
-
-		const array = otherItem
-		const a = this.getGridArea();
-
-		return array.some(item=>{
-			const b = item.getGridArea();
-
-			const colsOverlap = a.colStart < b.colEnd && a.colEnd > b.colStart;
-			const rowsOverlap = a.rowStart < b.rowEnd && a.rowEnd > b.rowStart;
-
-			return colsOverlap && rowsOverlap;
-		})
-	}
-
-	isAdjacent(otherItem) {
-		if (!(otherItem instanceof GridItem)) throw new Error("otherItem is not a GridItem");
-
-		const a = this.getGridArea();
-		const b = otherItem.getGridArea();
-
-		const verticallyAligned = a.colStart < b.colEnd && a.colEnd > b.colStart;
-		const horizontallyAligned = a.rowStart < b.rowEnd && a.rowEnd > b.rowStart;
-
-		// Above
-		if (a.rowStart === b.rowEnd && verticallyAligned) return true;
-
-		// Below
-		if (a.rowEnd === b.rowStart && verticallyAligned) return true;
-
-		// Left
-		if (a.colStart === b.colEnd && horizontallyAligned) return true;
-
-		// Right
-		if (a.colEnd === b.colStart && horizontallyAligned) return true;
-
-		return false;
-	}
-
-	isSubsetOf(otherItem){
-		//Checks if this item is fully within the otherItem
-		if (!(otherItem instanceof GridItem)) throw new Error("otherItem is not a GridItem");
-
-		const a = this.getGridArea();
-		const b = otherItem.getGridArea();
-
-		// Check if `a` is fully inside `b`
-		const rowsContained = a.rowStart >= b.rowStart && a.rowEnd <= b.rowEnd;
-		const colsContained = a.colStart >= b.colStart && a.colEnd <= b.colEnd;
-
-		return rowsContained && colsContained;
-	}
-
-	isEqual(otherItem){
-		if (!(otherItem instanceof GridItem)) throw new Error("otherItem is not a GridItem");
-		const area1 = this.getGridArea()
-		const area2 = otherItem.getGridArea()
-		return area1.rowStart === area2.rowStart && area1.rowEnd === area2.rowEnd && area1.colStart === area2.colStart && area1.colEnd === area2.colEnd
-	}
-	
-	//JS GridItem class
-	isEdge(){
-		return this.#rowStart === this.#rowEnd || this.#colStart === this.#colEnd
-	}
-
-	isPoint(){
-		return this.#rowStart === this.#rowEnd && this.#colStart === this.#colEnd 
-	}
-
-	getEdgeTop(){
-		return new GridItem(this.#rowStart, this.#rowStart, this.#colStart, this.#colEnd)
-	}
-
-	getEdgeRight() {
-		return new GridItem(this.#rowStart, this.#rowEnd, this.#colEnd, this.#colEnd);
-	}
-
-	getEdgeBottom() {
-		return new GridItem(this.#rowEnd, this.#rowEnd, this.#colStart, this.#colEnd);
-	}
-
-	getEdgeLeft() {
-		return new GridItem(this.#rowStart, this.#rowEnd, this.#colStart, this.#colStart);
-	}
-
-
-}
-*/
-
-
-
-
-/*
-class Machine {
-	#element
-	#stack
-	machine
-	constructor(element, machine){
-		if (!(element instanceof HTMLElement)) throw new Error("element is not an HTMLElement");
-		this.#element = element
-		this.#stack = 1
-		this.machine = machine
-	}
-
-	static createMachine(width, height, centerElement){
-		const root = document.createElement('div')
-		root.className = 'machine'
-		root.style.gridRow = `span ${height}`
-		root.style.gridColumn = `span ${width}`
-		const repeatString = (n, str)=>{
-			let string = ''
-			for(let i=0; i<n; i++){
-				string += str
-			}
-			return string
-		}
-		root.style.gridTemplateRows = `auto ${repeatString(height, '1fr ')}auto`
-		root.style.gridTemplateColumns = `auto ${repeatString(width, '1fr ')}auto`
-		
-		const center = document.createElement('div')
-		center.style.gridArea = `${2}/${2}/${2+height}/${2+width}`
-		if (centerElement) center.appendChild(centerElement)
-		root.appendChild(center)
-
-		//left
-		for (let i = 0; i < height; i++) {	
-			const edge = document.createElement('button')
-			edge.style.gridColumn = `${1}/${2}`
-			edge.style.gridRow = `${2+i}/${3+i}`
-			edge.style.width = '15px'
-			root.appendChild(edge)
-		}
-		
-		//right
-		for (let i = 0; i < height; i++) {	
-			const edge = document.createElement('button')
-			edge.style.gridColumn = `${width+2}/${width+3}`
-			edge.style.gridRow = `${2+i}/${3+i}`
-			edge.style.width = '15px'
-			root.appendChild(edge)
-		}
-
-		//top
-		for (let i = 0; i < width; i++) {	
-			const edge = document.createElement('button')
-			edge.style.gridColumn = `${2+i}/${3+i}`
-			edge.style.gridRow = `${1}/${2}`
-			edge.style.height = '15px'
-			root.appendChild(edge)
-		}
-
-		//bottom
-		for (let i = 0; i < width; i++) {	
-			const edge = document.createElement('button')
-			edge.style.gridColumn = `${2+i}/${3+i}`
-			edge.style.gridRow = `${height+2}/${height+3}`
-			edge.style.height = '15px'
-			root.appendChild(edge)
-		}
-
-		return root
-	}
-
-	setStack(value){
-		if (!Number.isInteger(value)) throw new Error("value is not an integer");
-		this.#stack = value
-		return this
-	}
-
-	getStack(){
-		//Stack is primitive
-		return this.#stack
-	}
-}
-*/
-
-
 
 
 /**
  * Class for managing pure data of item instances. inventory can be constructed and configured before compilation. Do not try to modify or access item instances before compilation.
  */
-class Inventory {
+export class Inventory {
 	#itemInstances: ItemInstance[]
 	#contentChangeCallback: Function|null
 	
@@ -407,7 +173,7 @@ class Inventory {
 	/**
 	 * Tries to subtract every item at once. if any item can't be subtracted then nothing gets subtracted and it returns false
 	 */
-	subtractItems(items: ItemInstance[]):boolean{
+	subtractItems(items: readonly ItemInstance[]):boolean{
 		return this.changeItems(items.map(v=>new ItemInstance(v.item, -v.amount, v.metadata)))
 	}
 
@@ -448,7 +214,7 @@ class Inventory {
 
 
 
-class ItemInstance {
+export class ItemInstance {
 	static fromItem(item: Item, amount?: number): ItemInstance{
 		return new ItemInstance(item, amount??0)
 	}
@@ -477,102 +243,16 @@ class ItemInstance {
 
 
 
-//Pure Functions
-
-/**
- * @param {Function} fnc calls fnc with {key, value, parent, path, set, delete, isLeaf}
- */
-function walkJson(obj: Record<string, any>, fnc: Function) {
-	const recurse = (current:Record<string, any>, parent: Record<string, any>|null = null, key: string|number|null = null, path: Array<string|number> = []) => {
-		// Provide a mutator
-		const set = (newValue: any) => {
-			if (parent !== null && key !== null) {
-				parent[key] = newValue;
-			}
-		};
-		const del = () => {
-			if (parent !== null && key !== null) {
-				if (Array.isArray(parent)) {
-				parent.splice(key as number, 1);
-				} else {
-				delete parent[key];
-				}
-			}
-		};
-
-		// Call user function with rich context
-		fnc({
-			key,
-			value: current,
-			parent,
-			path,
-			set,
-			delete: del,
-			isLeaf: typeof current !== 'object' || current === null
-		});
-
-		// Recurse into children if object/array
-		if (Array.isArray(current)) {
-			current.forEach((val, idx) => recurse(val, current, idx, [...path, idx]));
-		} else if (current && typeof current === 'object') {
-			for (const k in current) {
-				recurse(current[k] as Record<string, any>, current, k, [...path, k]);
-			}
-		}
-	};
-
-	recurse(obj, null, null, []);
-}
-
-
-
-function relu(x: number) {
-	return Math.max(x,0)
-}
-
-
-
-/**
- * Converts a string of energy in joules to a number
- */
-function energyToNumber(energyString:string): number {
-	const prefix = energyString.slice(-2)
-	const value = energyString.slice(0,-2)
-	if ({kJ:1000, MJ:1000000, GJ:1000000000}[prefix] === undefined || !Number.isFinite(Number(value))) return 0
-	const multiplier = {kJ:1000, MJ:1000000, GJ:1000000000}[prefix]
-	if (!multiplier) throw new Error("Invalid energy prefix, must be 'kJ, MJ or GJ'");
-	return Number(value) * multiplier
-}
-
-
-
-
 // Impure global functions
 
 /**
  * Return weather a object is an item
- * @param {Item} value
- * @returns {Boolean}
  */
 //Not a pure function. This function is mutated in the compile function 
 function isItem(value:any) {
 	if (!items) throw new Error("Do not use isItem before item has been declared");
 	return items.includes(value)
 }
-
-
-
-function clamp(val: number, min: number, max: number) {
-	const validate = (n: number) => {
-		if (Number.isNaN(n)) throw new Error("type error. value must be a number");
-		if (typeof n !== 'number') throw new Error("type error. value must be a number");
-	}
-	validate(val)
-	validate(min)
-	validate(max)
-	return Math.max(min, Math.min(max, val))
-}
-
 
 
 
@@ -631,13 +311,11 @@ function createMachine(machine: Machine): {element:HTMLElement, setStack:Functio
 
 
 
-
-
 //Global Variables
 
 /* These will be assigned after compilation. Should be validated outside the main function*/
 
-var items: readonly Item[]
+export var items: readonly Item[]
 
 var machines: readonly Machine[]
 
@@ -757,7 +435,7 @@ const MouseOverlay = new class {
 place should only be called when machine placements is canceled or successful, if it is canceled/failed items are automatically refunded*/
 ;const MachineBeingPlaced = (()=>{
 	let _machine: null|Machine = null;
-	let _itemRefund: ItemInstance[] = [];
+	let _itemRefund: readonly ItemInstance[] = [];
 	let _placeCallback: null|Function = null;
 	let _inventory: null|Inventory = null;// inventory to refund to
 	function clear(){
@@ -767,7 +445,7 @@ place should only be called when machine placements is canceled or successful, i
 		_inventory = null;
 	};
 	const properties = {
-		set(machine: Machine, itemRefund: ItemInstance[], placeCallback: Function, inventory: Inventory){
+		set(machine: Machine, itemRefund: readonly ItemInstance[], placeCallback: Function, inventory: Inventory){
 			if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory");
 			if (itemRefund.some(instance=>!(instance instanceof ItemInstance))) throw new Error(`itemRefund has non ItemInstance values, itemRefund:${JSON.stringify(itemRefund)}`);
 			_machine = machine;
@@ -1078,7 +756,6 @@ const extraction = await fetchJSON('game-data/extraction.json')
 return compile(items, machines, recipes, extraction)
 })().then(main)
 
-
 function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extraction:Extractor[]}) {
 
 	items = response.items
@@ -1088,176 +765,8 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 	extraction  = response.extraction
 
 
-	{ // Freeze all
-		// @ts-ignore
-		const freeze = ({value:obj})=>{if (typeof obj === 'object') Object.freeze(obj)}
-		walkJson(items, freeze)
-		walkJson(machines, freeze)
-		walkJson(recipes, freeze)
-		walkJson(extraction, freeze)
-	}
-	
-
-
 
 	// Data utility functions / Post compiled functions
-
-	/**
-	 * Get all recipes that crafts the provided item
-	 */
-	function getRecipesProducing(craftable:Craftable) {
-		return recipes.filter(recipe=>{
-			return recipe.outputs.some(output=>output.id === craftable.id)
-		})
-	}
-
-	/**
-	 * Returns every input with each item that is valid for that input of the recipe. think of it like this (item||item...)&&(item||item...)...
-	 */
-	function getRecipeInputs(recipe:Recipe): Input[] {
-		if (!Array.isArray(recipe.inputs)) return []
-		return recipe.inputs.map(input=>{
-			const inputItems = new Set<Item>()
-			for (const item of items) {
-				if (item.id === input.id || (input.tag && item.tags.includes(input.tag))) {
-					inputItems.add(item);
-				}
-			}
-			return {items:Array.from(inputItems), amount:input.amount}
-		})
-	}
-
-	/**
-	 * Returns the recipe outputs as an array of item instances
-	 */
-	function getRecipeOutputs(recipe:Recipe): ItemInstance[] {
-		return recipe.outputs.flatMap(output=>{
-			return [
-				output.id ? new ItemInstance(getItemFromId(output.id), output.amount) : [],
-				output.tag ? getItemsFromTag(output.tag).map(item=>new ItemInstance(item, output.amount)) : []
-			].flat()
-		})
-	}
-
-
-	function getItemFromId(id:string):Item {
-		const item = items.find(item=>item.id === id)
-		if (!item) throw new Error("Could not find item from id");
-		return item
-	}
-
-
-	function getItemsFromTag(tag:string):Item[] {
-		return items.filter(item=>item.tags.includes(tag))
-	}
-	
-	function getAffordableRecipes(craftable:Craftable, inventory:Inventory):Recipe[] {
-		if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory");
-		const allEntries = inventory.getAllItemInstances()
-		const recipes = getRecipesProducing(craftable)
-		if (recipes.length === 0) return []
-
-		return recipes.filter(recipe=>{
-			return recipe.inputs.every(input => {
-				let ingredientItems:Item[] = []
-				if (input.tag) ingredientItems = getItemsFromTag(input.tag)
-				if (input.id) ingredientItems.push(getItemFromId(input.id))
-				if (ingredientItems.length === 0) throw new Error(`recipe:${recipe.id} has unknown inputs, could not find items for input: ${JSON.stringify(input)}`);
-				return ingredientItems.some(item=>{
-					const matchingEntries = allEntries.filter(itemEntry=>itemEntry.item===item)
-					return matchingEntries.some(matchingEntry=>matchingEntry.amount >= input.amount)
-				})
-			})
-		})
-	}
-
-	/**
-	 * Calculates the maximum number of times a recipe can be crafted
-	 * given the current inventory.
-	 */
-	function maxCraftableCount(inputs:Input[], inventory:Inventory):number {
-		if (!(inventory instanceof Inventory)) return 0;
-		if (!inputs.length) return 0;
-
-		const counts = inputs.map(input => {
-			const totalAvailable = input.items.reduce((sum, item) => {
-				return sum + inventory.getAmount(ItemInstance.fromItem(item));
-			}, 0);
-
-			return Math.floor(totalAvailable / input.amount);
-		});
-
-		const limitingReagent = Math.min(...counts);
-		if (!Number.isInteger(limitingReagent)) return 0;
-		return limitingReagent
-	}
-
-	/**
-	 * Returns items affordable from inventory to fulfill recipe requirements
-	 */
-	function affordableInputsFromInventory(
-		recipe:Recipe, 
-		inventory:Inventory, 
-		options:CraftingOptions={multiply:1}
-	): ItemInstance[]|false 
-	{
-		if (!(inventory instanceof Inventory)) return false
-		const inputs = getRecipeInputs(recipe).map(input=>{
-			
-			// Apply whitelist filters
-			const whitelisted = input.items.filter(item =>
-				(!options.itemWhitelist || options.itemWhitelist.includes(item)) &&
-				(!options.tagWhitelist || item.tags.some(tag => options.tagWhitelist?.includes(tag)))
-			);
-			
-			// Apply priority ordering
-			if (options.itemPriorityList) {
-				whitelisted.sort((a, b) => {
-					const ai = options.itemPriorityList!.indexOf(a);
-					const bi = options.itemPriorityList!.indexOf(b);
-					return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
-				});
-			} else if (options.tagPriorityList) {
-				whitelisted.sort((a, b) => {
-					const ai = a.tags.findIndex(tag => options.tagPriorityList!.includes(tag));
-					const bi = b.tags.findIndex(tag => options.tagPriorityList!.includes(tag));
-					return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
-				});
-			}
-			
-			return {items:whitelisted, amount:input.amount}
-		})
-		
-		const maxCraftable = maxCraftableCount(inputs, inventory)
-
-		let multiplier = 1
-		if (options.maximize) {
-			multiplier = maxCraftable
-		} else if (options.capAtMax) {
-			multiplier = Math.min(maxCraftable, Math.max(1, Math.floor(options.multiply??1)))
-		} else {
-			multiplier = Math.max(0, Math.floor(options.multiply??1))
-		}
-
-		// Build chosen ItemInstances
-		const chosenInstances = [];
-		for (const input of inputs) {
-			let remaining = input.amount * multiplier;
-			for (const item of input.items) {
-				if (remaining <= 0) break;
-				const available = inventory.getAmount(ItemInstance.fromItem(item));
-				const take = Math.min(available, remaining);
-				if (take > 0) {
-					chosenInstances.push(new ItemInstance(item, take));
-					remaining -= take;
-				}
-			}
-			if (remaining > 0) return false; // not enough items
-		}
-		if (chosenInstances.some(used=>!inventory.canChange(used))) return false
-
-		return chosenInstances
-	}
 
 	/**
 	 * When this function is called it will show the slider and set up events for items transfer of a specified item from the provided inventory into the transfer context
@@ -1390,7 +899,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		document.getElementById('machines-grid')!.appendChild(cell)
 
 		cell.addEventListener('mouseenter', ()=>{
-			const recipe = getRecipesProducing(machine)[0]
+			const recipe = getRecipesProducing(machine, recipes)[0]
 			if (!recipe) return
 
 			MouseOverlay.show()
@@ -1419,9 +928,9 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 				MachineBeingPlaced.place(false)
 				return
 			}
-			const recipe = getRecipesProducing(machine)[0]
+			const recipe = getRecipesProducing(machine, recipes)[0]
 			if (!recipe) throw new Error(`The machine: ${machine.id} is not craftable`);
-			const itemsUsed = affordableInputsFromInventory(recipe, mainInventory)
+			const itemsUsed = resolveCraftingCosts(recipe, mainInventory)
 			if (!itemsUsed) return
 			if (!mainInventory.changeItems(itemsUsed.map(item=>new ItemInstance(item.item, -item.amount)))) return
 			MachineBeingPlaced.set(machine, itemsUsed, (success:boolean)=>{cell.style.backgroundColor = ''}, mainInventory)
@@ -1497,7 +1006,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 				}
 			}
 			if (resultId === null) continue
-			mainInventory.changeItem(ItemInstance.fromItem(getItemFromId(resultId), 1))
+			mainInventory.changeItem(ItemInstance.fromItem(getItemFromId(resultId, items), 1))
 		}
 	})
 
@@ -1552,11 +1061,11 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		const craft = (amount: number, recipe: Recipe)=>{
 			const maxCraftable = maxCraftableCount(getRecipeInputs(recipe), inputInventory)
 			const multiplier = Math.min(amount, maxCraftable)
-			const itemsUsed = affordableInputsFromInventory(recipe, inputInventory, {multiply:multiplier})
+			const itemsUsed = resolveCraftingCosts(recipe, inputInventory, {multiply:multiplier})
 			if (!itemsUsed || !inputInventory.subtractItems(itemsUsed)) {
 				throw new Error("Failed to subtract items from input inventory");
 			}
-			if (!outputInventory.changeItems(getRecipeOutputs(recipe).map(itemInst=>{itemInst.amount *= multiplier; return itemInst}))) {
+			if (!outputInventory.changeItems(getRecipeOutputs(recipe, items).map(itemInst=>{itemInst.amount *= multiplier; return itemInst}))) {
 				throw new Error("Failed to add items to output inventory");
 			}
 			return multiplier
@@ -1567,7 +1076,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 			
 			//Idle is set to false when anything is added to the inputInventory
 			if (idle) return
-			workingOn = capableRecipes.filter(recipe=>Boolean(affordableInputsFromInventory(recipe, inputInventory)))
+			workingOn = capableRecipes.filter(recipe=>Boolean(resolveCraftingCosts(recipe, inputInventory)))
 			if (workingOn.length === 0) {
 				idle = true
 				return
