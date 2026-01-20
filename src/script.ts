@@ -807,7 +807,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		let idle = false
 		const capableRecipes = recipes.filter(recipe=>machineObject.capabilities.includes(recipe.requiredProcess))
 
-		const inputInventory = new Inventory(()=>{idle = false}, Infinity, capableRecipes.map(recipe=>getRecipeInputs(recipe, items)).flat().flatMap(v=>v.items))
+		const inputInventory = new Inventory(()=>{idle = false}, Infinity, capableRecipes.map(recipe=>getRecipeInputs(recipe, items)).flat().flatMap(v=>v.items.map(inst=>inst.item)))
 		const outputInventory = mainInventory
 
 		let energy = 0

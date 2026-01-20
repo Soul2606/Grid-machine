@@ -1,69 +1,81 @@
 // types.ts
 
+import type { ItemInstance } from "./classes"
+
+
+export type JSONValue = 
+ | string
+ | number
+ | boolean
+ | null
+ | JSONValue[]
+ | { [key: string]: JSONValue }
+//
+
+// A json friendly way to reference an ItemInstance (class)
+export type ItemInstanceRef = {
+	readonly id: string
+	readonly amount: number
+	readonly metadata?: JSONValue
+}
 
 
 // Game data schema
 export type Item = {
-	id: string
-	name: string
-	tags: string[]
-	energy?: string
+	readonly id: string
+	readonly name: string
+	readonly tags: string[]
+	readonly energy?: string
 }
 
 export type Machine = {
-	id: string
-	name: string
-	tier: number
-	requiresConfiguration: boolean
-	capabilities: string[]
-	fuelNeeds?: {
-		tags: string[],
-		energy: string
+	readonly id: string
+	readonly name: string
+	readonly tier: number
+	readonly requiresConfiguration: boolean
+	readonly capabilities: string[]
+	readonly fuelNeeds?: {
+		readonly tags: string[],
+		readonly energy: string
 	}
-	energyNeeds?: {
-		voltageTier: number,
-		energy: string
+	readonly energyNeeds?: {
+		readonly voltageTier: number,
+		readonly energy: string
 	}
 }
 
-export type RecipeIO = {
-	id?:string
-	tag?:string
-	amount:number
+export type RecipeInput = {
+	readonly amount:number
+	readonly id?:string
+	readonly tag?:string
+	readonly meta?:JSONValue
 }
 
 export type Recipe = {
-	id: string
-	inputs: RecipeIO[]
-	outputs: RecipeIO[]
-	requiredProcess: string
-	requiredTier: number
-	processTimeSeconds: number
+	readonly id: string
+	readonly inputs: RecipeInput[]
+	readonly outputs: ItemInstanceRef[]
+	readonly requiredProcess: string
+	readonly requiredTier: number
+	readonly processTimeSeconds: number
 }
 
 export type Extractor = {
-	id: string
-	name: string
-	manualPower: number
-	requiredPower: number
-	yields: Array<{
-		itemId: string
-		weight: number
+	readonly id: string
+	readonly name: string
+	readonly manualPower: number
+	readonly requiredPower: number
+	readonly yields: Array<{
+		readonly itemId: string
+		readonly weight: number
 	}>
 }
 // Game data schema end
 
 
-
-// this type is occasionally useful if metadata and ItemInstance is not needed
-export type ItemEntry = {
-	item: Item
-	amount: number
-}
-
 // type represents a Recipe input slot, because multiple different items can are valid in a single input, then items is an array of Items
 export type Input = {
-	readonly items: readonly Item[]
+	readonly items: readonly ItemInstance[]
 	readonly amount: number
 }
 

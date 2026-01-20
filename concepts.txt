@@ -1,0 +1,72 @@
+concepts.txt
+
+
+Concept for a schema for metadata matching in recipe inputs
+
+Valid if: item does not have durability with any value
+{
+	"id":"wrench",
+	"meta":{
+		"not":true,
+		"values":{
+			"val":{"any":true}
+		},
+		"data":{"durability":"val"}
+	}
+}
+
+Valid if: item has content with a value of a object with id(any) and amount(any)
+{
+	"id":"magic_jar",
+	"meta":{
+		"values":{
+			"cnt":{"any":true},
+			"str":{"any":true}
+		},
+		"data":{"content": {"id":"str", "amount":"cnt"}}
+	}
+}
+
+Valid if: item has content with a value of a object with id "ignis" and amount(any)
+{
+	"id":"magic_jar",
+	"meta":{
+		"values":{
+			"cnt":{"any":true}
+		},
+		"data":{"content": {"id":"ignis", "amount":"cnt"}}
+	}
+}
+
+
+
+
+Parameterize metadata in recipes
+
+Example recipe
+{
+	"id": "pour_liquid",
+	"inputs": [{
+		"id": "water",
+		"amount": 1,
+		"meta": {
+			"values": {
+				"ids": {"any": true, "string": true, "parameterId": "content_id"}
+			},
+			"data": {"content": {"id": "ids"}}
+		}
+	}],
+	"outputs": [{
+		"id": "oxygen",
+		"amount": 1,
+		"meta": {
+			"parameters": {
+				"ids": "content_id"
+			},
+			"data": {"content": {"id": "ids"}}
+		}
+	}],
+	"requiredProcess": "alchemy",
+	"processTimeSeconds": 0
+}
+

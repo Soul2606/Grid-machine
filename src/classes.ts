@@ -1,5 +1,5 @@
-import { isItem } from './script.js';
-import type { Item } from './types.js';
+import { JSONEquals } from './functions.js';
+import type { Item, JSONValue } from './types.js';
 
 
 
@@ -160,7 +160,6 @@ export class Inventory {
 		const baseAmount = item.amount;
 		const baseItem = item.item;
 
-		if (!isItem(baseItem)) return false;
 		if (!Number.isInteger(baseAmount)) return false;
 
 		if (typeof baseAmount !== 'number' || !Number.isFinite(baseAmount) || Number.isNaN(baseAmount)) return false;
@@ -195,10 +194,10 @@ export class ItemInstance {
 		return new ItemInstance(item, amount ?? 0)
 	}
 
-	item
-	amount
-	metadata
-	constructor(item: Item, amount = 0, metadata: object = {}) {
+	item: Item
+	amount: number
+	metadata: JSONValue
+	constructor(item: Item, amount = 0, metadata: JSONValue = null) {
 		this.item = item
 		this.amount = amount
 		this.metadata = structuredClone(metadata)
@@ -210,7 +209,7 @@ export class ItemInstance {
 
 	isEqual(itemInstance: ItemInstance, options = { ignoreAmount: true, ignoreMetadata: false }) {
 		if (!(itemInstance instanceof ItemInstance)) throw new Error("itemInstance is not an ItemInstance")
-		return (this.item === itemInstance.item && (options.ignoreMetadata || JSON.stringify(this.metadata) === JSON.stringify(itemInstance.metadata)) && (options.ignoreAmount || this.amount === itemInstance.amount))
+		return (this.item === itemInstance.item && (options.ignoreMetadata || JSONEquals(this.metadata, itemInstance.metadata)) && (options.ignoreAmount || this.amount === itemInstance.amount))
 	}
 }
 

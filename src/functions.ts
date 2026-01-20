@@ -1,6 +1,6 @@
 import { ItemInstance } from './classes.js';
 import { Inventory } from './classes.js';
-import type { Craftable, CraftingOptions, Input, Item, Recipe } from "./types.js";
+import type { Craftable, CraftingOptions, Input, Item, JSONValue, Recipe } from "./types.js";
 
 
 
@@ -14,63 +14,77 @@ export function relu(x: number) {
 
 type WalkJsonArgs = { 
 	key: string|number|null
-	value: unknown 
-	parent: Record<string, unknown> | unknown[] | null
+	value: JSONValue 
+	parent: JSONValue | null
 	path: readonly (string | number)[] 
-	set: (newValue: unknown) => void 
-	delete: () => void 
-	isLeaf: boolean 
 }
-export function walkJson(obj: Record<string, any>, fnc: (args:WalkJsonArgs)=>void) {
+export function walkJson<T=void>(obj: JSONValue, fnc: (args:WalkJsonArgs)=>T): T {
 	const recurse = (
-		current: unknown, 
-		parent:  Record<string, unknown> | unknown[] | null = null, 
-		key:     string | number | null         = null, 
-		path:    Array<string | number>         = []
-	) => {
-		// Provide a mutator
-		const set = (newValue: unknown) => {
-			if (parent !== null && key !== null) {
-				if (Array.isArray(parent)) {
-					parent[Number(key)] = newValue
-				} else {
-					parent[String(key)] = newValue
-				}
-			}
-		}
-		const del = () => {
-			if (parent !== null && key !== null) {
-				if (Array.isArray(parent)) {
-					parent.splice(key as number, 1)
-				} else {
-					delete parent[key]
-				}
-			}
-		}
-
+		current: JSONValue, 
+		parent:  JSONValue              = null, 
+		key:     string | number | null = null, 
+		path:    Array<string | number> = []
+	):T => {
 		// Call user function with rich context
-		fnc({
+		const results = fnc({
 			key,
 			value: current,
 			parent,
 			path,
-			set,
-			delete: del,
-			isLeaf: typeof current !== 'object' || current === null
 		})
 
 		// Recurse into children if object/array
 		if (Array.isArray(current)) {
 			current.forEach((val, idx) => recurse(val, current, idx, [...path, idx]))
-		} else if (current && typeof current === 'object') {
-			for (const k in current) {
-				const currentObject = current as Record<string, unknown>
-				recurse(currentObject[k], currentObject, k, [...path, k])
+		} else if (typeof current === 'object') {
+			for (const key in current) {
+				const next = current[key]
+				if (next === undefined) continue
+				recurse(next, current, key, [...path, key])
 			}
 		}
+		return results
 	}
 
-	recurse(obj, null, null, [])
+	return recurse(obj, null, null, [])
+}
+
+
+
+
+export function JSONEquals(obj1:JSONValue, obj2:JSONValue): boolean {
+	function tupleToString(arr: readonly (string | number)[]): string {
+		return arr
+		.map(v => typeof v === "string" ? `'${v}'` : String(v))
+		.join(",");
+	}
+
+	function setEquals(a: Set<string>, b: Set<string>): boolean {
+		if (a.size !== b.size) return false;
+		for (const v of a) {
+			if (!b.has(v)) return false;
+		}
+		return true;
+	}
+
+
+	const pathMap = new Map<string, unknown>()
+	const paths = new Set<string>()
+
+	walkJson(obj1, ({value, path})=>{
+		pathMap.set(tupleToString(path), value)
+	})
+
+	let mismatch = false
+	walkJson(obj2, ({value, path})=>{
+		paths.add(tupleToString(path))
+		const value2 = pathMap.get(tupleToString(path))
+		if (!pathMap.has(tupleToString(path))) mismatch = true
+		if (value2 !== value && typeof value !== 'object' && typeof value2 !== 'object') mismatch = true
+	})
+	if (mismatch) return false
+
+	return setEquals(new Set(pathMap.keys()), paths)
 }
 
 
@@ -114,7 +128,12 @@ export function getRecipeInputs(recipe: Recipe, items: readonly Item[]): Input[]
 				inputItems.add(item)
 			}
 		}
-		return { items: Array.from(inputItems), amount: input.amount }
+		return {
+			items: Array.from(inputItems).map(item=>
+				new ItemInstance(item,1,input.meta)
+			),
+			amount: input.amount
+		}
 	})
 }
 
@@ -138,12 +157,9 @@ export function getItemsFromTag(tag: string, items: readonly Item[]): Item[] {
 
 
 export function getRecipeOutputs(recipe: Recipe, items: readonly Item[]): ItemInstance[] {
-	return recipe.outputs.flatMap(output => {
-		return [
-			output.id ? new ItemInstance(getItemFromId(output.id, items), output.amount) : [],
-			output.tag ? getItemsFromTag(output.tag, items).map(item => new ItemInstance(item, output.amount)) : []
-		].flat()
-	})
+	return recipe.outputs.map(output => 
+		new ItemInstance(getItemFromId(output.id, items), output.amount)
+	)
 }
 
 
@@ -201,22 +217,23 @@ function applyCraftingOptions(options:CraftingOptions, inputs: readonly Input[])
 	return inputs.map(input=>{
 		
 		// Apply whitelist filters
-		const whitelisted = input.items.filter(item =>
-			(!options.itemWhitelist || options.itemWhitelist.includes(item)) &&
+		const whitelisted = input.items.filter(itemInst =>{
+			const item = itemInst.item
+			return (!options.itemWhitelist || options.itemWhitelist.includes(item)) &&
 			(!options.tagWhitelist || item.tags.some(tag => options.tagWhitelist?.includes(tag)))
-		);
+		});
 		
 		// Apply priority ordering
 		if (options.itemPriorityList) {
 			whitelisted.sort((a, b) => {
-				const ai = options.itemPriorityList!.indexOf(a);
-				const bi = options.itemPriorityList!.indexOf(b);
+				const ai = options.itemPriorityList!.indexOf(a.item);
+				const bi = options.itemPriorityList!.indexOf(b.item);
 				return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
 			});
 		} else if (options.tagPriorityList) {
 			whitelisted.sort((a, b) => {
-				const ai = a.tags.findIndex(tag => options.tagPriorityList!.includes(tag));
-				const bi = b.tags.findIndex(tag => options.tagPriorityList!.includes(tag));
+				const ai = a.item.tags.findIndex(tag => options.tagPriorityList!.includes(tag));
+				const bi = b.item.tags.findIndex(tag => options.tagPriorityList!.includes(tag));
 				return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
 			});
 		}
@@ -238,7 +255,7 @@ export function maxCraftableCount(inputs: readonly Input[], inventory: Inventory
 
 	const counts = _inputs.map(input => {
 		const totalAvailable = input.items.reduce((sum, item) => {
-			return sum + inventory.getAmount(ItemInstance.fromItem(item))
+			return sum + inventory.getAmount(item)
 		}, 0)
 
 		return Math.floor(totalAvailable / input.amount)
@@ -282,10 +299,10 @@ export function resolveCraftingCosts(
 		let remaining = input.amount * multiplier
 		for (const item of input.items) {
 			if (remaining <= 0) break
-			const available = inventory.getAmount(ItemInstance.fromItem(item))
+			const available = inventory.getAmount(item)
 			const take = Math.min(available, remaining)
 			if (take > 0) {
-				chosenInstances.push(new ItemInstance(item, take))
+				chosenInstances.push(new ItemInstance(item.item, take, item.metadata))
 				remaining -= take
 			}
 		}
