@@ -1,5 +1,5 @@
-import { JSONEquals } from './functions.js';
-import type { Item, JSONValue } from './types.js';
+import { getItemFromId, JSONEquals } from './functions.js';
+import type { Item, ItemInstanceRef, JSONValue } from './types.js';
 
 
 
@@ -190,11 +190,19 @@ export class Inventory {
 
 
 export class ItemInstance {
-	static fromItem(item: Item, amount?: number): ItemInstance {
-		return new ItemInstance(item, amount ?? 0)
+	static from(inst: ItemInstance):ItemInstance{
+		return new ItemInstance(inst.item, inst.amount, inst.metadata)
 	}
 
-	item: Item
+	static fromRef(ref: ItemInstanceRef, items:Item[]):ItemInstance{
+		return new ItemInstance(getItemFromId(ref.id, items), ref.amount, ref.metadata)
+	}
+
+	static fromItem(item: Item, amount?: number): ItemInstance {
+		return new ItemInstance(item, amount ?? 1)
+	}
+
+	readonly item: Item
 	amount: number
 	metadata: JSONValue
 	constructor(item: Item, amount = 0, metadata: JSONValue = null) {
@@ -207,9 +215,13 @@ export class ItemInstance {
 		return new ItemInstance(this.item, this.amount, this.metadata)
 	}
 
+	serialize():ItemInstanceRef{
+		return {id: this.item.id, amount: this.amount, metadata: this.metadata}
+	}
+
 	isEqual(itemInstance: ItemInstance, options = { ignoreAmount: true, ignoreMetadata: false }) {
 		if (!(itemInstance instanceof ItemInstance)) throw new Error("itemInstance is not an ItemInstance")
-		return (this.item === itemInstance.item && (options.ignoreMetadata || JSONEquals(this.metadata, itemInstance.metadata)) && (options.ignoreAmount || this.amount === itemInstance.amount))
+		return (this.item.id === itemInstance.item.id && (options.ignoreMetadata || JSONEquals(this.metadata, itemInstance.metadata)) && (options.ignoreAmount || this.amount === itemInstance.amount))
 	}
 }
 
