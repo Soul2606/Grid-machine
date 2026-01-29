@@ -1,5 +1,61 @@
 concepts.txt
 
+Energy generation
+Some Machines require energy:
+{
+	"id":"chemical_reactor_1",
+	"energyNeeds":{
+		"voltageTier":1,
+		"energy":"10kJ"
+	}
+}
+Managing this is straight-forward
+Just have a global power variable, type number, assume voltage tier 0. And functions for converting between voltage tiers.
+But what about energy production? We could have a machine that requires negative energy:
+{
+	"id":"wind_turbine",
+	"capabilities":["nothing"],
+	"energyNeeds":{
+		"voltageTier":1,
+		"energy":"-500kJ"
+	}
+}
+Than give it a nothing capability used by a recipe that consumes nothing and produces nothing so it always runs and produces energy. That seems more like workaround than an actual feature.
+
+Concept 2: Power is an item that can be converted to energy.
+This feels much better because: Recipes that only produce and don't consume is intended, we can add recipes that consume fuel to produce power, and we don't need that negative energy nonsense.
+Power being am item feels a bit wrong, but it is already decided that the name Item is a misnomer and the more accurate name is Resource, and power being a resource feels more correct. 
+{
+	"id":"wind_turbine",
+	"capabilities":["wind_energy"],
+}
+The downside is that recipes only craft resources, so i would have to make power an resource, which means power can go in an inventory and so fourth, creating a big mess.
+The alternative is that recipes can craft things that are not resources, or some resources cannot go in inventories or be used in crafting. So many exceptions.
+
+Concept 3: energyProduction key.
+Machines can have a energyProduction property to tweak it's behavior to act more like a generator.
+I think this is best because the machine can still have all the capabilities of a regular machine while having new behavior that makes it act like a generator.
+Generator behavior: always active if there is energy demand. 
+{
+	"id":"wind_turbine",
+	"energyProduction":{
+		"voltageTier":1,
+		"energy":"500kJ"
+	}
+}
+The problem is that this is likely completely incompatible with factories, or extremely difficult to implement. Factories are a future mechanic for the game.
+
+Concept 4: Have generators be a completely separate thing.
+generators.json
+{
+	"id":"wind_turbine",
+	"consumes":{"id":"coal", "amount":1},
+	"time"10,
+	"voltageTier":1,
+	"energy":"500kJ"
+}
+As boring as this is, it seems to be the ideal solution. Power production is a less important mechanic in this game
+
 
 Concept for a schema for metadata matching in recipe inputs
 

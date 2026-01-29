@@ -11,6 +11,14 @@ body{
     margin-bottom: 0;
 }
 
+.loading > :not(#loading-screen) {
+    display: none!important; 
+}
+
+body:not(.loading) #loading-screen{
+    display: none;
+}
+
 main{
     flex-grow: 1;
     position: relative;

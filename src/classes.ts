@@ -1,5 +1,5 @@
-import { getItemFromId, JSONEquals } from './functions.js';
-import type { Item, ItemInstanceRef, JSONValue } from './types.js';
+import { getItemFromId, JSONEquals, energyToNumber, maxCraftableCount, getRecipeInputs, resolveCraftingCosts, getRecipeOutputs, relu } from './functions.js';
+import type { Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe } from './types.js';
 
 
 
@@ -9,7 +9,7 @@ import type { Item, ItemInstanceRef, JSONValue } from './types.js';
  */
 export class Inventory {
 	#itemInstances: ItemInstance[];
-	#contentChangeCallback: Function | null;
+	#contentChangeCallback: (inst: ItemInstance)=>void;
 
 	// Cannot be changed after construction
 	#max: number;
@@ -17,7 +17,7 @@ export class Inventory {
 	#itemsFilter: Item[];
 	#tagsFilter: string[];
 	constructor(
-		contentChangeCallback: Function | ((itemInstance: ItemInstance) => void) = () => { },
+		contentChangeCallback: (inst: ItemInstance)=>void = () => {},
 		max: number = Infinity,
 		itemsFilter: Item[] = [],
 		tagsFilter: string[] = [],
@@ -38,8 +38,20 @@ export class Inventory {
 		this.#tagsFilter = Array.from(tagsFilter);
 	}
 
+	clone(){
+		const newI = new Inventory(
+			this.#contentChangeCallback,
+			this.#max,
+			Array.from(this.#itemsFilter),
+			Array.from(this.#tagsFilter),
+			this.#maxSlots
+		)
+		if (!newI.addItems(this.getAllItemInstances())) console.warn('cannot clone item contents')
+		return newI
+	}
+
 	copy(
-		contentChangeCallback: Function | ((itemInstance: ItemInstance) => void) = () => { },
+		contentChangeCallback: (inst: ItemInstance)=>void = () => {},
 		max: number = Infinity,
 		itemsFilter: Item[] = [],
 		tagsFilter: string[] = [],
@@ -56,6 +68,10 @@ export class Inventory {
 
 	getMaxSlots() {
 		return this.#maxSlots;
+	}
+
+	getContentChangeCallback(){
+		return this.#contentChangeCallback
 	}
 
 	hasInstance(item: ItemInstance) {
@@ -112,7 +128,7 @@ export class Inventory {
 		}
 
 		if (itemInstance.amount === 0) this.#itemInstances.splice(this.#itemInstances.indexOf(itemInstance), 1);
-		if (this.#contentChangeCallback) this.#contentChangeCallback(itemInstance);
+		this.#contentChangeCallback(itemInstance);
 		return true;
 	}
 
@@ -179,7 +195,7 @@ export class Inventory {
 		return true;
 	}
 
-	setContentChangeCallback(func: Function | null) {
+	setContentChangeCallback(func: (inst: ItemInstance)=>void = ()=>{}) {
 		if (typeof func !== 'function' && func !== null) throw new Error("func is not a function or null");
 		this.#contentChangeCallback = func;
 		return this;
@@ -194,7 +210,7 @@ export class ItemInstance {
 		return new ItemInstance(inst.item, inst.amount, inst.metadata)
 	}
 
-	static fromRef(ref: ItemInstanceRef, items:Item[]):ItemInstance{
+	static fromRef(ref: ItemInstanceSer, items:Item[]):ItemInstance{
 		return new ItemInstance(getItemFromId(ref.id, items), ref.amount, ref.metadata)
 	}
 
@@ -215,13 +231,130 @@ export class ItemInstance {
 		return new ItemInstance(this.item, this.amount, this.metadata)
 	}
 
-	serialize():ItemInstanceRef{
+	serialize():ItemInstanceSer{
 		return {id: this.item.id, amount: this.amount, metadata: this.metadata}
 	}
 
 	isEqual(itemInstance: ItemInstance, options = { ignoreAmount: true, ignoreMetadata: false }) {
 		if (!(itemInstance instanceof ItemInstance)) throw new Error("itemInstance is not an ItemInstance")
 		return (this.item.id === itemInstance.item.id && (options.ignoreMetadata || JSONEquals(this.metadata, itemInstance.metadata)) && (options.ignoreAmount || this.amount === itemInstance.amount))
+	}
+}
+
+
+
+
+export class MachineInstance {
+	readonly machine: Machine
+	private stack: number
+	private energy: number
+	private input: Inventory
+	private output: Inventory
+	private work: number
+	constructor(machine: Machine, stack: number = 1, energy: number = 0, work: number = 0, input: Inventory|undefined = undefined, output: Inventory|undefined = undefined) {
+		this.machine = machine
+		this.stack = stack
+		this.energy = energy
+		this.work = work
+		this.input = input? input.clone() : new Inventory()
+		this.output = output? output.clone() : new Inventory()
+	}
+
+	/**Returns a serialized snapshot of the state of a machine instance */
+	serialize(): MachineInstanceSer{
+		const serializeItInst = (inst: ItemInstance): ItemInstanceSer=>{
+			return {
+				id: inst.item.id,
+				amount: inst.amount,
+				metadata: inst.metadata
+			}
+		}
+		return {
+			machineId: this.machine.id,
+			stack: this.stack,
+			energy: this.energy,
+			work: this.work,
+			input: this.input.getAllItemInstances().map(serializeItInst),
+			output: this.output.getAllItemInstances().map(serializeItInst),
+		}
+	}
+
+	tick(deltaMS: number, recipes: readonly Recipe[], items: readonly Item[]) {
+		const machineObject = this.machine
+		const capableRecipes = recipes.filter(recipe=>machineObject.capabilities.includes(recipe.requiredProcess))
+
+		const inputInventory = this.input
+		const outputInventory = this.output
+
+		
+		const craft = (amount: number, recipe: Recipe)=>{
+			const maxCraftable = maxCraftableCount(getRecipeInputs(recipe, items), inputInventory)
+			const multiplier = Math.min(amount, maxCraftable)
+			const itemsUsed = resolveCraftingCosts(recipe, inputInventory, items, {multiply:multiplier})
+			if (!itemsUsed || !inputInventory.subtractItems(itemsUsed)) {
+				throw new Error("Failed to subtract items from input inventory");
+			}
+			if (!outputInventory.changeItems(getRecipeOutputs(recipe, items).map(itemInst=>{itemInst.amount *= multiplier; return itemInst}))) {
+				throw new Error("Failed to add items to output inventory");
+			}
+			return multiplier
+		}
+
+		const workingOn: Recipe[] = capableRecipes.filter(recipe=>Boolean(resolveCraftingCosts(recipe, inputInventory, items)))
+		if (workingOn.length === 0) {
+			return 'idle' as const
+		}
+		workingOn.sort((a,b)=>a.processTimeSeconds - b.processTimeSeconds)
+	
+		const energyPerWork: number = (()=>{
+			return machineObject.fuelNeeds ?
+			energyToNumber(machineObject.fuelNeeds.energy) :
+			machineObject.energyNeeds ?
+			energyToNumber(machineObject.energyNeeds.energy) * machineObject.energyNeeds.voltageTier :
+			0
+		})()
+
+		const maxWorkAdded = Math.min(
+			deltaMS/1000 * this.stack,
+			Number.isFinite(this.energy/energyPerWork) ? this.energy/energyPerWork : Infinity
+		)
+		const {
+			workDemand, // total demand, used and unfulfilled
+			workDemands // total demand, for each individual recipe
+		} = (()=>{ // invoked
+			const workDemands: number[] = []
+			let sum = 0
+			for(const recipe of recipes){
+				const maxCraftable = maxCraftableCount(getRecipeInputs(recipe, items), inputInventory)
+				const seconds = recipe.processTimeSeconds
+				workDemands.push(maxCraftable * seconds)
+				sum += maxCraftable * seconds
+			}
+			return {
+				workDemand: sum,
+				workDemands
+			}
+		})()
+
+		const workAdded = Math.min(relu(workDemand - this.work), maxWorkAdded)
+		const lowEnergy = workDemand > this.energy / energyPerWork
+		const energyNeeded = workAdded * energyPerWork
+		this.energy -= energyNeeded
+		this.work += workAdded
+		
+		for (const recipe of workingOn) {
+			const sec = recipe.processTimeSeconds
+			const amountOfCrafts = Math.floor(this.work / sec)
+			const amountCrafted = craft(amountOfCrafts, recipe)			
+			this.work -= sec * amountCrafted
+		}
+
+
+		// Return status from simulation, can be used for ui elements
+		return {
+			lowEnergy,
+			progress: this.work / Math.min(...workDemands)
+		}
 	}
 }
 

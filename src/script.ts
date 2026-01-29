@@ -24,19 +24,7 @@ type MouseOverlayElements = {
 
 
 
-let dataIsCompiled = false
-
-
-// Impure global functions
-
-/**
- * Return weather a object is an item
- */
-//Not a pure function. This function is mutated in the compile function 
-export function isItem(value:any) {
-	if (!items) throw new Error("Do not use isItem before item has been declared");
-	return items.includes(value)
-}
+// Global functions
 
 
 
@@ -97,6 +85,8 @@ function createMachine(machine: Machine): {element:HTMLElement, setStack:Functio
 
 //Global Variables
 
+let dataIsCompiled = false
+
 /* These will be assigned after compilation. Should be validated outside the main function*/
 
 var items: readonly Item[]
@@ -105,7 +95,7 @@ var machines: readonly Machine[]
 
 var recipes: readonly Recipe[]
 
-var extraction: Extractor[]
+var extraction: readonly Extractor[]
 
 
 
@@ -548,7 +538,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 	extraction  = response.extraction
 
-
+	document.body.classList.remove('loading')
 
 	// Data utility functions / Post compiled functions
 
@@ -562,7 +552,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 	 * @param {Function(success:Boolean)} resolveTransferCall optional functions to add extra events upon transfer context resolution
 	 * @returns void
 	 */
-	function itemTransferEvent(event:MouseEvent, inventory:Inventory, item:Item, initiateTransferCall:Function=()=>{}, resolveTransferCall:Function|((success:boolean)=>void)=()=>{}): void {
+	function itemTransferEvent(event:MouseEvent, inventory:Inventory, item:Item, initiateTransferCall:Function=()=>{}, resolveTransferCall:((success:boolean)=>void)=()=>{}): void {
 		if (!event || !inventory || !item) return
 		if (ItemTransferContext.itemInstance !== null) return
 
@@ -622,6 +612,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 				MouseOverlay.elements.heldItemIcon.hide()
 				MouseOverlay.hide()
 				if (success) {
+					resolveTransferCall(success)
 					return
 				}
 				// on failure attempt refund 
@@ -722,7 +713,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		})
 
 		machineCellElements.push({element:cell, machinePointer:machine})
-		}
+	}
 
 
 
@@ -874,7 +865,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 				0
 			})()
 
-			const maxWorkAdded = Math.min(deltaMS/1000 * stack, energy/energyPerWork)
+			const maxWorkAdded = Math.min(deltaMS/1000 * stack, Number.isFinite(energy/energyPerWork) ? energy/energyPerWork : Infinity)
 			let workUsed = 0
 			let workDemand = 0 // total demand, used and unfulfilled
 			let lowestSeconds = Infinity
@@ -910,4 +901,11 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 }
 
 
+
+setTimeout(()=>{
+	if (dataIsCompiled) return
+	document.getElementById('loading-screen')!.innerHTML = `
+	<p>ERROR: could not get game data.</p>
+	<p>You can download them manually from <a href="YOUR_LINK_HERE" target="_blank">this page</a> and import the JSON files into the document.</p>`
+}, 10000)
 
