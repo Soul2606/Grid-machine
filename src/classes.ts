@@ -62,6 +62,10 @@ export class Inventory {
 		return inventory;
 	}
 
+	getLength() {
+		return this.#itemInstances.length
+	}
+
 	getMax() {
 		return this.#max;
 	}
@@ -106,6 +110,11 @@ export class Inventory {
 
 	getAllItemInstances(): ItemInstance[] {
 		return this.#itemInstances.map(instance => instance.clone());
+	}
+
+	clear(){
+		this.#itemInstances = []
+		return this
 	}
 
 	/**
@@ -251,13 +260,13 @@ export class MachineInstance {
 	readonly input: Inventory
 	readonly output: Inventory
 	private work: number
-	constructor(machine: Machine, stack: number = 1, energy: number = 0, work: number = 0, input: Inventory|undefined = undefined, output: Inventory|undefined = undefined) {
+	constructor(machine: Machine, stack: number = 1, energy: number = 0, work: number = 0) {
 		this.machine = machine
-		this.stack = stack
-		this.energy = energy
-		this.work = work
-		this.input = input? input.clone() : new Inventory()
-		this.output = output? output.clone() : new Inventory()
+		this.stack =   stack
+		this.energy =  energy
+		this.work =    work
+		this.input =   new Inventory()
+		this.output =  new Inventory()
 	}
 
 	/**Returns a serialized snapshot of the state of a machine instance */
@@ -323,20 +332,20 @@ export class MachineInstance {
 			Number.isFinite(this.energy/energyPerWork) ? this.energy/energyPerWork : Infinity
 		)
 		const {
-			workDemand, // total demand, used and unfulfilled
-			workDemands // total demand, for each individual recipe
+			workDemand,  // total demand, used and unfulfilled
+			lowestDemand,
 		} = (()=>{ // invoked
-			const workDemands: number[] = []
 			let sum = 0
-			for(const recipe of recipes){
+			let lowestDemand = Infinity
+			for(const recipe of workingOn){
 				const maxCraftable = maxCraftableCount(getRecipeInputs(recipe, items), inputInventory)
 				const seconds = recipe.processTimeSeconds
-				workDemands.push(maxCraftable * seconds)
 				sum += maxCraftable * seconds
+				if (maxCraftable > 0 && seconds < lowestDemand) lowestDemand = seconds
 			}
 			return {
 				workDemand: sum,
-				workDemands
+				lowestDemand
 			}
 		})()
 
@@ -357,7 +366,7 @@ export class MachineInstance {
 		// Return status from simulation, can be used for ui elements
 		return {
 			lowEnergy,
-			progress: this.work / Math.min(...workDemands)
+			progress: this.work / lowestDemand
 		}
 	}
 

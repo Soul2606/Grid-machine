@@ -1,7 +1,7 @@
 
 import type { Item, Machine, Recipe, Extractor } from './types.js'
 import { clamp, energyToNumber, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, maxCraftableCount, relu, resolveCraftingCosts, walkJson } from './functions.js'
-import { Inventory, ItemInstance } from './classes.js'
+import { Inventory, ItemInstance, MachineInstance } from './classes.js'
 
 type InfoPanelMethods = {
 	show: () => void
@@ -28,7 +28,7 @@ type MouseOverlayElements = {
 
 
 
-function createMachine(machine: Machine): {element:HTMLElement, setStack:Function, setProgress:Function, setWarning:Function} {
+function createMachine(machine: Machine) {
 	const cell = document.createElement('div')
 	cell.className = 'inventory-grid-cell machine'
 	cell.textContent = machine.name
@@ -50,7 +50,7 @@ function createMachine(machine: Machine): {element:HTMLElement, setStack:Functio
 	progressBarFill.className = 'progress-bar-fill'
 
 	const setProgress = (n: number)=>{
-		progressBarFill.style.width = clamp(n, 0, 100) + '%'
+		progressBarFill.style.width = String(clamp(n, 0, 100)) + '%'
 		if (n>100) {
 			progressBarFill.classList.add('rainbow')
 		} else {
@@ -66,7 +66,7 @@ function createMachine(machine: Machine): {element:HTMLElement, setStack:Functio
 	noFuel.src = 'img/Fuel-icon-red.png'
 	noFuel.style.display = 'none'
 	warning.appendChild(noFuel)
-	const setWarning = (string: string)=>{
+	const setWarning = (string: "" | "no_fuel")=>{
 		switch (string) {
 			case 'no_fuel':
 				noFuel.style.display = ''
@@ -794,19 +794,14 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		if (!machineObject) return
 		const {element:machineCell, setStack, setProgress, setWarning} = createMachine(machineObject)
 		setWarning('no_fuel')
-		let stack = 1
-		let idle = false
 		const capableRecipes = recipes.filter(recipe=>machineObject.capabilities.includes(recipe.requiredProcess))
 
-		const inputInventory = new Inventory(()=>{idle = false}, Infinity, capableRecipes.map(recipe=>getRecipeInputs(recipe, items)).flat().flatMap(v=>v.items.map(inst=>inst.item)))
-		const outputInventory = mainInventory
-
-		let energy = 0
+		const machineInst = new MachineInstance(machineObject)
 
 		machineCell.addEventListener('click',()=>{
-			if (!MachineBeingPlaced.isEmpty()) {
-				stack++
-				setStack(stack)
+			if (!MachineBeingPlaced.isEmpty() && MachineBeingPlaced.getState().machine?.id === machineInst.machine.id) {
+				machineInst.setStack(1 + machineInst.getStack())
+				setStack(String(machineInst.getStack()))
 				MachineBeingPlaced.place(true)
 				return
 			}
@@ -814,14 +809,12 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 			console.log('incomingItem', incomingItem)
 			if (incomingItem === null) return
 			let success = false
-			if (machineObject.fuelNeeds) success = machineObject.fuelNeeds.tags.some(tag=>incomingItem.item.tags.includes(tag))
-			console.log('success', success)
-			if (success) {
-				energy += energyToNumber(incomingItem.item.energy??'') * incomingItem.amount
+			if (machineInst.addFuel(incomingItem) === "success") {
+				success = true
 				setWarning('')
-				idle = false;
-			} else {
-				success = inputInventory.addItem(incomingItem)
+			}
+			if (!success) {
+				success = machineInst.input.addItem(incomingItem)
 			}
 			if (ItemTransferContext.transfer) ItemTransferContext.transfer(success)
 			ItemTransferContext.itemInstance  = null
@@ -830,71 +823,25 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		
 		MachineBeingPlaced.place(true)
 
-		let work = 0
-		let workingOn: Recipe[] = []
-
-		const craft = (amount: number, recipe: Recipe)=>{
-			const maxCraftable = maxCraftableCount(getRecipeInputs(recipe, items), inputInventory)
-			const multiplier = Math.min(amount, maxCraftable)
-			const itemsUsed = resolveCraftingCosts(recipe, inputInventory, items, {multiply:multiplier})
-			if (!itemsUsed || !inputInventory.subtractItems(itemsUsed)) {
-				throw new Error("Failed to subtract items from input inventory");
-			}
-			if (!outputInventory.changeItems(getRecipeOutputs(recipe, items).map(itemInst=>{itemInst.amount *= multiplier; return itemInst}))) {
-				throw new Error("Failed to add items to output inventory");
-			}
-			return multiplier
-		}
-
 		// Declare setInterval machine logic
-		pubSubTick.add(deltaMS=>{
-			
-			//Idle is set to false when anything is added to the inputInventory
-			if (idle) return
-			workingOn = capableRecipes.filter(recipe=>Boolean(resolveCraftingCosts(recipe, inputInventory, items)))
-			if (workingOn.length === 0) {
-				idle = true
-				return
-			}
-		
-			const energyPerWork: number = (()=>{
-				return machineObject.fuelNeeds ?
-				energyToNumber(machineObject.fuelNeeds.energy) :
-				machineObject.energyNeeds ?
-				energyToNumber(machineObject.energyNeeds.energy) * machineObject.energyNeeds.voltageTier :
-				0
-			})()
-
-			const maxWorkAdded = Math.min(deltaMS/1000 * stack, Number.isFinite(energy/energyPerWork) ? energy/energyPerWork : Infinity)
-			let workUsed = 0
-			let workDemand = 0 // total demand, used and unfulfilled
-			let lowestSeconds = Infinity
-			
-			for (const recipe of workingOn) {
-				const workAvailable = maxWorkAdded + work - workUsed
-				const seconds = recipe.processTimeSeconds
-				const amountOfCrafts = Math.floor(workAvailable / seconds)
-				const amountCrafted = craft(amountOfCrafts, recipe)
-				const maxCraftable = maxCraftableCount(getRecipeInputs(recipe, items), inputInventory)
-				
-				workDemand += maxCraftable * seconds
-				workUsed += seconds * amountCrafted
-				
-				if (seconds < lowestSeconds) {
-					lowestSeconds = seconds
-					setProgress(workAvailable / seconds * 100)
-				}
-			}
-			
-			const workAdded = Math.min(relu(workDemand - work), maxWorkAdded)
-			const energyNeeded = workAdded * energyPerWork
-			if (energy < workDemand) {
-				setWarning('no_fuel')
+		pubSubTick.add(deltaMS => {
+			const status = machineInst.tick(deltaMS, recipes, items)
+			console.log(status)
+			if (status === "idle") return
+			if (status.lowEnergy) {
+				setWarning("no_fuel")
 			} else {
-				setWarning('')
+				setWarning("")
 			}
-			energy -= energyNeeded
-			work += workAdded - workUsed
+			if (status.progress) {
+				setProgress(status.progress * 100)
+			} else {
+				setProgress(100)
+			}
+			if (machineInst.output.getLength() > 0) {				
+				mainInventory.addItems(machineInst.output.getAllItemInstances())
+				machineInst.output.clear()
+			}
 		})
 	})
 
