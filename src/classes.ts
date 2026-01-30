@@ -305,10 +305,12 @@ export class MachineInstance {
 			const multiplier = Math.min(amount, maxCraftable)
 			const itemsUsed = resolveCraftingCosts(recipe, inputInventory, items, {multiply:multiplier})
 			if (!itemsUsed || !inputInventory.subtractItems(itemsUsed)) {
-				throw new Error("Failed to subtract items from input inventory");
+				console.warn("Failed to subtract items from input inventory");
+				return 0
 			}
 			if (!outputInventory.changeItems(getRecipeOutputs(recipe, items).map(itemInst=>{itemInst.amount *= multiplier; return itemInst}))) {
-				throw new Error("Failed to add items to output inventory");
+				console.warn("Failed to add items to output inventory");
+				return 0
 			}
 			return multiplier
 		}
