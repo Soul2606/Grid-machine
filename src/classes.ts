@@ -248,8 +248,8 @@ export class MachineInstance {
 	readonly machine: Machine
 	private stack: number
 	private energy: number
-	private input: Inventory
-	private output: Inventory
+	readonly input: Inventory
+	readonly output: Inventory
 	private work: number
 	constructor(machine: Machine, stack: number = 1, energy: number = 0, work: number = 0, input: Inventory|undefined = undefined, output: Inventory|undefined = undefined) {
 		this.machine = machine
@@ -262,12 +262,8 @@ export class MachineInstance {
 
 	/**Returns a serialized snapshot of the state of a machine instance */
 	serialize(): MachineInstanceSer{
-		const serializeItInst = (inst: ItemInstance): ItemInstanceSer=>{
-			return {
-				id: inst.item.id,
-				amount: inst.amount,
-				metadata: inst.metadata
-			}
+		const serializeItInst = (inst: ItemInstance)=>{
+			return inst.serialize()
 		}
 		return {
 			machineId: this.machine.id,
@@ -277,6 +273,14 @@ export class MachineInstance {
 			input: this.input.getAllItemInstances().map(serializeItInst),
 			output: this.output.getAllItemInstances().map(serializeItInst),
 		}
+	}
+
+	setStack(n: number){
+		this.stack = n
+	}
+
+	getStack(){
+		return this.stack
 	}
 
 	tick(deltaMS: number, recipes: readonly Recipe[], items: readonly Item[]) {
@@ -355,6 +359,23 @@ export class MachineInstance {
 			lowEnergy,
 			progress: this.work / Math.min(...workDemands)
 		}
+	}
+
+	addFuel(fuel: ItemInstance):"success" | "incapable" | "incompatible" | "no_energy_in_item"{
+		const fuelNeeds = this.machine.fuelNeeds
+		if (!fuelNeeds) return "incapable"
+		if (!fuelNeeds.tags.some(tag=>fuel.item.tags.includes(tag))) return "incompatible"
+		if (!fuel.item.energy) return "no_energy_in_item"
+		this.energy += energyToNumber(fuel.item.energy) * fuel.amount
+		return "success"
+	}
+
+	addPower(power: number, voltageTier: number): "success" | "incapable" | "overloaded"{
+		const energyNeeds = this.machine.energyNeeds
+		if (!energyNeeds) return "incapable"
+		if (voltageTier > energyNeeds.voltageTier) return "overloaded"
+		this.energy += power
+		return "success"
 	}
 }
 
