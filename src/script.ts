@@ -652,7 +652,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 
 
-	mainInventory.setContentChangeCallback((itemInstance: ItemInstance)=>{
+	mainInventory.signal.subscribe((itemInstance: ItemInstance)=>{
 		const item = itemInstance.item
 		const amount = itemInstance.amount
 		for(const cellElement of inventoryCellElements){
@@ -796,7 +796,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		setWarning('no_fuel')
 		const capableRecipes = recipes.filter(recipe=>machineObject.capabilities.includes(recipe.requiredProcess))
 
-		const machineInst = new MachineInstance(machineObject)
+		const machineInst = new MachineInstance(machineObject, items, recipes)
 
 		machineCell.addEventListener('click',()=>{
 			if (!MachineBeingPlaced.isEmpty() && MachineBeingPlaced.getState().machine?.id === machineInst.machine.id) {
@@ -825,7 +825,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 		// Declare setInterval machine logic
 		pubSubTick.add(deltaMS => {
-			const status = machineInst.tick(deltaMS, recipes, items)
+			const status = machineInst.tick(deltaMS)
 			console.log(status)
 			if (status === "idle") return
 			if (status.lowEnergy) {

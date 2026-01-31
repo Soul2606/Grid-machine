@@ -97,6 +97,14 @@ Valid if: item has content with a value of a object with id "ignis" and amount(a
 
 
 
+Potential refactor of Item and ItemInstance:
+class ItemEntry extends ItemInstance 
+ItemEntry has amount
+remove amount from ItemInstance
+
+
+
+
 Parameterize metadata in recipes
 
 Example recipe

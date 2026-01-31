@@ -8,12 +8,12 @@ import type { Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Rec
  * Class for managing data of item instances. inventory can be constructed and configured before compilation.
  */
 export class Inventory {
-	private itemInstances: ItemInstance[];
-	private contentChangeCallback: (inst: ItemInstance)=>void;
-	private readonly max: number;      // Max for each item, not amount in total
-	private readonly maxSlots: number; // Max amount of different items
+	private itemInstances: ItemInstance[]; // !!!!Important!!!! The actual items in the inventory
+	private readonly max: number;          // Max for each item, not amount in total
+	private readonly maxSlots: number;     // Max amount of different items
+	private contentChangeSignal: Signal<ItemInstance>;
+	readonly signal: SignalInterfaceT<ItemInstance, void>
 	constructor(
-		contentChangeCallback: (inst: ItemInstance)=>void = () => {},
 		max: number = Infinity,
 		maxSlots: number = Infinity
 	) {
@@ -23,14 +23,14 @@ export class Inventory {
 		if (max < 1) throw new Error("max must be a natural number");
 
 		this.itemInstances = [];
-		this.contentChangeCallback = contentChangeCallback;
+		this.contentChangeSignal = new Signal<ItemInstance>();
+		this.signal = this.contentChangeSignal.createInterface(true)
 		this.max = Math.ceil(max);
 		this.maxSlots = Math.ceil(maxSlots);
 	}
 
 	clone(){
 		const newI = new Inventory(
-			this.contentChangeCallback,
 			this.max,
 			this.maxSlots
 		)
@@ -95,26 +95,38 @@ export class Inventory {
 	}
 
 	/**
-	 * Used to add/subtract an item from inventory. Can either take a Item amount:number pair or an ItemInstance. Filters and restrictions apply. amount cannot go into negatives and must be integers.
+	 * Used to add/subtract an item from inventory.
+	 * @param item Item instance to be added to inventory
+	 * @param dryRun If true then no item will be added but you will still get the success value
+	 * @returns success
 	 */
-	changeItem(item: ItemInstance): boolean {
+	changeItem(item: ItemInstance, dryRun: boolean = false): boolean {
+		const baseAmount = item.amount;
 
-		const itemInstanceSample = item;
-		const baseAmount = itemInstanceSample.amount;
+		if (!Number.isInteger(baseAmount)) return false;
 
-		if (!this.canChange(itemInstanceSample)) return false;
+		const existing = this.findInstance(item);
 
-		// Item successfully changed
-		let itemInstance = this.findInstance(itemInstanceSample);
-		if (!itemInstance) {
-			itemInstance = itemInstanceSample.clone();
-			this.itemInstances.push(itemInstance);
+		if (!existing) {
+			if (this.itemInstances.length + 1 > this.maxSlots) return false;
+			if (baseAmount > this.max) return false;
+
+			if (!dryRun) {
+				this.itemInstances.push(item.clone());
+			}
 		} else {
-			itemInstance.amount += baseAmount;
+			const nextAmount = existing.amount + baseAmount;
+
+			if (nextAmount < 0 || nextAmount > this.max) return false;
+
+			if (!dryRun) {
+				existing.amount = nextAmount;
+				if (existing.amount === 0) {
+					this.itemInstances.splice(this.itemInstances.indexOf(existing), 1);
+				}
+			}
 		}
 
-		if (itemInstance.amount === 0) this.itemInstances.splice(this.itemInstances.indexOf(itemInstance), 1);
-		this.contentChangeCallback(itemInstance);
 		return true;
 	}
 
@@ -132,7 +144,7 @@ export class Inventory {
 	 * Tries to change every item at once. if any item can't be changed then nothing gets changed and it returns false
 	 */
 	changeItems(items: ItemInstance[]): boolean {
-		if (items.every(item => this.canChange(item)) && items.length <= this.maxSlots - this.itemInstances.length) { // This check is not strong enough. Even if every item can be added individually, then that does not mean they can all be added at once
+		if (items.every(item => this.changeItem(item, true))) { // This check is not strong enough. Even if every item can be added individually, then that does not mean they can all be added at once
 			for (const itemInstance of items) {
 				if (!this.changeItem(itemInstance)) throw new Error("Invariant broken: inventory may be unpredictably mutated");
 			}
@@ -159,32 +171,15 @@ export class Inventory {
 	 * Return weather a change is possible without actually changing the content of the inventory
 	 */
 	canChange(item: ItemInstance): boolean {
-		const baseAmount = item.amount;
-		const baseItem = item.item;
-
-		if (!Number.isInteger(baseAmount)) return false;
-
-		if (typeof baseAmount !== 'number' || !Number.isFinite(baseAmount) || Number.isNaN(baseAmount)) return false;
-
-		const existing = this.findInstance(item);
-
-		if (!existing) {
-			if (this.itemInstances.length + 1 > this.maxSlots) return false;
-			if (baseAmount > this.max) return false;
-		} else {
-			if (baseAmount > 0 && existing.amount + baseAmount > this.max) return false;
-			if (baseAmount < 0 && Math.abs(baseAmount) > existing.amount) return false;
-		}
-		return true;
+		// For the sake of clarity
+		return this.changeItem(item, true)
 	}
 
-	/**
-	 * !Deprecated!
-	 */
-	setContentChangeCallback(func: (inst: ItemInstance)=>void = ()=>{}) {
-		if (typeof func !== 'function' && func !== null) throw new Error("func is not a function or null");
-		this.contentChangeCallback = func;
-		return this;
+	capacityFor(item: ItemInstance): number{
+		const existing = this.hasInstance(item)
+		return !existing && this.maxSlots === this.itemInstances.length ?
+		0 :
+		this.max - this.getAmount(item)
 	}
 }
 
@@ -202,6 +197,19 @@ export class ItemInstance {
 
 	static fromItem(item: Item, amount?: number): ItemInstance {
 		return new ItemInstance(item, amount ?? 1)
+	}
+
+	static squash(items: ItemInstance[]){
+		const squashed = new Map<string, ItemInstance>()
+		for (const inst of items) {
+			const f = squashed.get(inst.item.id)
+			if (f) {
+				f.amount += inst.amount
+			} else {
+				squashed.set(inst.item.id, ItemInstance.from(inst))
+			}
+		}
+		return squashed.values().toArray()
 	}
 
 	readonly item: Item
@@ -236,13 +244,17 @@ export class ItemInstance {
 
 export class MachineInstance {
 	readonly machine: Machine
+	private readonly items
+	private readonly recipes
 	private stack: number
 	private energy: number
 	readonly input: Inventory
 	readonly output: Inventory
 	private work: number
-	constructor(machine: Machine, stack: number = 1, energy: number = 0, work: number = 0) {
+	constructor(machine: Machine, items: readonly Item[], recipes: readonly Recipe[], stack: number = 1, energy: number = 0, work: number = 0) {
 		this.machine = machine
+		this.items =   items
+		this.recipes = recipes
 		this.stack =   stack
 		this.energy =  energy
 		this.work =    work
@@ -273,30 +285,30 @@ export class MachineInstance {
 		return this.stack
 	}
 
-	tick(deltaMS: number, recipes: readonly Recipe[], items: readonly Item[]) {
+	tick(deltaMS: number) {
 		const machineObject = this.machine
-		const capableRecipes = recipes.filter(recipe=>machineObject.capabilities.includes(recipe.requiredProcess))
+		const capableRecipes = this.recipes.filter(recipe=>machineObject.capabilities.includes(recipe.requiredProcess))
 
 		const inputInventory = this.input
 		const outputInventory = this.output
 
 		
 		const craft = (amount: number, recipe: Recipe)=>{
-			const maxCraftable = maxCraftableCount(getRecipeInputs(recipe, items), inputInventory)
+			const maxCraftable = maxCraftableCount(getRecipeInputs(recipe, this.items), inputInventory)
 			const multiplier = Math.min(amount, maxCraftable)
-			const itemsUsed = resolveCraftingCosts(recipe, inputInventory, items, {multiply:multiplier})
+			const itemsUsed = resolveCraftingCosts(recipe, inputInventory, this.items, {multiply:multiplier})
 			if (!itemsUsed || !inputInventory.subtractItems(itemsUsed)) {
 				console.warn("Failed to subtract items from input inventory");
 				return 0
 			}
-			if (!outputInventory.changeItems(getRecipeOutputs(recipe, items).map(itemInst=>{itemInst.amount *= multiplier; return itemInst}))) {
+			if (!outputInventory.changeItems(getRecipeOutputs(recipe, this.items).map(itemInst=>{itemInst.amount *= multiplier; return itemInst}))) {
 				console.warn("Failed to add items to output inventory");
 				return 0
 			}
 			return multiplier
 		}
 
-		const workingOn: Recipe[] = capableRecipes.filter(recipe=>Boolean(resolveCraftingCosts(recipe, inputInventory, items)))
+		const workingOn: Recipe[] = capableRecipes.filter(recipe=>Boolean(resolveCraftingCosts(recipe, inputInventory, this.items)))
 		if (workingOn.length === 0) {
 			return 'idle' as const
 		}
@@ -321,7 +333,7 @@ export class MachineInstance {
 			let sum = 0
 			let lowestDemand = Infinity
 			for(const recipe of workingOn){
-				const maxCraftable = maxCraftableCount(getRecipeInputs(recipe, items), inputInventory)
+				const maxCraftable = maxCraftableCount(getRecipeInputs(recipe, this.items), inputInventory)
 				const seconds = recipe.processTimeSeconds
 				sum += maxCraftable * seconds
 				if (maxCraftable > 0 && seconds < lowestDemand) lowestDemand = seconds
@@ -380,7 +392,7 @@ type SignalInterfaceT<P, R> = {
 	clear?: ()=> void
 }
 
-export class Signal<P, R> {
+export class Signal<P = unknown, R = void> {
 	private listeners = new Set<(param: P) => R>()
 	private onceListener = new Set<(param: P) => R>()
 
