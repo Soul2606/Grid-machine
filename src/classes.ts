@@ -48,6 +48,28 @@ export class Inventory {
 		return this.itemInstances.find(entry => entry.isEqual(item));
 	}
 
+	/**
+	 * Try to change content, only amount and max filter apply, does not use shared inventories
+	 */
+	private changeItemDirect(item: ItemInstance, amount: number): boolean {
+		const existing = this.findInstance(item);
+
+		if (!existing) {
+			if (this.itemInstances.length + 1 > this.maxSlots) return false;
+			if (amount > this.max) return false;
+			this.itemInstances.push(item.clone());
+		} else {
+			const nextAmount = existing.amount + amount;
+			if (nextAmount < 0 || nextAmount > this.max) return false;
+			existing.amount = nextAmount;
+			if (existing.amount === 0) {
+				this.itemInstances.splice(this.itemInstances.indexOf(existing), 1);
+			}
+		}
+		this.contentChangeSignal.send(this.getReflection(item))
+		return true;
+	}
+
 	private shareAllowed(){
 		return this.max === Infinity && this.maxSlots === Infinity
 	}
@@ -118,8 +140,7 @@ export class Inventory {
 	 * @returns success
 	 */
 	changeItem(item: ItemInstance, amount: number, dryRun: boolean = false): boolean {
-		const baseAmount = amount;
-		if (!Number.isInteger(baseAmount)) return false;
+		if (!Number.isInteger(amount)) return false;
 		if (this.shareAllowed() && amount < 0 && this.shared.length > 0) {
 			const toRemove = -amount;
 
@@ -154,44 +175,18 @@ export class Inventory {
 			if (!dryRun) {
 				// Apply local
 				if (takeLocal > 0 && localInst) {
-					localInst.amount -= takeLocal;
-					if (localInst.amount === 0) {
-						this.itemInstances.splice(this.itemInstances.indexOf(localInst), 1);
-					}
+					if (!this.changeItemDirect(item, -takeLocal)) throw new Error("Invariant broke");
 				}
 
 				// Apply shared
 				for (const plan of sharedPlans) {
-					plan.inv.subtractItem(item, plan.take)
+					if (!plan.inv.subtractItem(item, plan.take)) throw new Error("Invariant broke");
 				}
-				this.contentChangeSignal.send(this.getReflection(item))
 			}
 
 			return true;
 		}
-		const existing = this.findInstance(item);
-
-		if (!existing) {
-			if (this.itemInstances.length + 1 > this.maxSlots) return false;
-			if (baseAmount > this.max) return false;
-
-			if (!dryRun) {
-				this.itemInstances.push(item.clone());
-			}
-		} else {
-			const nextAmount = existing.amount + baseAmount;
-
-			if (nextAmount < 0 || nextAmount > this.max) return false;
-
-			if (!dryRun) {
-				existing.amount = nextAmount;
-				if (existing.amount === 0) {
-					this.itemInstances.splice(this.itemInstances.indexOf(existing), 1);
-				}
-			}
-		}
-		if (!dryRun) this.contentChangeSignal.send(this.getReflection(item))
-		return true;
+		return this.changeItemDirect(item, amount)
 	}
 
 	addItem(item: ItemInstance, amount: number): boolean {
