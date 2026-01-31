@@ -74,60 +74,9 @@ export class Inventory {
 		return this.max === Infinity && this.maxSlots === Infinity
 	}
 
-	clone(){
-		const newI = new Inventory(
-			this.max,
-			this.maxSlots
-		)
-		if (!newI.addItems(this.getAllItemInstances())) console.warn('cannot clone item contents')
-		return newI
-	}
+	// ====== Execution ======
 
-	/**
-	 * Copies and overwrites content of provided inventory from this inventory
-	 */
-	copyContent(inv: Inventory) {
-		inv.itemInstances = Array.from(this.itemInstances)
-		return inv;
-	}
-
-	getLength() {
-		return this.itemInstances.length
-	}
-
-	getMax() {
-		return this.max;
-	}
-
-	getMaxSlots() {
-		return this.maxSlots;
-	}
-
-	hasInstance(item: ItemInstance) {
-		return this.getReflection(item).amount > 0
-	}
-
-	/**
-	 * Returns an item based on content in this and shared inventories, does not return direct reference
-	 */
-	getReflection(item: ItemInstance): ItemInstance {
-		const instance = this.getAllItemInstances().find(v=>v.isEqual(item));
-		if (instance) return instance.clone();
-		return new ItemInstance(item.item, 0);
-	}
-
-	getAmount(item: ItemInstance): number {
-		return this.getReflection(item).amount
-	}
-
-	/**
-	 * Returns item instances based on content in this and shared inventories, does not return direct reference
-	 */
-	getAllItemInstances(): ItemInstance[] {
-		return ItemInstance.squash(this.itemInstances.concat(...this.shared.flatMap(inv=>inv.itemInstances)));
-	}
-
-	clear(){
+		clear(){
 		this.itemInstances = []
 		return this
 	}
@@ -224,6 +173,44 @@ export class Inventory {
 		return this.changeItems(items.map(v => new ItemInstance(v.item, -v.amount, v.metadata)));
 	}
 
+	// ====== Queries ======
+
+	getLength() {
+		return this.itemInstances.length
+	}
+
+	getMax() {
+		return this.max;
+	}
+
+	getMaxSlots() {
+		return this.maxSlots;
+	}
+
+	hasInstance(item: ItemInstance) {
+		return this.getReflection(item).amount > 0
+	}
+
+	/**
+	 * Returns an item based on content in this and shared inventories, does not return direct reference
+	 */
+	getReflection(item: ItemInstance): ItemInstance {
+		const instance = this.getAllItemInstances().find(v=>v.isEqual(item));
+		if (instance) return instance.clone();
+		return new ItemInstance(item.item, 0);
+	}
+
+	getAmount(item: ItemInstance): number {
+		return this.getReflection(item).amount
+	}
+
+	/**
+	 * Returns item instances based on content in this and shared inventories, does not return direct reference
+	 */
+	getAllItemInstances(): ItemInstance[] {
+		return ItemInstance.squash(this.itemInstances.concat(...this.shared.flatMap(inv=>inv.itemInstances)));
+	}
+
 	/**
 	 * Return weather a change is possible without actually changing the content of the inventory
 	 */
@@ -237,6 +224,24 @@ export class Inventory {
 		return !existing && this.maxSlots === this.itemInstances.length ?
 		0 :
 		this.max - this.getAmount(item)
+	}
+
+
+	clone(){
+		const newI = new Inventory(
+			this.max,
+			this.maxSlots
+		)
+		if (!newI.addItems(this.getAllItemInstances())) console.warn('cannot clone item contents')
+		return newI
+	}
+
+	/**
+	 * Copies and overwrites content of provided inventory from this inventory
+	 */
+	copyContent(inv: Inventory) {
+		inv.itemInstances = Array.from(this.itemInstances)
+		return inv;
 	}
 }
 
