@@ -5,102 +5,79 @@ import type { Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Rec
 
 
 /**
- * Class for managing data of item instances. inventory can be constructed and configured before compilation. Do not try to modify or access item instances before compilation.
+ * Class for managing data of item instances. inventory can be constructed and configured before compilation.
  */
 export class Inventory {
-	#itemInstances: ItemInstance[];
-	#contentChangeCallback: (inst: ItemInstance)=>void;
-
-	// Cannot be changed after construction
-	#max: number;
-	#maxSlots: number;
-	#itemsFilter: Item[];
-	#tagsFilter: string[];
+	private itemInstances: ItemInstance[];
+	private contentChangeCallback: (inst: ItemInstance)=>void;
+	private readonly max: number;      // Max for each item, not amount in total
+	private readonly maxSlots: number; // Max amount of different items
 	constructor(
 		contentChangeCallback: (inst: ItemInstance)=>void = () => {},
 		max: number = Infinity,
-		itemsFilter: Item[] = [],
-		tagsFilter: string[] = [],
 		maxSlots: number = Infinity
 	) {
 		if (typeof max !== 'number') throw new Error("max must be a number");
 		if (typeof maxSlots !== 'number') throw new Error("maxSlots must be a number");
 		if (Number.isNaN(max)) throw new Error("max must be a valid number");
 		if (max < 1) throw new Error("max must be a natural number");
-		if (!Array.isArray(itemsFilter)) throw new Error("itemsFilter must be an Array");
-		if (!Array.isArray(tagsFilter)) throw new Error("tagsFilter must be an Array");
 
-		this.#itemInstances = [];
-		this.#contentChangeCallback = contentChangeCallback;
-		this.#max = Math.ceil(max);
-		this.#maxSlots = Math.ceil(maxSlots);
-		this.#itemsFilter = Array.from(itemsFilter);
-		this.#tagsFilter = Array.from(tagsFilter);
+		this.itemInstances = [];
+		this.contentChangeCallback = contentChangeCallback;
+		this.max = Math.ceil(max);
+		this.maxSlots = Math.ceil(maxSlots);
 	}
 
 	clone(){
 		const newI = new Inventory(
-			this.#contentChangeCallback,
-			this.#max,
-			Array.from(this.#itemsFilter),
-			Array.from(this.#tagsFilter),
-			this.#maxSlots
+			this.contentChangeCallback,
+			this.max,
+			this.maxSlots
 		)
 		if (!newI.addItems(this.getAllItemInstances())) console.warn('cannot clone item contents')
 		return newI
 	}
 
-	copy(
-		contentChangeCallback: (inst: ItemInstance)=>void = () => {},
-		max: number = Infinity,
-		itemsFilter: Item[] = [],
-		tagsFilter: string[] = [],
-		maxSlots: number = Infinity
-	) {
-		const inventory = new Inventory(contentChangeCallback, max, itemsFilter, tagsFilter, maxSlots);
-		inventory.addItems(this.getAllItemInstances());
-		return inventory;
+	/**
+	 * Copies and overwrites content of provided inventory from this inventory
+	 */
+	copyContent(inv: Inventory) {
+		inv.itemInstances = Array.from(this.itemInstances)
+		return inv;
 	}
 
 	getLength() {
-		return this.#itemInstances.length
+		return this.itemInstances.length
 	}
 
 	getMax() {
-		return this.#max;
+		return this.max;
 	}
 
 	getMaxSlots() {
-		return this.#maxSlots;
-	}
-
-	getContentChangeCallback(){
-		return this.#contentChangeCallback
+		return this.maxSlots;
 	}
 
 	hasInstance(item: ItemInstance) {
-		const entry = this.#getInstance(item);
+		const entry = this.findInstance(item);
 		if (entry) {
 			return entry.amount > 0;
 		}
 		return false;
 	}
 
-	#getInstance(item: ItemInstance): ItemInstance | undefined {
-		if (item instanceof ItemInstance) {
-			return this.#itemInstances.find(entry => entry.isEqual(item));
-		}
-		throw new Error("item is not Item or ItemInstance");
+	private findInstance(item: ItemInstance): ItemInstance | undefined {
+		return this.itemInstances.find(entry => entry.isEqual(item));
 	}
 
 	getInstance(item: ItemInstance): ItemInstance {
-		const instance = this.#getInstance(item);
+		const instance = this.findInstance(item);
 		if (instance) return instance.clone();
-		return new ItemInstance(item instanceof ItemInstance ? item.item : item, 0);
+		return new ItemInstance(item.item, 0);
 	}
 
 	getAmount(item: ItemInstance): number {
-		const inventoryEntry = this.#getInstance(item);
+		const inventoryEntry = this.findInstance(item);
 		if (inventoryEntry) {
 			return inventoryEntry.amount;
 		} else {
@@ -109,11 +86,11 @@ export class Inventory {
 	}
 
 	getAllItemInstances(): ItemInstance[] {
-		return this.#itemInstances.map(instance => instance.clone());
+		return this.itemInstances.map(instance => instance.clone());
 	}
 
 	clear(){
-		this.#itemInstances = []
+		this.itemInstances = []
 		return this
 	}
 
@@ -128,16 +105,16 @@ export class Inventory {
 		if (!this.canChange(itemInstanceSample)) return false;
 
 		// Item successfully changed
-		let itemInstance = this.#getInstance(itemInstanceSample);
+		let itemInstance = this.findInstance(itemInstanceSample);
 		if (!itemInstance) {
 			itemInstance = itemInstanceSample.clone();
-			this.#itemInstances.push(itemInstance);
+			this.itemInstances.push(itemInstance);
 		} else {
 			itemInstance.amount += baseAmount;
 		}
 
-		if (itemInstance.amount === 0) this.#itemInstances.splice(this.#itemInstances.indexOf(itemInstance), 1);
-		this.#contentChangeCallback(itemInstance);
+		if (itemInstance.amount === 0) this.itemInstances.splice(this.itemInstances.indexOf(itemInstance), 1);
+		this.contentChangeCallback(itemInstance);
 		return true;
 	}
 
@@ -155,7 +132,7 @@ export class Inventory {
 	 * Tries to change every item at once. if any item can't be changed then nothing gets changed and it returns false
 	 */
 	changeItems(items: ItemInstance[]): boolean {
-		if (items.every(item => this.canChange(item))) {
+		if (items.every(item => this.canChange(item)) && items.length <= this.maxSlots - this.itemInstances.length) { // This check is not strong enough. Even if every item can be added individually, then that does not mean they can all be added at once
 			for (const itemInstance of items) {
 				if (!this.changeItem(itemInstance)) throw new Error("Invariant broken: inventory may be unpredictably mutated");
 			}
@@ -189,24 +166,24 @@ export class Inventory {
 
 		if (typeof baseAmount !== 'number' || !Number.isFinite(baseAmount) || Number.isNaN(baseAmount)) return false;
 
-		if (this.#itemsFilter.length > 0 && !this.#itemsFilter.includes(baseItem)) return false;
-		if (this.#tagsFilter.length > 0 && !this.#tagsFilter.some(tag => baseItem.tags.includes(tag))) return false;
-
-		const existing = this.#getInstance(item);
+		const existing = this.findInstance(item);
 
 		if (!existing) {
-			if (this.#itemInstances.length + 1 > this.#maxSlots) return false;
-			if (baseAmount > this.#max) return false;
+			if (this.itemInstances.length + 1 > this.maxSlots) return false;
+			if (baseAmount > this.max) return false;
 		} else {
-			if (baseAmount > 0 && existing.amount + baseAmount > this.#max) return false;
+			if (baseAmount > 0 && existing.amount + baseAmount > this.max) return false;
 			if (baseAmount < 0 && Math.abs(baseAmount) > existing.amount) return false;
 		}
 		return true;
 	}
 
+	/**
+	 * !Deprecated!
+	 */
 	setContentChangeCallback(func: (inst: ItemInstance)=>void = ()=>{}) {
 		if (typeof func !== 'function' && func !== null) throw new Error("func is not a function or null");
-		this.#contentChangeCallback = func;
+		this.contentChangeCallback = func;
 		return this;
 	}
 }
@@ -244,9 +221,13 @@ export class ItemInstance {
 		return {id: this.item.id, amount: this.amount, metadata: this.metadata}
 	}
 
-	isEqual(itemInstance: ItemInstance, options = { ignoreAmount: true, ignoreMetadata: false }) {
+	isEqual(itemInstance: ItemInstance) {
 		if (!(itemInstance instanceof ItemInstance)) throw new Error("itemInstance is not an ItemInstance")
-		return (this.item.id === itemInstance.item.id && (options.ignoreMetadata || JSONEquals(this.metadata, itemInstance.metadata)) && (options.ignoreAmount || this.amount === itemInstance.amount))
+		return (
+			this.item.id === itemInstance.item.id
+			&&
+			JSONEquals(this.metadata, itemInstance.metadata)
+		)
 	}
 }
 
@@ -388,5 +369,63 @@ export class MachineInstance {
 		this.energy += power
 		return "success"
 	}
+}
+
+
+
+type SignalInterfaceT<P, R> = {
+	subscribe: (fnc: (param: P) => R)=> () => boolean
+	once: (fnc: (param: P) => R)=> () => boolean
+	unsubscribe: (fnc: (param: P) => R)=> boolean
+	clear?: ()=> void
+}
+
+export class Signal<P, R> {
+	private listeners = new Set<(param: P) => R>()
+	private onceListener = new Set<(param: P) => R>()
+
+	subscribe(fnc: (param: P) => R) {
+		this.listeners.add(fnc)
+		return () => this.listeners.delete(fnc)
+	}
+
+	once(fnc: (param: P) => R) {
+		this.onceListener.add(fnc)
+		return () => this.onceListener.delete(fnc)
+	}
+
+	unsubscribe(fnc: (param: P) => R): boolean {
+		return this.listeners.delete(fnc) || this.onceListener.delete(fnc)
+	}
+
+	clear(){
+		this.listeners.clear()
+		this.onceListener.clear()
+	}
+
+	send(param: P): R[] {
+		const results: R[] = []
+		this.listeners.forEach(f => results.push(f(param)))
+		this.onceListener.forEach(f => results.push(f(param)))
+		this.onceListener.clear()
+		return results
+	}
+
+	createInterface(includeClear: boolean): SignalInterfaceT<P, R> {
+		const self = this
+
+		const api: SignalInterfaceT<P, R> = {
+			subscribe: fnc => self.subscribe(fnc),
+			once: fnc => self.once(fnc),
+			unsubscribe: fnc => self.unsubscribe(fnc),
+		}
+
+		if (includeClear) {
+			api.clear = () => self.clear()
+		}
+
+		return api
+	}
+
 }
 
