@@ -1,4 +1,4 @@
-import { getItemFromId, JSONEquals, energyToNumber, maxCraftableCount, getRecipeInputs, resolveCraftingCosts, getRecipeOutputs, relu } from './functions.js';
+import { getItemFromId, JSONEquals, energyToNumber, maxCraftableCount, getRecipeInputs, resolveCraftingCosts, getRecipeOutputs, relu, distributeIntEvenly } from './functions.js';
 import type { Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe } from './types.js';
 
 
@@ -8,11 +8,22 @@ import type { Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Rec
  * Class for managing data of item instances. inventory can be constructed and configured before compilation.
  */
 export class Inventory {
+
+	static hasInfiniteSharingLoo(inv:Inventory, checked = new Set<Inventory>()): boolean{
+		if (checked.has(inv)) return true
+		checked.add(inv)
+		for (const i of inv.shared) {
+			if (this.hasInfiniteSharingLoo(i, checked)) return true
+		}
+		return false
+	}
+
 	private itemInstances: ItemInstance[]; // !!!!Important!!!! The actual items in the inventory
 	private readonly max: number;          // Max for each item, not amount in total
 	private readonly maxSlots: number;     // Max amount of different items
-	private contentChangeSignal: Signal<ItemInstance>;
+	private readonly contentChangeSignal: Signal<ItemInstance>;
 	readonly signal: SignalInterfaceT<ItemInstance, void>
+	public shared: Inventory[]
 	constructor(
 		max: number = Infinity,
 		maxSlots: number = Infinity
@@ -27,6 +38,18 @@ export class Inventory {
 		this.signal = this.contentChangeSignal.createInterface(true)
 		this.max = Math.ceil(max);
 		this.maxSlots = Math.ceil(maxSlots);
+		this.shared = []
+	}
+
+	/**
+	 * Finds an instance of the item in !ONLY THIS! inventory. Use with caution, this returns direct references!
+	 */
+	private findInstance(item: ItemInstance): ItemInstance | undefined {
+		return this.itemInstances.find(entry => entry.isEqual(item));
+	}
+
+	private shareAllowed(){
+		return this.max === Infinity && this.maxSlots === Infinity
 	}
 
 	clone(){
@@ -59,34 +82,27 @@ export class Inventory {
 	}
 
 	hasInstance(item: ItemInstance) {
-		const entry = this.findInstance(item);
-		if (entry) {
-			return entry.amount > 0;
-		}
-		return false;
+		return this.getReflection(item).amount > 0
 	}
 
-	private findInstance(item: ItemInstance): ItemInstance | undefined {
-		return this.itemInstances.find(entry => entry.isEqual(item));
-	}
-
-	getInstance(item: ItemInstance): ItemInstance {
-		const instance = this.findInstance(item);
+	/**
+	 * Returns an item based on content in this and shared inventories, does not return direct reference
+	 */
+	getReflection(item: ItemInstance): ItemInstance {
+		const instance = this.getAllItemInstances().find(v=>v.isEqual(item));
 		if (instance) return instance.clone();
 		return new ItemInstance(item.item, 0);
 	}
 
 	getAmount(item: ItemInstance): number {
-		const inventoryEntry = this.findInstance(item);
-		if (inventoryEntry) {
-			return inventoryEntry.amount;
-		} else {
-			return 0;
-		}
+		return this.getReflection(item).amount
 	}
 
+	/**
+	 * Returns item instances based on content in this and shared inventories, does not return direct reference
+	 */
 	getAllItemInstances(): ItemInstance[] {
-		return this.itemInstances.map(instance => instance.clone());
+		return ItemInstance.squash(this.itemInstances.concat(...this.shared.flatMap(inv=>inv.itemInstances)));
 	}
 
 	clear(){
@@ -97,14 +113,62 @@ export class Inventory {
 	/**
 	 * Used to add/subtract an item from inventory.
 	 * @param item Item instance to be added to inventory
+	 * @param amount The amount that will change
 	 * @param dryRun If true then no item will be added but you will still get the success value
 	 * @returns success
 	 */
-	changeItem(item: ItemInstance, dryRun: boolean = false): boolean {
-		const baseAmount = item.amount;
-
+	changeItem(item: ItemInstance, amount: number, dryRun: boolean = false): boolean {
+		const baseAmount = amount;
 		if (!Number.isInteger(baseAmount)) return false;
+		if (this.shareAllowed() && amount < 0 && this.shared.length > 0) {
+			const toRemove = -amount;
 
+			// --- Phase 1: compute how much we can remove ---
+			const localInst = this.findInstance(item);
+			const localAvailable = localInst ? localInst.amount : 0;
+
+			let remaining = toRemove;
+
+			const sharedPlans: { inv: Inventory; take: number }[] = [];
+
+			// Take from local first
+			const takeLocal = Math.min(localAvailable, remaining);
+			remaining -= takeLocal;
+
+			// Then evenly from shared inventories
+			if (remaining > 0 && this.shared.length > 0) {
+				const candidates = this.shared.map(inv=>{
+					const inst = inv.findInstance(item)
+					return inst?inst.amount:0
+				})
+
+				const distribution = distributeIntEvenly(remaining, candidates)
+				if (distribution.reduce((p,n)=>p+n,0) < remaining) return false
+				distribution.forEach((take, i)=>{
+					const inv = this.shared[i]!
+					sharedPlans.push({inv, take})
+				})
+			}
+
+			// --- Phase 2: apply mutations ---
+			if (!dryRun) {
+				// Apply local
+				if (takeLocal > 0 && localInst) {
+					localInst.amount -= takeLocal;
+					if (localInst.amount === 0) {
+						this.itemInstances.splice(this.itemInstances.indexOf(localInst), 1);
+					}
+				}
+
+				// Apply shared
+				for (const plan of sharedPlans) {
+					plan.inv.subtractItem(item, plan.take)
+				}
+				this.contentChangeSignal.send(this.getReflection(item))
+			}
+
+			return true;
+		}
 		const existing = this.findInstance(item);
 
 		if (!existing) {
@@ -126,27 +190,25 @@ export class Inventory {
 				}
 			}
 		}
-
+		if (!dryRun) this.contentChangeSignal.send(this.getReflection(item))
 		return true;
 	}
 
-	addItem(item: ItemInstance): boolean {
-		return this.changeItem(item);
+	addItem(item: ItemInstance, amount: number): boolean {
+		return this.changeItem(item, amount);
 	}
 
-	subtractItem(item: ItemInstance): boolean {
-		const cItem = item.clone();
-		cItem.amount *= -1;
-		return this.changeItem(cItem);
+	subtractItem(item: ItemInstance, amount: number): boolean {
+		return this.changeItem(item, -amount);
 	}
 
 	/**
 	 * Tries to change every item at once. if any item can't be changed then nothing gets changed and it returns false
 	 */
 	changeItems(items: ItemInstance[]): boolean {
-		if (items.every(item => this.changeItem(item, true))) { // This check is not strong enough. Even if every item can be added individually, then that does not mean they can all be added at once
+		if (items.every(item => this.changeItem(item, item.amount, true))) { // This check is not strong enough. Even if every item can be added individually, then that does not mean they can all be added at once
 			for (const itemInstance of items) {
-				if (!this.changeItem(itemInstance)) throw new Error("Invariant broken: inventory may be unpredictably mutated");
+				if (!this.changeItem(itemInstance, itemInstance.amount)) throw new Error("Invariant broken: inventory may be unpredictably mutated");
 			}
 			return true;
 		}
@@ -170,9 +232,9 @@ export class Inventory {
 	/**
 	 * Return weather a change is possible without actually changing the content of the inventory
 	 */
-	canChange(item: ItemInstance): boolean {
+	canChange(item: ItemInstance, amount: number): boolean {
 		// For the sake of clarity
-		return this.changeItem(item, true)
+		return this.changeItem(item, amount, true)
 	}
 
 	capacityFor(item: ItemInstance): number{
@@ -199,7 +261,10 @@ export class ItemInstance {
 		return new ItemInstance(item, amount ?? 1)
 	}
 
-	static squash(items: ItemInstance[]){
+	/**
+	 * Does not mutate provided values
+	 */
+	static squash(items: readonly ItemInstance[]){
 		const squashed = new Map<string, ItemInstance>()
 		for (const inst of items) {
 			const f = squashed.get(inst.item.id)
@@ -243,14 +308,17 @@ export class ItemInstance {
 
 
 export class MachineInstance {
+	//Public
 	readonly machine: Machine
+	readonly input: Inventory
+	readonly output: Inventory
+	//Private
 	private readonly items
 	private readonly recipes
 	private stack: number
 	private energy: number
-	readonly input: Inventory
-	readonly output: Inventory
 	private work: number
+	private readonly capableRecipes: Recipe[]
 	constructor(machine: Machine, items: readonly Item[], recipes: readonly Recipe[], stack: number = 1, energy: number = 0, work: number = 0) {
 		this.machine = machine
 		this.items =   items
@@ -260,6 +328,7 @@ export class MachineInstance {
 		this.work =    work
 		this.input =   new Inventory()
 		this.output =  new Inventory()
+		this.capableRecipes = this.recipes.filter(recipe=>this.machine.capabilities.includes(recipe.requiredProcess))
 	}
 
 	/**Returns a serialized snapshot of the state of a machine instance */
@@ -286,39 +355,37 @@ export class MachineInstance {
 	}
 
 	tick(deltaMS: number) {
-		const machineObject = this.machine
-		const capableRecipes = this.recipes.filter(recipe=>machineObject.capabilities.includes(recipe.requiredProcess))
-
-		const inputInventory = this.input
-		const outputInventory = this.output
+		const machine = this.machine
+		const input = this.input
+		const output = this.output
 
 		
 		const craft = (amount: number, recipe: Recipe)=>{
-			const maxCraftable = maxCraftableCount(getRecipeInputs(recipe, this.items), inputInventory)
+			const maxCraftable = maxCraftableCount(getRecipeInputs(recipe, this.items), input)
 			const multiplier = Math.min(amount, maxCraftable)
-			const itemsUsed = resolveCraftingCosts(recipe, inputInventory, this.items, {multiply:multiplier})
-			if (!itemsUsed || !inputInventory.subtractItems(itemsUsed)) {
+			const itemsUsed = resolveCraftingCosts(recipe, input, this.items, {multiply:multiplier})
+			if (!itemsUsed || !input.subtractItems(itemsUsed)) {
 				console.warn("Failed to subtract items from input inventory");
 				return 0
 			}
-			if (!outputInventory.changeItems(getRecipeOutputs(recipe, this.items).map(itemInst=>{itemInst.amount *= multiplier; return itemInst}))) {
+			if (!output.changeItems(getRecipeOutputs(recipe, this.items).map(itemInst=>{itemInst.amount *= multiplier; return itemInst}))) {
 				console.warn("Failed to add items to output inventory");
 				return 0
 			}
 			return multiplier
 		}
 
-		const workingOn: Recipe[] = capableRecipes.filter(recipe=>Boolean(resolveCraftingCosts(recipe, inputInventory, this.items)))
+		const workingOn: Recipe[] = this.capableRecipes.filter(recipe=>Boolean(resolveCraftingCosts(recipe, input, this.items)))
 		if (workingOn.length === 0) {
 			return 'idle' as const
 		}
 		workingOn.sort((a,b)=>a.processTimeSeconds - b.processTimeSeconds)
 	
 		const energyPerWork: number = (()=>{
-			return machineObject.fuelNeeds ?
-			energyToNumber(machineObject.fuelNeeds.energy) :
-			machineObject.energyNeeds ?
-			energyToNumber(machineObject.energyNeeds.energy) * machineObject.energyNeeds.voltageTier :
+			return machine.fuelNeeds ?
+			energyToNumber(machine.fuelNeeds.energy) :
+			machine.energyNeeds ?
+			energyToNumber(machine.energyNeeds.energy) * machine.energyNeeds.voltageTier :
 			0
 		})()
 
@@ -333,7 +400,7 @@ export class MachineInstance {
 			let sum = 0
 			let lowestDemand = Infinity
 			for(const recipe of workingOn){
-				const maxCraftable = maxCraftableCount(getRecipeInputs(recipe, this.items), inputInventory)
+				const maxCraftable = maxCraftableCount(getRecipeInputs(recipe, this.items), input)
 				const seconds = recipe.processTimeSeconds
 				sum += maxCraftable * seconds
 				if (maxCraftable > 0 && seconds < lowestDemand) lowestDemand = seconds

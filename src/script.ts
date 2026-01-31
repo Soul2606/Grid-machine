@@ -235,7 +235,7 @@ place should only be called when machine placements is canceled or successful, i
 			if (!success) {
 				// Refund
 				if (_inventory) {
-					_itemRefund.forEach(entry=>(_inventory as Inventory).addItem(entry))
+					_itemRefund.forEach(inst=>(_inventory as Inventory).addItem(inst, inst.amount))
 				}
 			}
 			clear()
@@ -590,7 +590,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 			const amount = candidates[index] ? candidates[index] : preset[preset.length-1] as number
 
 			// try to subtract; if subtraction fails, restore UI and exit
-			const removed = inventory.subtractItem(ItemInstance.fromItem(item, amount))
+			const removed = inventory.subtractItem(ItemInstance.fromItem(item), amount)
 			if (!removed) {
 			// optionally show a feedback/error in UI here
 			return
@@ -616,9 +616,9 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 					return
 				}
 				// on failure attempt refund 
-				if (!inventory.addItem(ItemInstance.fromItem(item, amount))) {
+				if (!inventory.addItem(ItemInstance.fromItem(item), amount)) {
 					//If refund fail default to refunding the players inventory
-					if (!mainInventory.addItem(ItemInstance.fromItem(item, amount))) throw new Error("could not add items to mainInventory");
+					if (!mainInventory.addItem(ItemInstance.fromItem(item), amount)) throw new Error("could not add items to mainInventory");
 				}
 
 				resolveTransferCall(success)
@@ -781,7 +781,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 				}
 			}
 			if (resultId === null) continue
-			mainInventory.changeItem(ItemInstance.fromItem(getItemFromId(resultId, items), 1))
+			mainInventory.changeItem(ItemInstance.fromItem(getItemFromId(resultId, items)), 1)
 		}
 	})
 
@@ -814,7 +814,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 				setWarning('')
 			}
 			if (!success) {
-				success = machineInst.input.addItem(incomingItem)
+				success = machineInst.input.addItem(incomingItem, incomingItem.amount)
 			}
 			if (ItemTransferContext.transfer) ItemTransferContext.transfer(success)
 			ItemTransferContext.itemInstance  = null
@@ -826,7 +826,6 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		// Declare setInterval machine logic
 		pubSubTick.add(deltaMS => {
 			const status = machineInst.tick(deltaMS)
-			console.log(status)
 			if (status === "idle") return
 			if (status.lowEnergy) {
 				setWarning("no_fuel")
