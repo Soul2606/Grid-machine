@@ -1,7 +1,7 @@
 [
 	{
 		"id":"smelt_iron",
-		"inputs":[{"id":"raw_iron", "amount":1}],
+		"inputs":[{"id":"hematite", "amount":1}],
 		"outputs":[{"id":"iron_ingot", "amount":1}],
 		"requiredProcess":"smelt",
 		"requiredTier":0,

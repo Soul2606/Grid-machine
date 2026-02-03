@@ -5,20 +5,10 @@
 		"tags":["stone"]
 	},
 	{
-		"id":"coal",
-		"name":"Coal",
+		"id":"raw_coal",
+		"name":"Raw coal",
 		"tags":["primitive_fuel"],
 		"energy":"4MJ"
-	},
-	{
-		"id":"raw_aluminum",
-		"name":"Raw Aluminum",
-		"tags":["raw_ore"]
-	},
-	{
-		"id":"aluminum_ingot",
-		"name":"Aluminum Ingot",
-		"tags":["metal"]
 	},
 	{
 		"id":"water",
@@ -36,13 +26,13 @@
 		"tags":[]
 	},
 	{
-		"id":"raw_iron",
-		"name":"Raw Iron",
-		"tags":["raw_ore"]
+		"id":"hematite",
+		"name":"Hematite",
+		"tags":[]
 	},
 	{
 		"id":"iron_ingot",
-		"name":"Iron Ingot",
+		"name":"Iron ingot",
 		"tags":["metal"]
 	}
 ]

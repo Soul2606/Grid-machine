@@ -1,5 +1,14 @@
 concepts.txt
 
+Crafting from machines:
+- When the user clicks on a machine, pop up a menu showing every item this machine can make from the inventory.
+- The user drags items in to the machine and then a menu shows every item this machine can make from the machine-inventory.
+- The machine has two buttons, one for selecting a recipes and one to craft a bach of the selected recipe.
+
+
+
+
+
 Energy generation
 Some Machines require energy:
 {
