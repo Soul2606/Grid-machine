@@ -1,5 +1,5 @@
 import { getItemFromId, JSONEquals, energyToNumber, maxCraftableCount, getRecipeInputs, resolveCraftingCosts, getRecipeOutputs, relu, distributeIntEvenly } from './functions.js';
-import type { Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe } from './types.js';
+import type { CraftingOptions, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe } from './types.js';
 
 
 
@@ -51,19 +51,21 @@ export class Inventory {
 	/**
 	 * Try to change content, only amount and max filter apply, does not use shared inventories
 	 */
-	private changeItemDirect(item: ItemInstance, amount: number): boolean {
+	private changeItemDirect(item: ItemInstance, amount: number, dryRun = false): boolean {
 		const existing = this.findInstance(item);
 
 		if (!existing) {
 			if (this.itemInstances.length + 1 > this.maxSlots) return false;
 			if (amount > this.max) return false;
-			this.itemInstances.push(item.clone());
+			if (!dryRun) this.itemInstances.push(ItemInstance.from(item, amount));
 		} else {
 			const nextAmount = existing.amount + amount;
 			if (nextAmount < 0 || nextAmount > this.max) return false;
-			existing.amount = nextAmount;
-			if (existing.amount === 0) {
-				this.itemInstances.splice(this.itemInstances.indexOf(existing), 1);
+			if (!dryRun) {
+				existing.amount = nextAmount;
+				if (existing.amount === 0) {
+					this.itemInstances.splice(this.itemInstances.indexOf(existing), 1);
+				}
 			}
 		}
 		this.contentChangeSignal.send(this.getReflection(item))
@@ -135,7 +137,7 @@ export class Inventory {
 
 			return true;
 		}
-		return this.changeItemDirect(item, amount)
+		return this.changeItemDirect(item, amount, dryRun)
 	}
 
 	addItem(item: ItemInstance, amount: number): boolean {
@@ -249,8 +251,8 @@ export class Inventory {
 
 
 export class ItemInstance {
-	static from(inst: ItemInstance):ItemInstance{
-		return new ItemInstance(inst.item, inst.amount, inst.metadata)
+	static from(inst: ItemInstance, amount?: number):ItemInstance{
+		return new ItemInstance(inst.item, amount === undefined ? inst.amount : amount, inst.metadata)
 	}
 
 	static fromRef(ref: ItemInstanceSer, items:Item[]):ItemInstance{
@@ -310,15 +312,14 @@ export class ItemInstance {
 export class MachineInstance {
 	//Public
 	readonly machine: Machine
-	readonly input: Inventory
-	readonly output: Inventory
+	readonly items
+	readonly recipes
+	readonly capableRecipes: Recipe[]
 	//Private
-	private readonly items
-	private readonly recipes
 	private stack: number
 	private energy: number
-	private work: number
-	private readonly capableRecipes: Recipe[]
+	private work: number // 1 work equals 1 second of processing
+	private workingOn: {recipe: Recipe, amount: number, consumed: ItemInstance[]}[] // Queue system, first item is the one thats actually being worked on
 	constructor(machine: Machine, items: readonly Item[], recipes: readonly Recipe[], stack: number = 1, energy: number = 0, work: number = 0) {
 		this.machine = machine
 		this.items =   items
@@ -326,9 +327,12 @@ export class MachineInstance {
 		this.stack =   stack
 		this.energy =  energy
 		this.work =    work
-		this.input =   new Inventory()
-		this.output =  new Inventory()
 		this.capableRecipes = this.recipes.filter(recipe=>this.machine.capabilities.includes(recipe.requiredProcess))
+		this.workingOn = []
+	}
+
+	private craft(multiplier: number, recipe: Recipe) {
+		return getRecipeOutputs(recipe, this.items).map(itemInst=>{itemInst.amount *= multiplier; return itemInst})
 	}
 
 	/**Returns a serialized snapshot of the state of a machine instance */
@@ -341,8 +345,7 @@ export class MachineInstance {
 			stack: this.stack,
 			energy: this.energy,
 			work: this.work,
-			input: this.input.getAllItemInstances().map(serializeItInst),
-			output: this.output.getAllItemInstances().map(serializeItInst),
+			workingOn: this.workingOn
 		}
 	}
 
@@ -354,32 +357,44 @@ export class MachineInstance {
 		return this.stack
 	}
 
+	craftableFromInventory(inv: Inventory, opt?: CraftingOptions){
+		return this.capableRecipes.map(r => {
+			return {
+				amount: maxCraftableCount(getRecipeInputs(r, this.items), inv, opt),
+				recipe: r
+			}
+		}).filter(r=>r.amount>0)
+	}
+
+	addWorkingOn(recipe: Recipe, amount: number, consumed: ItemInstance[]){
+		const existing = this.workingOn.find(wo => wo.recipe.id === recipe.id)
+		if (existing) {
+			existing.amount += amount
+			existing.consumed = ItemInstance.squash(existing.consumed.concat(consumed))
+		} else {
+			this.workingOn.push({recipe, amount, consumed: consumed.map(ItemInstance.from)})
+		}
+		return this
+	}
+
+	refundWorkingOn(recipeId: string): ItemInstance[]|"id_not_found"{
+		const idx = this.workingOn.findIndex(wo => wo.recipe.id === recipeId)
+		if (idx !== -1) {
+			const consumed = this.workingOn[idx]!.consumed
+			this.workingOn.splice(idx, 1)
+			return consumed
+		}
+		return "id_not_found"
+	}
+
 	tick(deltaMS: number) {
 		const machine = this.machine
-		const input = this.input
-		const output = this.output
+		const workingOn = this.workingOn
 
-		
-		const craft = (amount: number, recipe: Recipe)=>{
-			const maxCraftable = maxCraftableCount(getRecipeInputs(recipe, this.items), input)
-			const multiplier = Math.min(amount, maxCraftable)
-			const itemsUsed = resolveCraftingCosts(recipe, input, this.items, {multiply:multiplier})
-			if (!itemsUsed || !input.subtractItems(itemsUsed)) {
-				console.warn("Failed to subtract items from input inventory");
-				return 0
-			}
-			if (!output.changeItems(getRecipeOutputs(recipe, this.items).map(itemInst=>{itemInst.amount *= multiplier; return itemInst}))) {
-				console.warn("Failed to add items to output inventory");
-				return 0
-			}
-			return multiplier
-		}
-
-		const workingOn: Recipe[] = this.capableRecipes.filter(recipe=>Boolean(resolveCraftingCosts(recipe, input, this.items)))
 		if (workingOn.length === 0) {
 			return 'idle' as const
 		}
-		workingOn.sort((a,b)=>a.processTimeSeconds - b.processTimeSeconds)
+		workingOn.sort((a,b)=>a.recipe.processTimeSeconds - b.recipe.processTimeSeconds)
 	
 		const energyPerWork: number = (()=>{
 			return machine.fuelNeeds ?
@@ -393,23 +408,11 @@ export class MachineInstance {
 			deltaMS/1000 * this.stack,
 			Number.isFinite(this.energy/energyPerWork) ? this.energy/energyPerWork : Infinity
 		)
-		const {
-			workDemand,  // total demand, used and unfulfilled
-			lowestDemand,
-		} = (()=>{ // invoked
-			let sum = 0
-			let lowestDemand = Infinity
-			for(const recipe of workingOn){
-				const maxCraftable = maxCraftableCount(getRecipeInputs(recipe, this.items), input)
-				const seconds = recipe.processTimeSeconds
-				sum += maxCraftable * seconds
-				if (maxCraftable > 0 && seconds < lowestDemand) lowestDemand = seconds
-			}
-			return {
-				workDemand: sum,
-				lowestDemand
-			}
-		})()
+		
+		const	workDemand = workingOn.reduce((prev, val)=>prev + val.amount * val.recipe.processTimeSeconds, 0) // total demand, used and unfulfilled
+		const lowestDemand = Math.min(...workingOn.map(w => w.recipe.processTimeSeconds))
+
+		
 
 		const workAdded = Math.min(relu(workDemand - this.work), maxWorkAdded)
 		const lowEnergy = workDemand > this.energy / energyPerWork
@@ -417,18 +420,22 @@ export class MachineInstance {
 		this.energy -= energyNeeded
 		this.work += workAdded
 		
-		for (const recipe of workingOn) {
-			const sec = recipe.processTimeSeconds
-			const amountOfCrafts = Math.floor(this.work / sec)
-			const amountCrafted = craft(amountOfCrafts, recipe)			
-			this.work -= sec * amountCrafted
+		const crafted: ItemInstance[] = []
+		for (const wo of workingOn) {
+			const sec = wo.recipe.processTimeSeconds
+			const amountOfCrafts = Math.min(wo.amount, Math.floor(this.work / sec))
+			crafted.push(...this.craft(amountOfCrafts, wo.recipe))
+			wo.amount -= amountOfCrafts
+			this.work -= sec * amountOfCrafts
 		}
+		this.workingOn = this.workingOn.filter(w => w.amount > 0)
 
 
 		// Return status from simulation, can be used for ui elements
 		return {
 			lowEnergy,
-			progress: this.work / lowestDemand
+			progress: this.work / lowestDemand,
+			crafted
 		}
 	}
 

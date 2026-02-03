@@ -25,8 +25,7 @@ export type MachineInstanceSer = {
 	readonly stack: number
 	readonly energy: number
 	readonly work: number
-	readonly input: readonly ItemInstanceSer[]
-	readonly output: readonly ItemInstanceSer[]
+	readonly workingOn: readonly {amount: number, recipe: Recipe}[]
 }
 
 

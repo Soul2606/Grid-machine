@@ -814,8 +814,27 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 				setWarning('')
 			}
 			if (!success) {
-				success = machineInst.input.addItem(incomingItem, incomingItem.amount)
+				console.log("incoming item:", incomingItem)
+				const ri = machineInst.capableRecipes.map(r=>{ // Find a recipes that has 1 input and that input has at least 1 matching item
+					return {inputs:getRecipeInputs(r, items), recipe:r}
+				}).filter(obj=>
+					obj.inputs.length === 1
+				).find(obj=>
+					obj.inputs[0]!.items.some(i=>i.isEqual(incomingItem)) && obj.inputs[0]!.amount <= incomingItem.amount
+				)
+				console.log("found ri: ", ri)
+				if (ri) {
+					const cost1 = ri.inputs[0]!.amount
+					const batches = Math.floor(incomingItem.amount / cost1)
+					console.log("baches: ", batches)
+					if (batches > 0) {						
+						success = true // success so the main inventory does not get it back
+						machineInst.addWorkingOn(ri.recipe, batches, [ItemInstance.from(incomingItem, cost1 * batches)])
+						mainInventory.addItem(incomingItem, incomingItem.amount - cost1 * batches) // Give back leftovers
+					}
+				}
 			}
+			console.log("success: ", success)
 			if (ItemTransferContext.transfer) ItemTransferContext.transfer(success)
 			ItemTransferContext.itemInstance  = null
 		})
@@ -823,9 +842,10 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		
 		MachineBeingPlaced.place(true)
 
-		// Declare setInterval machine logic
+		// Declare setTimeout machine logic
 		pubSubTick.add(deltaMS => {
 			const status = machineInst.tick(deltaMS)
+			console.log("status: ", status)
 			if (status === "idle") return
 			if (status.lowEnergy) {
 				setWarning("no_fuel")
@@ -837,10 +857,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 			} else {
 				setProgress(100)
 			}
-			if (machineInst.output.getLength() > 0) {				
-				mainInventory.addItems(machineInst.output.getAllItemInstances())
-				machineInst.output.clear()
-			}
+			mainInventory.addItems(status.crafted)
 		})
 	})
 
