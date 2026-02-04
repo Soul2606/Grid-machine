@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="100"
+   height="100"
+   viewBox="0 0 100 100"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   sodipodi:docname="lead-ingot.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <title
+     id="title1">Template Ingot</title>
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="4.1907538"
+     inkscape:cx="65.739963"
+     inkscape:cy="57.268933"
+     inkscape:window-width="1440"
+     inkscape:window-height="828"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     showguides="true" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="display:inline;fill:#383151;fill-opacity:1;stroke:none;stroke-width:5;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="M 5,50 55,10 95,20 V 50 L 45,90 5,80 Z"
+       id="path2"
+       sodipodi:nodetypes="ccccccc"
+       inkscape:label="Body" />
+    <g
+       id="g1"
+       style="display:inline;fill:#5d5177;fill-opacity:1"
+       inkscape:label="Shine">
+      <path
+         style="fill:#5d5177;fill-opacity:1;stroke:none;stroke-width:5;stroke-opacity:1;paint-order:fill markers stroke"
+         d="M 11.625,52 14.25,82.125 24.809112,85.968391 21.95907,53.303535 Z"
+         id="path10"
+         sodipodi:nodetypes="ccccc" />
+      <path
+         style="fill:#5d5177;fill-opacity:1;stroke:none;stroke-width:5;paint-order:fill markers stroke"
+         d="m 76.935958,63.519315 9.800251,-36.050923 7.137657,-4.564818 1.44236,27.489591 z"
+         id="path9"
+         sodipodi:nodetypes="ccccc" />
+      <path
+         style="fill:#5d5177;fill-opacity:1;stroke:none;stroke-width:5;paint-order:fill markers stroke"
+         d="M 66.064191,72.976868 75.864442,36.925945 79.73173,34.217282 69.860382,71.076038 Z"
+         id="path8"
+         sodipodi:nodetypes="ccccc" />
+      <path
+         style="fill:#5d5177;fill-opacity:1;stroke:none;stroke-width:5;paint-order:fill markers stroke"
+         d="M 45.32616,60.55155 63.614128,46.376187 53.726375,83.302132 46.026178,88.552267 Z"
+         id="path1" />
+      <path
+         style="fill:#5d5177;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:butt;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+         d="m 33.04041,26.976814 9.652254,-7.796052 47.271298,5.321115 -9.899748,7.796051 z"
+         id="path7"
+         sodipodi:nodetypes="ccccc" />
+      <path
+         style="fill:#5d5177;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:butt;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+         d="M 11.892176,44.036911 25.120611,33.164157 72.391909,38.485272 58.775745,48.977494 Z"
+         id="path6"
+         sodipodi:nodetypes="ccccc" />
+    </g>
+    <g
+       id="g2"
+       inkscape:label="Edges"
+       style="stroke:#6b6b85;stroke-opacity:1">
+      <path
+         style="fill:#08ff18;fill-opacity:1;stroke:#6b6b85;stroke-width:5;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+         d="M 45,60 V 90"
+         id="path5"
+         sodipodi:nodetypes="cc" />
+      <path
+         style="display:inline;fill:none;stroke:#6b6b85;stroke-width:5.00032;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+         d="M 5,50 45,60 95,20"
+         id="path4"
+         sodipodi:nodetypes="ccc" />
+    </g>
+    <path
+       style="display:inline;fill:none;stroke:#14141d;stroke-width:5;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="M 5,50 55,10 95,20 V 50 L 45,90 5,80 Z"
+       id="path3"
+       sodipodi:nodetypes="ccccccc"
+       inkscape:label="Ouline" />
+  </g>
+  <metadata
+     id="metadata1">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>Template Ingot</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+</svg>

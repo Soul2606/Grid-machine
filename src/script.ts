@@ -1,6 +1,6 @@
 
 import type { Item, Machine, Recipe, Extractor } from './types.js'
-import { clamp, energyToNumber, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, maxCraftableCount, relu, resolveCraftingCosts, walkJson } from './functions.js'
+import { clamp, energyToNumber, fetchData, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, maxCraftableCount, relu, resolveCraftingCosts, walkJson } from './functions.js'
 import { Inventory, ItemInstance, MachineInstance } from './classes.js'
 
 type InfoPanelMethods = {
@@ -384,153 +384,10 @@ document.getElementById('main-window-button')!.addEventListener('click',()=>{
 
 
 
-;(async () => {
-async function fetchJSON(url: string) {
-	return fetch(url).then(response=>{
-		if (!response.ok) {
-			throw new Error("Network response was not ok" + response.statusText);
-			
-		}
-		return response.json()
-	})
-}
-function compile(items:unknown, machines:unknown, recipes:unknown, extraction:unknown) {
-
-	if (!Array.isArray(items)) throw new Error("error");
-	if (!Array.isArray(machines)) throw new Error("error");
-	if (!Array.isArray(recipes)) throw new Error("error");
-	if (!Array.isArray(extraction)) throw new Error("error");
-	
-
-	const limitKeysTo = (obj:any, keys:string[])=>{
-		if (Object.keys(obj).some(key=>!keys.includes(key))) throw new Error(`${obj.id} has invalid keys, object can only have these keys:${keys}`);	
-	}
-
-	const includeKeys = (obj:any, keys:string[])=>{
-		if (keys.some(key=>!Object.keys(obj).includes(key))) throw new Error(`${obj.id} has invalid keys, object must include these keys:${keys}`);	
-	}
-
-	items.forEach(item => {
-		includeKeys(item,['id', 'name', 'tags'])
-	})
-
-	machines.forEach(item => {
-		includeKeys(item,['id', 'name', 'capabilities', 'tier', 'requiresConfiguration'])
-	})
-	machines.forEach(item => {
-		limitKeysTo(item,['id', 'name', 'capabilities', 'tier', 'requiresConfiguration', 'energyNeeds', 'fuelNeeds'])
-	})
-
-	recipes.forEach(item => {
-		limitKeysTo(item,['id', 'inputs', 'outputs', 'requiredProcess', 'requiredTier', 'processTimeSeconds'])
-	})
-	
-	const checkType = (obj:object, type:string)=>{
-		if (type === 'array'){
-			if (!Array.isArray(obj)) throw new Error(`${obj} is not of an array`);
-		}
-		else if (typeof obj !== type) throw new Error(`${obj} is not of type ${type}`);
-	}
-
-	for (const item of items) {
-		checkType(item.id,'string')
-		checkType(item.name,'string')
-		checkType(item.tags,'array')
-		item.tags.forEach((tag:any)=>checkType(tag,'string'))
-	}
-	
-	for (const machine of machines) {
-		checkType(machine.id,'string')
-		checkType(machine.name,'string')
-		checkType(machine.tier,'number')
-		checkType(machine.requiresConfiguration,'boolean')
-		checkType(machine.capabilities,'array')
-		machine.capabilities.forEach((item:any)=>checkType(item,'string'))
-		if (machine.fuelNeeds) {
-			checkType(machine.fuelNeeds.tags, 'array')
-			machine.fuelNeeds.tags.forEach((v:any)=>checkType(v,'string'))
-			checkType(machine.fuelNeeds.energy,'string')
-		}
-		if (machine.energyNeeds) {
-			checkType(machine.energyNeeds.voltageTier, 'number')
-			checkType(machine.energyNeeds.energy,'string')
-		}
-	}
-
-	for (const recipe of recipes) {
-		checkType(recipe.id,'string')
-		checkType(recipe.requiredProcess,'string')
-		checkType(recipe.requiredTier,'number')
-		checkType(recipe.processTimeSeconds,'number')
-		checkType(recipe.inputs,'array')
-		recipe.inputs.forEach((input:any)=>{
-			limitKeysTo(input,['id','tag','amount'])
-			if (input.id) checkType(input.id,'string')
-			if (input.tag) checkType(input.tag,'string')
-			checkType(input.amount,'number')
-		})
-		checkType(recipe.outputs,'array')
-		recipe.outputs.forEach((output:any)=>{
-			limitKeysTo(output,['id','tag','amount'])
-			if (output.id) checkType(output.id,'string')
-			if (output.tag) checkType(output.tag,'string')
-			checkType(output.amount,'number')
-		})
-	}
-	
-
-	const hasDuplicateIds = (array:any[])=>{
-		const previousIds = new Set()
-		const duplicates = new Set()
-		for (const item of array) {
-			if (previousIds.has(item.id)) duplicates.add(item.id)
-			previousIds.add(item.id)
-		}
-		return duplicates.size===0? false : duplicates
-	}
-	{
-		const result = hasDuplicateIds(items.concat(machines))
-		if(result) throw new Error(`Machines and Items has duplicate IDs, ${result}`)
-	}
-	{
-		const result = hasDuplicateIds(recipes)
-		if (result) throw new Error(`Recipes has duplicate IDs, ${result}`);
-	}
-
-	/*Some machines do not need to have their recipe set. All recipes used by those machines must me check to make sure they don't conflict.
-	Recipes conflict if they take the same ingredient and produce different things: (a,b,c)→(a) and (a,b,c)→(b). They also conflict if one is a subset of another: (a)→(c) and (a,b)→(d).
-	The outputs do not matter, only the input, even if they produce the exact same thing as long as the input conflict the entire recipe conflict. Conflict: (a)→(b) and (a)→(b). Don't conflict: (a)→(b) and (b)→(b).*/
-	//Check if setA is a subset of setB
-	const isSubset = (setA:any, setB:any) => [...setA].every(x => setB.has(x));
-
-	for (const machine of machines) {
-		if (machine.requiresConfiguration) continue
-		const relevantRecipes = recipes.filter(recipe=>machine.capabilities.includes(recipe.requiredProcess) && recipe.requiredTier <= machine.tier)
-		const inputIdsSets = relevantRecipes.map(recipe=>new Set(recipe.inputs.map((input:any)=>input.itemId)))
-		for (let i = 0; i < inputIdsSets.length; i++) {
-			for (let j = i + 1; j < inputIdsSets.length; j++) {
-				const setA = inputIdsSets[i];
-				const setB = inputIdsSets[j];
-				if (i === j) continue
-				if (isSubset(setB, setA) || isSubset(setA, setB)) {
-					throw new Error(`Conflicting recipes detected for machine ${machine.name}. Recipe ${relevantRecipes[i].id} and ${relevantRecipes[j].id} have subset/superset inputs`);
-				}
-			}
-		}
-	}
-
-	
-	dataIsCompiled = true
-	return {items, machines, recipes, extraction}
-}
-const items = await fetchJSON('src/game-data/items.json')
-const machines = await fetchJSON('src/game-data/machines.json')
-const recipes = await fetchJSON('src/game-data/recipes.json')
-const extraction = await fetchJSON('src/game-data/extraction.json')
-return compile(items, machines, recipes, extraction)
-})().then(main)
+fetchData().then(main)
 
 function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extraction:Extractor[]}) {
+	dataIsCompiled = true
 
 	items = response.items
 	machines = response.machines
