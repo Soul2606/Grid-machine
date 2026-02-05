@@ -124,4 +124,4 @@ The term Item is a misnomer in this project. Resource is the more accurate term.
 
 Sometimes different function can disagree on the truth of the same state, in that case: Prediction functions are advisory; execution functions are authoritative.
 
-resolveCraftingCosts is a super important function, it is responsible for taking huge amount of data and turn that into a definitive set of items cat can be used to satisfy the provided recipe.
+resolveCraftingCosts is a super important function, it is responsible for taking huge amount of data and turn that into a definitive set of items that can be used to satisfy the provided recipe.
