@@ -126,7 +126,7 @@ export function JSONEquals(obj1:JSONValue, obj2:JSONValue): boolean {
 
 
 
-export function clamp(val: number, min: number, max: number) {
+export function clamp(val: number, min: number = 0, max: number = 1) {
 	const validate = (n: number) => {
 		if (Number.isNaN(n)) throw new Error("type error. value must be a number")
 		if (typeof n !== 'number') throw new Error("type error. value must be a number")
@@ -424,7 +424,7 @@ export async function fetchData() {
 			includeKeys(item, ['id', 'name', 'capabilities', 'tier', 'requiresConfiguration'])
 		})
 		machines.forEach(item => {
-			limitKeysTo(item, ['id', 'name', 'capabilities', 'tier', 'requiresConfiguration', 'energyNeeds', 'fuelNeeds'])
+			limitKeysTo(item, ['id', 'name', 'capabilities', 'tier', 'requiresConfiguration', 'energyNeeds', 'fuelNeeds', "workerNeeds"])
 		})
 
 		recipes.forEach(item => {

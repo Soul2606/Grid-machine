@@ -1,4 +1,4 @@
-import { getItemFromId, JSONEquals, energyToNumber, maxCraftableCount, getRecipeInputs, resolveCraftingCosts, getRecipeOutputs, relu, distributeIntEvenly } from './functions.js';
+import { getItemFromId, JSONEquals, energyToNumber, maxCraftableCount, getRecipeInputs, resolveCraftingCosts, getRecipeOutputs, relu, distributeIntEvenly, clamp } from './functions.js';
 import type { CraftingOptions, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe } from './types.js';
 
 
@@ -317,10 +317,11 @@ export class MachineInstance {
 	readonly capableRecipes: Recipe[]
 	//Private
 	private stack: number
-	private energy: number
-	private work: number // 1 work equals 1 second of processing
+	private energy:  number
+	private workers: number
+	private work: number    // 1 work equals 1 second of processing
 	private workingOn: {recipe: Recipe, amount: number, consumed: ItemInstance[]}[] // Queue system, first item is the one thats actually being worked on
-	constructor(machine: Machine, items: readonly Item[], recipes: readonly Recipe[], stack: number = 1, energy: number = 0, work: number = 0) {
+	constructor(machine: Machine, items: readonly Item[], recipes: readonly Recipe[], stack: number = 1, energy: number = 0, work: number = 0, workers = 0) {
 		this.machine = machine
 		this.items =   items
 		this.recipes = recipes
@@ -329,23 +330,26 @@ export class MachineInstance {
 		this.work =    work
 		this.capableRecipes = this.recipes.filter(recipe=>this.machine.capabilities.includes(recipe.requiredProcess))
 		this.workingOn = []
+		this.workers = workers
 	}
 
 	private craft(multiplier: number, recipe: Recipe) {
 		return getRecipeOutputs(recipe, this.items).map(itemInst=>{itemInst.amount *= multiplier; return itemInst})
 	}
 
-	/**Returns a serialized snapshot of the state of a machine instance */
+	/**Returns a serialized snapshot of the state of a machine instance. */
 	serialize(): MachineInstanceSer{
-		const serializeItInst = (inst: ItemInstance)=>{
-			return inst.serialize()
-		}
 		return {
 			machineId: this.machine.id,
 			stack: this.stack,
 			energy: this.energy,
+			workers: this.workers,
 			work: this.work,
-			workingOn: this.workingOn
+			workingOn: this.workingOn.map(wo => ({
+				amount: wo.amount,
+				recipeId: wo.recipe.id,
+				consumed: wo.consumed.map(c=>c.serialize())
+			}))
 		}
 	}
 
@@ -387,9 +391,31 @@ export class MachineInstance {
 		return "id_not_found"
 	}
 
-	tick(deltaMS: number) {
+	/**Returns a multiplier based on workers per need. Accounts for if workers are not being needed. */
+	workerMultiplier() {
+		const workerNeeds = this.machine.workerNeeds
+		if (!workerNeeds) return 1
+		if (this.stack === 0) return 0
+		const minimum = workerNeeds.minimum
+		if (minimum === 0) return 1
+		const minimumTotal = workerNeeds.minimum * this.stack
+		if (this.workers < minimum) return 0 // Not enough for even a single machine
+		const ratio = this.workers / minimumTotal
+		const satisfy = clamp(ratio)     //Base speed based on ratio
+		const overflow = ratio - satisfy //Overflow gives bonus speed at half efficiency
+		return satisfy + overflow / 2
+	}
+
+	/**
+	 * ====The main simulation function==== 
+	 * @param deltaMS delta time in milliseconds
+	 * @param manually if true: overwrites needs for workers(if needed)
+	 * @returns status about this simulation tick
+	 */
+	tick(deltaMS: number, manually = false) {
 		const machine = this.machine
 		const workingOn = this.workingOn
+		const energy = this.energy
 
 		if (workingOn.length === 0) {
 			return 'idle' as const
@@ -404,9 +430,10 @@ export class MachineInstance {
 			0
 		})()
 
+		const deltaS = deltaMS/1000
 		const maxWorkAdded = Math.min(
-			deltaMS/1000 * this.stack,
-			Number.isFinite(this.energy/energyPerWork) ? this.energy/energyPerWork : Infinity
+			manually ? deltaS : deltaS * this.stack * this.workerMultiplier(),
+			Number.isFinite(energy/energyPerWork) ? energy/energyPerWork : Infinity
 		)
 		
 		const	workDemand = workingOn.reduce((prev, val)=>prev + val.amount * val.recipe.processTimeSeconds, 0) // total demand, used and unfulfilled
@@ -415,7 +442,7 @@ export class MachineInstance {
 		
 
 		const workAdded = Math.min(relu(workDemand - this.work), maxWorkAdded)
-		const lowEnergy = workDemand > this.energy / energyPerWork
+		const lowEnergy = workDemand > energy / energyPerWork
 		const energyNeeded = workAdded * energyPerWork
 		this.energy -= energyNeeded
 		this.work += workAdded
@@ -442,6 +469,7 @@ export class MachineInstance {
 	addFuel(fuel: ItemInstance):"success" | "incapable" | "incompatible" | "no_energy_in_item"{
 		const fuelNeeds = this.machine.fuelNeeds
 		if (!fuelNeeds) return "incapable"
+		if (this.energy === null) return "incapable"
 		if (!fuelNeeds.tags.some(tag=>fuel.item.tags.includes(tag))) return "incompatible"
 		if (!fuel.item.energy) return "no_energy_in_item"
 		this.energy += energyToNumber(fuel.item.energy) * fuel.amount
@@ -451,9 +479,23 @@ export class MachineInstance {
 	addPower(power: number, voltageTier: number): "success" | "incapable" | "overloaded"{
 		const energyNeeds = this.machine.energyNeeds
 		if (!energyNeeds) return "incapable"
+		if (this.energy === null) return "incapable"
 		if (voltageTier > energyNeeds.voltageTier) return "overloaded"
 		this.energy += power
 		return "success"
+	}
+
+	changeWorker(workers:number){
+		const need = this.machine.workerNeeds
+		if (!need) return "incapable"
+		if (this.workers + workers > need.maximum) return "too_many"
+		if (this.workers + workers < 0) return "too_low"
+		this.workers += workers
+		return "success"
+	}
+
+	getWorkers(){
+		return this.workers
 	}
 }
 

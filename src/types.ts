@@ -24,8 +24,9 @@ export type MachineInstanceSer = {
 	readonly machineId: string
 	readonly stack: number
 	readonly energy: number
+	readonly workers: number
 	readonly work: number
-	readonly workingOn: readonly {amount: number, recipe: Recipe}[]
+	readonly workingOn: readonly {amount: number, recipeId: string, consumed: ItemInstanceSer[]}[]
 }
 
 
@@ -34,6 +35,7 @@ export type Item = {
 	readonly id: string
 	readonly name: string
 	readonly tags: readonly string[]
+	readonly img?: string
 	readonly energy?: string
 }
 
@@ -50,6 +52,10 @@ export type Machine = {
 	readonly energyNeeds?: {
 		readonly voltageTier: number,
 		readonly energy: string
+	}
+	readonly workerNeeds?: {
+		readonly minimum: number,
+		readonly maximum: number
 	}
 }
 

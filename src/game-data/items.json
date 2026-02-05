@@ -2,37 +2,44 @@
 	{
 		"id":"stone",
 		"name":"Stone",
-		"tags":["stone"]
+		"tags":["stone"],
+		"img":"svg/stone.svg"
 	},
 	{
 		"id":"raw_coal",
 		"name":"Raw coal",
 		"tags":["primitive_fuel"],
+		"img":"svg/raw-coal.svg",
 		"energy":"4MJ"
 	},
 	{
 		"id":"water",
 		"name":"Water",
-		"tags":[]
+		"tags":[],
+		"img":"svg/water.svg"
 	},
 	{
 		"id":"hydrogen",
-		"name":"Hydrogen",
-		"tags":[]
+		"name":"Hydrogen gas",
+		"tags":[],
+		"img":"svg/hydrogen-gas.svg"
 	},
 	{
 		"id":"oxygen",
-		"name":"Oxygen",
-		"tags":[]
+		"name":"Oxygen gas",
+		"tags":[],
+		"img":"svg/oxygen-gas.svg"
 	},
 	{
 		"id":"hematite",
 		"name":"Hematite",
-		"tags":[]
+		"tags":[],
+		"img":"svg/hematite.svg"
 	},
 	{
 		"id":"iron_ingot",
 		"name":"Iron ingot",
-		"tags":["metal"]
+		"tags":["metal"],
+		"img":"svg/iron-ingot.svg"
 	}
 ]

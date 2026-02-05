@@ -12,7 +12,7 @@
 	},
 	{
 		"id":"water_pump",
-		"name":"Water Pump",
+		"name":"Water pump",
 		"capabilities":["extract_water"],
 		"tier":0,
 		"requiresConfiguration":false,
@@ -22,25 +22,14 @@
 		}
 	},
 	{
-		"id":"chemical_reactor_1",
-		"name":"Chemical Reactor",
-		"capabilities":["chemical_reactor"],
-		"tier":1,
+		"id":"iron_anvil",
+		"name":"Iron anvil",
+		"capabilities":["anvil"],
+		"tier":0,
 		"requiresConfiguration":true,
-		"energyNeeds":{
-			"voltageTier":1,
-			"energy":"10kJ"
-		}
-	},
-	{
-		"id":"electrolyses_chamber_1",
-		"name":"Electrolyses Chamber",
-		"capabilities":["electrolyze"],
-		"tier":1,
-		"requiresConfiguration":false,
-		"energyNeeds":{
-			"voltageTier":1,
-			"energy":"10kJ"
+		"workerNeeds":{
+			"minimum":1,
+			"maximum":1
 		}
 	}
 ]

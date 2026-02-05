@@ -56,9 +56,8 @@ main{
 }
 
 .side-menu-grid{
-    display: grid;
-    height: min-content;
-    grid-template-columns: repeat(auto-fit,80px);
+    display: flex;
+    flex-wrap: wrap;
 }
 
 .side-menu-width-button{
@@ -92,10 +91,15 @@ main{
 
 .inventory-grid-cell{
     background-color: rgb(99, 103, 114);
+    background-size: cover;
     margin: 2px;
     text-align: center;
-    aspect-ratio: 1/1;
+    width: 80px;
+    height: 80px;
     user-select: none;
+    border-width: 2px; 
+    border-style: inset;
+    border-color: white;
 }
 
 .grid-cell{

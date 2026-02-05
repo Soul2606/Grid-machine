@@ -1,7 +1,7 @@
 
 import type { Item, Machine, Recipe, Extractor } from './types.js'
 import { clamp, energyToNumber, fetchData, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, maxCraftableCount, relu, resolveCraftingCosts, walkJson } from './functions.js'
-import { Inventory, ItemInstance, MachineInstance } from './classes.js'
+import { Inventory, ItemInstance, MachineInstance, Signal } from './classes.js'
 
 type InfoPanelMethods = {
 	show: () => void
@@ -253,15 +253,41 @@ place should only be called when machine placements is canceled or successful, i
 
 
 
-/* This variable is used to store the context for transferring items and functions to be called upon transfer.
-How do i even type this? */
+
+/**
+ * Stores context for an in-progress item transfer.
+ *
+ * - itemInstance:
+ *   The item being transferred.
+ *   Should be expected to be null when the sender receives a transfer callback.
+ *
+ * - transfer:
+ *   Created by the sender of the transfer.
+ *   Called by the recipient with a success status.
+ *
+ *   IMPORTANT:
+ *   The transfer function is responsible for refunding the sender
+ *   if the transfer fails.
+ *
+ *   !!! REFUNDS MUST BE HANDLED BY THE SENDER, NOT THE RECIPIENT !!!
+ */
+
 const ItemTransferContext: {
 	itemInstance: ItemInstance | null
 	transfer: ((success: boolean) => void) | null
 } = {
 	itemInstance:null,
-	transfer:null // function (success)=>{}
+	transfer:null
 }
+
+window.addEventListener("keydown", e => {
+	console.log("keydown: ", e.key)
+	if (e.key !== "Escape") return
+	if (ItemTransferContext.transfer) ItemTransferContext.transfer(false)
+	ItemTransferContext.itemInstance = null
+	ItemTransferContext.transfer = null
+})
+
 
 
 
@@ -340,16 +366,20 @@ const machinesUnlocked = new Set(['stone_furnace'])
 
 
 
-const pubSubTick = new Set<(deltaMS:number)=>void>()
-{
-	let now = Date.now()
-	setInterval(()=>{
-		//Milliseconds
-		const deltaMS = Date.now() - now
-		now = Date.now()
-		pubSubTick.forEach((f:Function)=>{f(deltaMS)})
-	},50)
-}
+const pubSubTick = (()=>{
+	const signal = new Signal<number>()
+	let now = 0
+	const loop = ()=>{
+		const t = Date.now()
+		const deltaMS = t - now
+		now = t
+		signal.send(deltaMS)
+		setTimeout(loop, 100) // Reduced lag
+	}
+	now = Date.now()
+	loop()
+	return signal.createInterface(false)
+})()
 
 
 
@@ -402,11 +432,11 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 	/**
 	 * When this function is called it will show the slider and set up events for items transfer of a specified item from the provided inventory into the transfer context
 	 * from there you can resolve the transfer from anywhere in the script since transfer context is a global variable. 
-	 * @param {Event} event event listener event 
-	 * @param {Inventory} inventory inventory class to transfer from
-	 * @param {Item} item the item "class" to transfer
-	 * @param {Function()} initiateTransferCall optional functions to add extra events upon transfer to transfer context
-	 * @param {Function(success:Boolean)} resolveTransferCall optional functions to add extra events upon transfer context resolution
+	 * @param event event listener event 
+	 * @param inventory inventory class to transfer from
+	 * @param item the item "class" to transfer
+	 * @param initiateTransferCall optional functions to add extra events upon transfer to transfer context
+	 * @param resolveTransferCall optional functions to add extra events upon transfer context resolution
 	 * @returns void
 	 */
 	function itemTransferEvent(event:MouseEvent, inventory:Inventory, item:Item, initiateTransferCall:Function=()=>{}, resolveTransferCall:((success:boolean)=>void)=()=>{}): void {
@@ -494,6 +524,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		cell.className = 'inventory-grid-cell'
 		cell.textContent = item.name
 		cell.style.display = 'none'
+		if (item.img) cell.style.backgroundImage = `url(${item.img})`
 
 		const number = document.createElement('p')
 		number.textContent = '0'
@@ -698,11 +729,10 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		document.getElementById('machine-line')!.appendChild(machineCell)
 		
 		MachineBeingPlaced.place(true)
-
+		
 		// Declare setTimeout machine logic
-		pubSubTick.add(deltaMS => {
+		const unsubscribe = pubSubTick.subscribe(deltaMS => {
 			const status = machineInst.tick(deltaMS)
-			console.log("status: ", status)
 			if (status === "idle") return
 			if (status.lowEnergy) {
 				setWarning("no_fuel")
