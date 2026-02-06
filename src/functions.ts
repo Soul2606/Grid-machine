@@ -421,10 +421,10 @@ export async function fetchData() {
 		})
 
 		machines.forEach(item => {
-			includeKeys(item, ['id', 'name', 'capabilities', 'tier', 'requiresConfiguration'])
+			includeKeys(item, ['id', 'name', 'capabilities', 'tier'])
 		})
 		machines.forEach(item => {
-			limitKeysTo(item, ['id', 'name', 'capabilities', 'tier', 'requiresConfiguration', 'energyNeeds', 'fuelNeeds', "workerNeeds"])
+			limitKeysTo(item, ['id', 'name', 'capabilities', 'tier', "img", 'energyNeeds', 'fuelNeeds', "workerNeeds"])
 		})
 
 		recipes.forEach(item => {
@@ -442,6 +442,7 @@ export async function fetchData() {
 			checkType(item.id, 'string')
 			checkType(item.name, 'string')
 			checkType(item.tags, 'array')
+			if (item.img) checkType(item.img, "string")
 			item.tags.forEach((tag: any) => checkType(tag, 'string'))
 		}
 
@@ -449,9 +450,9 @@ export async function fetchData() {
 			checkType(machine.id, 'string')
 			checkType(machine.name, 'string')
 			checkType(machine.tier, 'number')
-			checkType(machine.requiresConfiguration, 'boolean')
 			checkType(machine.capabilities, 'array')
 			machine.capabilities.forEach((item: any) => checkType(item, 'string'))
+			if (machine.img) checkType(machine.img, "string")
 			if (machine.fuelNeeds) {
 				checkType(machine.fuelNeeds.tags, 'array')
 				machine.fuelNeeds.tags.forEach((v: any) => checkType(v, 'string'))
@@ -501,28 +502,6 @@ export async function fetchData() {
 		{
 			const result = hasDuplicateIds(recipes)
 			if (result) throw new Error(`Recipes has duplicate IDs, ${result}`)
-		}
-
-		/*Some machines do not need to have their recipe set. All recipes used by those machines must me check to make sure they don't conflict.
-		Recipes conflict if they take the same ingredient and produce different things: (a,b,c)→(a) and (a,b,c)→(b). They also conflict if one is a subset of another: (a)→(c) and (a,b)→(d).
-		The outputs do not matter, only the input, even if they produce the exact same thing as long as the input conflict the entire recipe conflict. Conflict: (a)→(b) and (a)→(b). Don't conflict: (a)→(b) and (b)→(b).*/
-		//Check if setA is a subset of setB
-		const isSubset = (setA: any, setB: any) => [...setA].every(x => setB.has(x))
-
-		for (const machine of machines) {
-			if (machine.requiresConfiguration) continue
-			const relevantRecipes = recipes.filter(recipe => machine.capabilities.includes(recipe.requiredProcess) && recipe.requiredTier <= machine.tier)
-			const inputIdsSets = relevantRecipes.map(recipe => new Set(recipe.inputs.map((input: any) => input.itemId)))
-			for (let i = 0; i < inputIdsSets.length; i++) {
-				for (let j = i + 1; j < inputIdsSets.length; j++) {
-					const setA = inputIdsSets[i]
-					const setB = inputIdsSets[j]
-					if (i === j) continue
-					if (isSubset(setB, setA) || isSubset(setA, setB)) {
-						throw new Error(`Conflicting recipes detected for machine ${machine.name}. Recipe ${relevantRecipes[i].id} and ${relevantRecipes[j].id} have subset/superset inputs`)
-					}
-				}
-			}
 		}
 		return { items, machines, recipes, extraction }
 	}

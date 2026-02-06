@@ -1,6 +1,6 @@
 
 import type { Item, Machine, Recipe, Extractor } from './types.js'
-import { clamp, energyToNumber, fetchData, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, maxCraftableCount, relu, resolveCraftingCosts, walkJson } from './functions.js'
+import { clamp, fetchData, getItemFromId, getRecipeInputs, getRecipesProducing, resolveCraftingCosts } from './functions.js'
 import { Inventory, ItemInstance, MachineInstance, Signal } from './classes.js'
 
 type InfoPanelMethods = {
@@ -30,8 +30,9 @@ type MouseOverlayElements = {
 
 function createMachine(machine: Machine) {
 	const cell = document.createElement('div')
-	cell.className = 'inventory-grid-cell machine'
+	cell.className = 'machine'
 	cell.textContent = machine.name
+	if (machine.img) cell.style.backgroundImage = `url(${machine.img})`
 
 	const stack = document.createElement('p')
 	stack.textContent = String(1)
@@ -205,93 +206,59 @@ const MouseOverlay = new class {
 
 
 
-/*This variable i here so the machine line and other objects where machines can be placed know what machine and cell is involved
-place should only be called when machine placements is canceled or successful, if it is canceled/failed items are automatically refunded*/
-;const MachineBeingPlaced = (()=>{
-	let _machine: null|Machine = null;
-	let _itemRefund: readonly ItemInstance[] = [];
-	let _placeCallback: null|Function = null;
-	let _inventory: null|Inventory = null;// inventory to refund to
-	function clear(){
-		_machine = null;
-		_itemRefund = [];
-		_placeCallback = null;
-		_inventory = null;
-	};
-	const properties = {
-		set(machine: Machine, itemRefund: readonly ItemInstance[], placeCallback: Function, inventory: Inventory){
-			if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory");
-			if (itemRefund.some(instance=>!(instance instanceof ItemInstance))) throw new Error(`itemRefund has non ItemInstance values, itemRefund:${JSON.stringify(itemRefund)}`);
-			_machine = machine;
-			_itemRefund = itemRefund;
-			_placeCallback = placeCallback;
-			_inventory = inventory;
-			return properties;
-		},
 
-		place(success: boolean):void{
-			const results = _placeCallback ? _placeCallback(success) : null
-			if (properties.isEmpty()) return results
-			if (!success) {
-				// Refund
-				if (_inventory) {
-					_itemRefund.forEach(inst=>(_inventory as Inventory).addItem(inst, inst.amount))
-				}
-			}
-			clear()
-			return results
-		},
-		getState(){
-			return {machine:_machine, itemRefund:_itemRefund.slice(), placeCallback:_placeCallback}
-		},
-		isEmpty(){
-			return _machine === null || _itemRefund.length === 0 || _placeCallback === null
-		}
-	} as const;
-	return properties
-})();
-
-
-
+type TransferContext = {
+	kind: "empty"
+}
+| {
+	kind: "item"
+	value: ItemInstance
+	transfer: (success:boolean) => void
+}
+| {
+	kind: "machine"
+	value: Machine
+	transfer: (success:boolean) => void
+}
 
 /**
- * Stores context for an in-progress item transfer.
+ * Stores context for an in-progress transfer.
  *
- * - itemInstance:
- *   The item being transferred.
- *   Should be expected to be null when the sender receives a transfer callback.
+ * - kind:
+ *   Describes what is being transferred, or "empty" if no transfer is active.
+ *
+ * - value:
+ *   Present only when kind !== "empty".
+ *   The thing being transferred.
  *
  * - transfer:
  *   Created by the sender of the transfer.
  *   Called by the recipient with a success status.
  *
  *   IMPORTANT:
+ *   Always assume on both sides that transferContext has been mutated after transfer is called.
  *   The transfer function is responsible for refunding the sender
  *   if the transfer fails.
  *
  *   !!! REFUNDS MUST BE HANDLED BY THE SENDER, NOT THE RECIPIENT !!!
  */
 
-const ItemTransferContext: {
-	itemInstance: ItemInstance | null
-	transfer: ((success: boolean) => void) | null
-} = {
-	itemInstance:null,
-	transfer:null
+let transferContext: TransferContext = {
+	kind: "empty"
 }
 
 window.addEventListener("keydown", e => {
 	console.log("keydown: ", e.key)
 	if (e.key !== "Escape") return
-	if (ItemTransferContext.transfer) ItemTransferContext.transfer(false)
-	ItemTransferContext.itemInstance = null
-	ItemTransferContext.transfer = null
+	if (transferContext.kind === "empty") return
+	transferContext.transfer(false)
+	transferContext = {kind: "empty"}
 })
 
 
 
 
-const itemQuantitySlider = (()=>{// Item amount slider
+const quantitySlider = (()=>{// Item amount slider
 	const root = document.getElementById('item-amount-slider')!
 	
 	const slider = document.getElementById('item-amount-slider-slider') as HTMLInputElement
@@ -407,8 +374,8 @@ document.getElementById('side-menu-width-button')!.addEventListener('mousedown',
 
 
 
-document.getElementById('main-window-button')!.addEventListener('click',()=>{
-	document.getElementById('main-window')!.style.display = 'none'
+document.getElementById('machine-window-button')!.addEventListener('click',()=>{
+	document.getElementById('machine-window')!.style.display = 'none'
 })
 
 
@@ -440,8 +407,8 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 	 * @returns void
 	 */
 	function itemTransferEvent(event:MouseEvent, inventory:Inventory, item:Item, initiateTransferCall:Function=()=>{}, resolveTransferCall:((success:boolean)=>void)=()=>{}): void {
-		if (!event || !inventory || !item) return
-		if (ItemTransferContext.itemInstance !== null) return
+		console.log("doing item transfer. Context;", transferContext)
+		if (transferContext.kind !== "empty") return
 
 		event.preventDefault()
 		event.stopPropagation()
@@ -462,16 +429,16 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 		const formatLabel = (idx: number) => `${candidates[idx]}/${currentQty}`
 
-		itemQuantitySlider.show(event.pageX, event.pageY, formatLabel(0), steps)
+		quantitySlider.show(event.pageX, event.pageY, formatLabel(0), steps)
 
 		const onInput = (step: number) => {
 			const index = Math.max(0, Math.min(steps - 1, step - 1))
-			itemQuantitySlider.setText(formatLabel(index))
+			quantitySlider.setText(formatLabel(index))
 		}
 
 		const onEnd = (step: number) => {
- 		   itemQuantitySlider.setInputCallback(null)
- 		   itemQuantitySlider.setEndCallback(null)
+ 		   quantitySlider.setInputCallback(null)
+ 		   quantitySlider.setEndCallback(null)
 
 			const index = Math.max(0, Math.min(steps - 1, step - 1))
 			const amount = candidates[index] ? candidates[index] : preset[preset.length-1] as number
@@ -484,18 +451,17 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 			}
 
 			// register the pending instance and transfer handler
-			ItemTransferContext.itemInstance = new ItemInstance(item, amount)
+			const value = new ItemInstance(item, amount)
 
-			MouseOverlay.elements.heldItemIcon.setText(`${ItemTransferContext.itemInstance.item.name}:${ItemTransferContext.itemInstance.amount}`)
+			MouseOverlay.elements.heldItemIcon.setText(`${value.item.name}:${value.amount}`)
 			MouseOverlay.elements.heldItemIcon.show()
 			MouseOverlay.show()
 
 			initiateTransferCall()
 
 			// transfer is called to resolve ItemTransferContext
-			ItemTransferContext.transfer = (success) => {
-				ItemTransferContext.itemInstance = null
-				ItemTransferContext.transfer = null
+			const transfer = (success: boolean) => {
+				transferContext = {kind: "empty"}
 				MouseOverlay.elements.heldItemIcon.hide()
 				MouseOverlay.hide()
 				if (success) {
@@ -510,10 +476,16 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 				resolveTransferCall(success)
 			}
+
+			transferContext = {
+				kind: "item",
+				value,
+				transfer
+			}
 		}
 
-		itemQuantitySlider.setInputCallback(onInput)
-		itemQuantitySlider.setEndCallback(onEnd)
+		quantitySlider.setInputCallback(onInput)
+		quantitySlider.setEndCallback(onEnd)
 	}
 
 
@@ -559,6 +531,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		cell.className = 'inventory-grid-cell'
 		cell.textContent = machine.name
 		cell.style.display = 'none'
+		if (machine.img) cell.style.backgroundImage = `url(${machine.img})`
 		document.getElementById('machines-grid')!.appendChild(cell)
 
 		cell.addEventListener('mouseenter', ()=>{
@@ -587,16 +560,25 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		})
 
 		cell.addEventListener('click',()=>{
-			if (!MachineBeingPlaced.isEmpty()) {
-				MachineBeingPlaced.place(false)
+			if (transferContext.kind !== "empty") {
+				if (transferContext.transfer) transferContext.transfer(false)
 				return
 			}
 			const recipe = getRecipesProducing(machine, recipes)[0]
 			if (!recipe) throw new Error(`The machine: ${machine.id} is not craftable`);
 			const itemsUsed = resolveCraftingCosts(recipe, mainInventory, items)
 			if (!itemsUsed) return
-			if (!mainInventory.changeItems(itemsUsed.map(item=>new ItemInstance(item.item, -item.amount)))) return
-			MachineBeingPlaced.set(machine, itemsUsed, (success:boolean)=>{cell.style.backgroundColor = ''}, mainInventory)
+			if (!mainInventory.subtractItems(itemsUsed)) return
+			transferContext = {
+				kind: "machine",
+				value: machine,
+				transfer: (success)=>{
+					transferContext = {kind: "empty"}
+					cell.style.backgroundColor = ''
+					if (success) return
+					mainInventory.addItems(itemsUsed)
+				}
+			}
 			cell.style.backgroundColor = 'green'
 		})
 
@@ -676,9 +658,9 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 
 	document.getElementById('machine-line-cell-button')!.addEventListener('click',()=>{
-		if (MachineBeingPlaced.isEmpty())return
+		if (transferContext.kind !== "machine")return
 		
-		const machineObject = MachineBeingPlaced.getState().machine
+		const machineObject = transferContext.value
 		if (!machineObject) return
 		const {element:machineCell, setStack, setProgress, setWarning} = createMachine(machineObject)
 		setWarning('no_fuel')
@@ -687,48 +669,57 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		const machineInst = new MachineInstance(machineObject, items, recipes)
 
 		machineCell.addEventListener('click',()=>{
-			if (!MachineBeingPlaced.isEmpty() && MachineBeingPlaced.getState().machine?.id === machineInst.machine.id) {
-				machineInst.setStack(1 + machineInst.getStack())
-				setStack(String(machineInst.getStack()))
-				MachineBeingPlaced.place(true)
-				return
-			}
-			const incomingItem = ItemTransferContext.itemInstance 
-			console.log('incomingItem', incomingItem)
-			if (incomingItem === null) return
-			let success = false
-			if (machineInst.addFuel(incomingItem) === "success") {
-				success = true
-				setWarning('')
-			}
-			if (!success) {
-				console.log("incoming item:", incomingItem)
-				const ri = machineInst.capableRecipes.map(r=>{ // Find a recipes that has 1 input and that input has at least 1 matching item
-					return {inputs:getRecipeInputs(r, items), recipe:r}
-				}).filter(obj=>
-					obj.inputs.length === 1
-				).find(obj=>
-					obj.inputs[0]!.items.some(i=>i.isEqual(incomingItem)) && obj.inputs[0]!.amount <= incomingItem.amount
-				)
-				console.log("found ri: ", ri)
-				if (ri) {
-					const cost1 = ri.inputs[0]!.amount
-					const batches = Math.floor(incomingItem.amount / cost1)
-					console.log("baches: ", batches)
-					if (batches > 0) {						
-						success = true // success so the main inventory does not get it back
-						machineInst.addWorkingOn(ri.recipe, batches, [ItemInstance.from(incomingItem, cost1 * batches)])
-						mainInventory.addItem(incomingItem, incomingItem.amount - cost1 * batches) // Give back leftovers
+			if (transferContext.kind === "empty") return
+			if (transferContext.kind === "machine") {
+				if (transferContext.value.id === machineInst.machine.id) {
+					machineInst.setStack(1 + machineInst.getStack())
+					setStack(String(machineInst.getStack()))
+					transferContext.transfer(true)
+				} else {
+					transferContext.transfer(false)
+				}
+			} else {
+				const incoming = transferContext.value 
+				console.log('incomingItem', incoming)
+				if (incoming === null) return
+				let success = false
+				if (machineInst.addFuel(incoming) === "success") {
+					success = true
+					setWarning('')
+				}
+				if (!success) {
+					console.log("incoming item:", incoming)
+					const ri = machineInst.capableRecipes.map(r=>{ // Find a recipes that has 1 input and that input has at least 1 matching item
+						return {inputs:getRecipeInputs(r, items), recipe:r}
+					}).filter(obj=>
+						obj.inputs.length === 1
+					).find(obj=>
+						obj.inputs[0]!.items.some(i=>i.isEqual(incoming)) && obj.inputs[0]!.amount <= incoming.amount
+					)
+					console.log("found ri: ", ri)
+					if (ri) {
+						const cost1 = ri.inputs[0]!.amount
+						const batches = Math.floor(incoming.amount / cost1)
+						console.log("baches: ", batches)
+						if (batches > 0) {						
+							success = true // success so the main inventory does not get it back
+							machineInst.addWorkingOn(ri.recipe, batches, [ItemInstance.from(incoming, cost1 * batches)])
+							mainInventory.addItem(incoming, incoming.amount - cost1 * batches) // Give back leftovers
+						}
 					}
 				}
+				console.log("success: ", success)
+				transferContext.transfer(success)
 			}
-			console.log("success: ", success)
-			if (ItemTransferContext.transfer) ItemTransferContext.transfer(success)
-			ItemTransferContext.itemInstance  = null
+			transferContext = {kind: "empty"}
 		})
+
+
+
 		document.getElementById('machine-line')!.appendChild(machineCell)
+		transferContext.transfer(true)
+		transferContext = {kind: "empty"}
 		
-		MachineBeingPlaced.place(true)
 		
 		// Declare setTimeout machine logic
 		const unsubscribe = pubSubTick.subscribe(deltaMS => {

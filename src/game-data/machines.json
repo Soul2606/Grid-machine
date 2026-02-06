@@ -4,7 +4,7 @@
 		"name":"Stone furnace",
 		"capabilities":["smelt"],
 		"tier":0,
-		"requiresConfiguration":false,
+		"img":"svg/stone-furnace.svg",
 		"fuelNeeds":{
 			"tags":["primitive_fuel"],
 			"energy":"90kJ"
@@ -15,7 +15,6 @@
 		"name":"Water pump",
 		"capabilities":["extract_water"],
 		"tier":0,
-		"requiresConfiguration":false,
 		"energyNeeds":{
 			"voltageTier":1,
 			"energy":"2kJ"
@@ -26,7 +25,6 @@
 		"name":"Iron anvil",
 		"capabilities":["anvil"],
 		"tier":0,
-		"requiresConfiguration":true,
 		"workerNeeds":{
 			"minimum":1,
 			"maximum":1

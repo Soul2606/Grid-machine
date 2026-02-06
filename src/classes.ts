@@ -151,7 +151,7 @@ export class Inventory {
 	/**
 	 * Tries to change every item at once. if any item can't be changed then nothing gets changed and it returns false
 	 */
-	changeItems(items: ItemInstance[]): boolean {
+	changeItems(items: readonly ItemInstance[]): boolean {
 		if (items.every(item => this.changeItem(item, item.amount, true))) { // This check is not strong enough. Even if every item can be added individually, then that does not mean they can all be added at once
 			for (const itemInstance of items) {
 				if (!this.changeItem(itemInstance, itemInstance.amount)) throw new Error("Invariant broken: inventory may be unpredictably mutated");
@@ -164,7 +164,7 @@ export class Inventory {
 	/**
 	 * Tries to add every item at once. if any item can't be added then nothing gets added and it returns false
 	 */
-	addItems(items: ItemInstance[]): boolean {
+	addItems(items: readonly ItemInstance[]): boolean {
 		return this.changeItems(items);
 	}
 

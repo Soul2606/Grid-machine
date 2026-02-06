@@ -43,8 +43,8 @@ export type Machine = {
 	readonly id: string
 	readonly name: string
 	readonly tier: number
-	readonly requiresConfiguration: boolean
 	readonly capabilities: readonly string[]
+	readonly img?: string
 	readonly fuelNeeds?: {
 		readonly tags: readonly string[],
 		readonly energy: string
