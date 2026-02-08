@@ -54,43 +54,99 @@ type WalkJsonArgs = {
 	parent: null|Record<string,JSONValue>|JSONValue[]
 	path: readonly (string | number)[] 
 	isLeaf: false
+	mutateValue: (newValue: JSONValue)=>void
+	mutateKey: (newKey: string|number)=>void
 } | { 
 	key: string|number|null
 	value: string|number|null|boolean
 	parent: null|Record<string,JSONValue>|JSONValue[]
 	path: readonly (string | number)[] 
 	isLeaf: true
+	mutateValue: (newValue: JSONValue)=>void
+	mutateKey: (newKey: string|number)=>void
 }
 export function walkJson(obj: JSONValue, fnc: (args:WalkJsonArgs)=>void): void {
-	type Parent = null|Record<string,JSONValue>|JSONValue[]
+	type Parental = null|
+	{readonly kind:"object", readonly key: string, readonly value: Record<string, JSONValue>}|
+	{readonly kind:"array", readonly key: number, readonly value: JSONValue[]}
+
 	const recurse = (
-		current: JSONValue, 
-		parent:  Parent                = null, 
-		key:     string | number | null = null, 
-		path:    Array<string | number> = []
+		current:JSONValue, 
+		parent: Parental = null, 
+		path:   Array<string | number> = []
 	) => {
+		const mutateValue = (newValue: JSONValue)=>{
+			if (parent === null) return false
+			if (parent.kind === "object"){
+				parent.value[parent.key] = newValue
+			} else {
+				parent.value[parent.key] = newValue
+			}
+			return true
+		}
+
+		const mutateKey = (newKey: string|number)=>{
+			if (parent === null) return false
+			if (parent.kind === "object") {
+				if (typeof newKey === "number") return false
+				delete parent.value[parent.key]
+			}
+			if (parent.kind === "array") {
+				if (typeof newKey === "string") return false
+				parent.value.splice(parent.key, 1)
+			}
+			//@ts-ignore
+			parent.value[newKey] = current
+			return true
+		}
+
 		const isLeaf = current === null || typeof current === "number" || typeof current === "boolean" || typeof current === "string"
 		fnc({
-			key,
+			key: parent ? parent.key : null,
 			value: current as any,
-			parent,
+			parent: parent ? parent.value : null,
 			path,
 			isLeaf,
+			mutateValue,
+			mutateKey
 		})
 
 		// Recurse into children if object/array
 		if (Array.isArray(current)) {
-			current.forEach((val, idx) => recurse(val, current, idx, [...path, idx]))
+			current.forEach((val, idx) => recurse(val, {value:current, key:idx, kind:"array"}, [...path, idx]))
 		} else if (typeof current === 'object') {
 			for (const key in current) {
 				const next = current[key]
 				if (next === undefined) continue
-				recurse(next, current, key, [...path, key])
+				recurse(next, {value:current, key, kind:"object"}, [...path, key])
 			}
 		}
 	}
 
-	return recurse(obj, null, null, [])
+	return recurse(obj, null, [])
+}
+
+
+
+function JSONPath(obj:JSONValue, path: readonly (string|number)[]) {
+	let current = obj
+	const hierarchy: (JSONValue[] | Record<string, JSONValue>)[] = []
+	for (const key of path) {
+		if (typeof current === "object" && current !== null && typeof key === "string" && !Array.isArray(current)) {
+			hierarchy.push(current)
+			const next = current[key]
+			if (next === undefined) return {end:undefined, hierarchy, success: false}
+			current = next
+		} else if (typeof key === "number" && Array.isArray(current)){
+			hierarchy.push(current)
+			const next = current[key]
+			if (next === undefined) return {end:undefined, hierarchy, success: false}
+			current = next
+		} else {
+			return {end:undefined, hierarchy, success: false}
+		}
+	}
+	return {end:current, hierarchy, success: true}
 }
 
 
@@ -170,6 +226,131 @@ export function JSONEquals(obj1:JSONValue, obj2:JSONValue): boolean {
 	return setEquals(new Set(pathMap.keys()), paths)
 }
 
+
+
+
+export function JSONSchema(obj: JSONValue, schema: {root:JSONValue}) {
+	type Tuple = string|number
+	
+	const tCheck = (t:string,v:string|number|boolean|null)=>{
+		const T = t.endsWith("?")? t.slice(0,-1) : t;
+		if (!["any", "null", "boolean", "string", "number"].includes(T)) throw new Error("Invalid type string: " + T);
+		return (
+			T === "any" ||
+			(T === "null" && v === null) ||
+			(T !== "null" && typeof v === T)
+		)
+	}
+
+	function subpath(base: readonly Tuple[], comparison: readonly Tuple[]) {
+		const arr1 = base
+		const arr2 = comparison
+		if (arr2.length > arr1.length) return false
+		return arr2.every((v,i)=> arr1[i] === v ) 
+	}
+
+	function reversLoop<T=unknown>(arr:T[], func: (idx:number, value:T)=>void) {
+		for (let i = 0; i < arr.length; i++) {
+			const element = arr.at(-1-i)! // Search backwards
+			func(i, element)
+		}
+	}
+
+	function search(arr: Tuple[]) {
+		for (let i = 0; i < arr.length; i++) {
+			const element = arr.at(-1-i) // Search backwards
+			if (typeof element === "string") return {i, arr: arr.slice(0, -i)}
+		}
+		return {i: 0, arr: []}
+	}
+
+	const errors: string[] = []
+	const optionalPaths = new Set<string>()
+	/** key:path, value:type */
+	const arrTypes = new Map<string, string>()
+	walkJson(schema, ({key, value, path, mutateKey, mutateValue})=>{
+		const truePath = JSON.stringify(path.slice(1))
+		if (typeof key === "string" && key.endsWith("?")) {
+			optionalPaths.add(truePath)
+			console.log(key.slice(0,-1))
+			mutateKey(key.slice(0,-1))
+		}
+		if (typeof value === "object") return
+		if (typeof value !== "string") throw new Error("Invalid schema");
+		if (value.endsWith("[]")) {
+			const v = value.slice(0,-2)
+			arrTypes.set(truePath, v)
+			console.log(v)
+			mutateValue(v)
+		}
+	})
+	console.log(arrTypes, optionalPaths)
+	console.log(obj, schema);
+	const {align:al, separate1:sep1, separate2:sep2} = JSONAligned(obj, schema.root)
+
+	// Has more then needed?
+	for(const [path, val] of sep1.entries()){
+		// Matches ["hi"] : "string[]". No deeply nest arrays.
+		const shortPath = JSON.stringify(JSON.parse(path).slice(0,-1))
+		const arrType = arrTypes.get(shortPath)
+		if (arrType === undefined) {
+			errors.push(`error: array does not have a corresponding array type. path: ${path}, value:${val}, short:${JSON.stringify(shortPath)}`)
+			continue
+		}
+		const parent = JSONPath(obj, JSON.parse(shortPath))?.end
+		if (parent === undefined) continue
+		if (!Array.isArray(parent)) {
+			errors.push(`error: deeply nested array type contains non array. path: ${path}, parent:${parent}, type:${arrType}`)
+			continue
+		}
+		if (!tCheck(arrType, val)) {
+			errors.push(`error: wrong type. value: ${val}, type:${arrType}`)
+			continue
+		}
+		console.log("delete", shortPath)
+		arrTypes.delete(shortPath)
+	}
+
+	// Needs more than has?
+	for(const [path, type] of sep2.entries()){
+		if (typeof type !== "string") throw new Error("Invalid schema");
+		if (JSON.parse(path).length === 0) continue
+		const subpaths = [...optionalPaths.values()].map(op=>JSON.parse(op)).filter(op=>subpath(JSON.parse(path), op))
+		console.log("subpaths:", subpaths);
+		// If any subpath: failed to reach the end one step from the end, then this path is completely ignored as an optional
+		if (subpaths.some(osp=>{
+			const res = JSONPath(obj, osp)
+			return !res.success && res.hierarchy.length === osp.length - 1
+		})){
+			continue // Success
+		}
+		errors.push(`error: missing data, needed path: ${path}, type: ${type}`)
+	}
+
+	// Align?
+	for(const [path, {obj1:val, obj2:type}] of al.entries()){
+		if (typeof type !== "string") throw new Error("Invalid schema");
+		if (!tCheck(type, val)) errors.push(`error: wrong type. value: ${val}, type:${type}`)
+	}
+
+	if (arrTypes.size > 0) {
+		errors.push(`error: missing arrays: ${JSON.stringify(Object.fromEntries(arrTypes.entries()))}`)
+	}
+
+	return errors
+}
+console.log("test1", JSONSchema(
+	["asdfasdf"],
+	{"root":"string[]"}
+))
+console.log("test2", JSONSchema(
+	"hello world!",
+	{"root":"string"}
+))
+console.log("test3", JSONSchema(
+	"hello world!",
+	{"root":"string[]"}
+))
 
 
 
@@ -446,57 +627,6 @@ export async function fetchData() {
 			}
 			return response.json()
 		})
-	}
-
-	function JSONSchema(obj: JSONValue, schema: JSONValue) {
-		type Tuple = string|number
-		const errors: string[] = []
-		const tCheck = (t:string,v:string|number|boolean|null)=>{
-			const T = t.endsWith("?")? t.slice(0,-1) : t;
-			if (!["any", "null", "boolean", "string", "number"].includes(T)) throw new Error("Invalid type string: " + T);
-			return (
-				T === "any" ||
-				(T === "null" && v === null) ||
-				(T !== "null" && typeof v === T)
-			)
-		}
-
-		function search(arr: Tuple[]) {
-			for (let i = 0; i < arr.length; i++) {
-				const element = arr.at(-1-i) // Search backwards
-				if (typeof element === "string") return {i, arr: arr.slice(0, -i)}
-			}
-			return {i: 0, arr: []}
-		}
-
-		const {align:al, separate1:sep1, separate2:sep2} = JSONAligned(obj, schema)
-
-		// Has more then needed?
-		for(const [path, val] of sep1.entries()){
-			const pathArr: Tuple[] = JSON.parse(path)
-			const res = search(pathArr)
-			const t = sep2.get(JSON.stringify(res.arr))
-			if (t === undefined) errors.push(`error: `)
-			if (typeof t !== "string") throw new Error("Invalid schema");
-			if (t === "any") continue // Anything goes with any
-			if (!t.endsWith("[]".repeat(res.i))) errors.push(`error: `) // Matches ["hi"] : "string[]", [["hi"]] : "string[][]" and so fourth
-			if (!tCheck(t.slice(0, -2 * res.i), val)) errors.push(`error: `)
-		}
-
-		// Needs more than has?
-		for(const [path, type] of sep2.entries()){
-			if (typeof type !== "string") throw new Error("Invalid schema");
-			if (!type.endsWith("?")) errors.push(`error: `)
-		}
-
-		// Align?
-		for(const [path, {obj1:val, obj2:type}] of al.entries()){
-			if (typeof type !== "string") throw new Error("Invalid schema");
-			if (!tCheck(type, val)) errors.push(`error: `)
-		}
-
-		//Everything passed
-		return errors
 	}
 
 	function compile(items: unknown, machines: unknown, recipes: unknown, extraction: unknown) {
