@@ -1,6 +1,6 @@
 
 import type { Item, Machine, Recipe, Extractor } from './types.js'
-import { clamp, fetchData, getItemFromId, getRecipeInputs, getRecipesProducing, resolveCraftingCosts } from './functions.js'
+import { clamp, fetchData, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, maxCraftableCount, resolveCraftingCosts } from './functions.js'
 import { Inventory, ItemInstance, MachineInstance, Signal } from './classes.js'
 
 type InfoPanelMethods = {
@@ -25,6 +25,21 @@ type MouseOverlayElements = {
 
 
 // Global functions
+
+
+
+function createResourceCell(resource: Item) {
+	
+	const cell = document.createElement('div')
+	cell.className = 'inventory-grid-cell'
+	if (resource.img) cell.style.backgroundImage = `url(${resource.img})`
+	
+	const number = document.createElement('p')
+	number.textContent = '0'
+	cell.appendChild(number)
+		
+	return {element:cell, amountLabel:number, itemPointer:resource}
+}
 
 
 
@@ -80,6 +95,51 @@ function createMachine(machine: Machine) {
 	cell.appendChild(warning)
 
 	return {element:cell, setStack, setProgress, setWarning}
+}
+
+
+
+function createMachineUI() {
+	const root = document.createElement("div")
+	const header = document.createElement("div")
+	root.append(header)
+	const pe = document.createElement("p")
+	header.append(pe)
+	const pw = document.createElement("p")
+	header.append(pw)
+
+	const grid = document.createElement("div")
+	root.append(grid)
+
+	const refresh = (machine: MachineInstance, availableResources: Inventory)=>{
+		refreshText(machine)
+		grid.innerHTML = ""
+		console.log(machine.capableRecipes)
+		machine.capableRecipes.forEach(cr => {
+			const count =  maxCraftableCount(getRecipeInputs(cr, machine.items), availableResources)
+			console.log(count, cr)
+			if (count === 0) return
+			const out = getRecipeOutputs(cr, machine.items)[0]
+			console.log("out: ", out)
+			if (out) {
+				grid.append(createResourceCell(out.item).element)
+			} else {
+				throw new Error("Recipe produces nothing. id: " + cr.id);
+			}
+		});
+	}
+
+	const refreshText = (machine: MachineInstance) => {
+		pe.textContent = `Energy: ${machine.getEnergy()}`
+		if (machine.machine.workerNeeds) {
+			pw.style.display = ""
+			pw.textContent = `Workers: ${machine.getWorkers()}/${machine.machine.workerNeeds.maximum}`
+		} else {
+			pw.style.display = "none"
+		}
+	}
+
+	return {element: root, refresh, refreshText}
 }
 
 
@@ -490,32 +550,22 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 
 
-	const inventoryCellElements: {element:HTMLDivElement, amountLabel:HTMLParagraphElement, itemPointer:Item}[] = []
-	for(const item of items){
-		const cell = document.createElement('div')
-		cell.className = 'inventory-grid-cell'
-		cell.textContent = item.name
-		cell.style.display = 'none'
-		if (item.img) cell.style.backgroundImage = `url(${item.img})`
-
-		const number = document.createElement('p')
-		number.textContent = '0'
-		cell.appendChild(number)
-
-		cell.addEventListener('mousedown', e => {
-			itemTransferEvent(e,mainInventory,item)
+	const invItemCells = items.map(r => {
+		const v = createResourceCell(r)
+		v.element.style.display = "none"
+		v.element.addEventListener('mousedown', e => {
+			itemTransferEvent(e,mainInventory, v.itemPointer)
 		})
-
-		document.getElementById('inventory-grid')!.appendChild(cell)
-		inventoryCellElements.push({element:cell, amountLabel:number, itemPointer:item})
-	}
+		document.getElementById('inventory-grid')!.appendChild(v.element)
+		return v
+	})
 
 
 
 	mainInventory.signal.subscribe((itemInstance: ItemInstance)=>{
 		const item = itemInstance.item
 		const amount = itemInstance.amount
-		for(const cellElement of inventoryCellElements){
+		for(const cellElement of invItemCells){
 			if (cellElement.itemPointer !== item) continue
 			cellElement.amountLabel.textContent = String(amount) // Yes this is correct
 			if (GameStates.ui.sideMenuSection.get() === 'recipes') continue
@@ -594,7 +644,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 	};
 	
 	const repairCells = () => {
-		for (const inventoryCell of inventoryCellElements) {
+		for (const inventoryCell of invItemCells) {
 			const entry = mainInventory.getAllItemInstances().find(e => e.item === inventoryCell.itemPointer);
 			inventoryCell.element.style.display = entry && entry.amount > 0 ? '' : 'none';
 			inventoryCell.amountLabel.style.display = ''
@@ -608,7 +658,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 	.addEventListener('click', () => {
 		GameStates.ui.sideMenuSection.set('recipes', 'side-menu-recipes-button clicked')
 		showGrid(true, true);
-		for (const inventoryCell of inventoryCellElements) {
+		for (const inventoryCell of invItemCells) {
 			inventoryCell.element.style.display = '' 
 			inventoryCell.amountLabel.style.display = 'none'
 		}
@@ -657,6 +707,11 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 
 
+	const machineUI = {...createMachineUI(), owner: null as null | MachineInstance}
+	document.getElementById("machine-window")!.append(machineUI.element)
+
+
+
 	document.getElementById('machine-line-cell-button')!.addEventListener('click',()=>{
 		if (transferContext.kind !== "machine")return
 		
@@ -664,13 +719,15 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		if (!machineObject) return
 		const {element:machineCell, setStack, setProgress, setWarning} = createMachine(machineObject)
 		setWarning('no_fuel')
-		const capableRecipes = recipes.filter(recipe=>machineObject.capabilities.includes(recipe.requiredProcess))
 
 		const machineInst = new MachineInstance(machineObject, items, recipes)
 
 		machineCell.addEventListener('click',()=>{
-			if (transferContext.kind === "empty") return
-			if (transferContext.kind === "machine") {
+			if (transferContext.kind === "empty") {
+				machineUI.owner = machineInst
+				machineUI.refresh(machineInst, mainInventory)
+				document.getElementById("machine-window")!.style.display = ""
+			} else if (transferContext.kind === "machine") {
 				if (transferContext.value.id === machineInst.machine.id) {
 					machineInst.setStack(1 + machineInst.getStack())
 					setStack(String(machineInst.getStack()))
@@ -724,6 +781,9 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		// Declare setTimeout machine logic
 		const unsubscribe = pubSubTick.subscribe(deltaMS => {
 			const status = machineInst.tick(deltaMS)
+			if (machineUI.owner === machineInst) {
+				machineUI.refreshText(machineInst)
+			}
 			if (status === "idle") return
 			if (status.lowEnergy) {
 				setWarning("no_fuel")

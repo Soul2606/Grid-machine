@@ -51,22 +51,31 @@ export function distributeIntEvenly(n: number, limits: readonly number[]): numbe
 type WalkJsonArgs = { 
 	key: string|number|null
 	value: JSONValue 
-	parent: JSONValue | null
+	parent: null|Record<string,JSONValue>|JSONValue[]
 	path: readonly (string | number)[] 
+	isLeaf: false
+} | { 
+	key: string|number|null
+	value: string|number|null|boolean
+	parent: null|Record<string,JSONValue>|JSONValue[]
+	path: readonly (string | number)[] 
+	isLeaf: true
 }
-export function walkJson<T=void>(obj: JSONValue, fnc: (args:WalkJsonArgs)=>T): T {
+export function walkJson(obj: JSONValue, fnc: (args:WalkJsonArgs)=>void): void {
+	type Parent = null|Record<string,JSONValue>|JSONValue[]
 	const recurse = (
 		current: JSONValue, 
-		parent:  JSONValue              = null, 
+		parent:  Parent                = null, 
 		key:     string | number | null = null, 
 		path:    Array<string | number> = []
-	):T => {
-		// Call user function with rich context
-		const results = fnc({
+	) => {
+		const isLeaf = current === null || typeof current === "number" || typeof current === "boolean" || typeof current === "string"
+		fnc({
 			key,
-			value: current,
+			value: current as any,
 			parent,
 			path,
+			isLeaf,
 		})
 
 		// Recurse into children if object/array
@@ -79,10 +88,48 @@ export function walkJson<T=void>(obj: JSONValue, fnc: (args:WalkJsonArgs)=>T): T
 				recurse(next, current, key, [...path, key])
 			}
 		}
-		return results
 	}
 
 	return recurse(obj, null, null, [])
+}
+
+
+
+
+function JSONAligned(obj1:JSONValue, obj2:JSONValue){
+	type Tuple = string | number
+	type Leaf = string|number|null|boolean
+	function pathKey(path: readonly Tuple[]): string {
+		return JSON.stringify(path)
+	}
+
+	const pathMap = new Map<string, Leaf>()
+	
+	walkJson(obj1, ({value, path, isLeaf})=>{
+		if (!isLeaf) return
+		pathMap.set(pathKey(path), value)
+	})
+	
+	const align =     new Map<string, {obj1:Leaf, obj2:Leaf}>()
+	const separate1 = new Map<string, Leaf>()
+	const separate2 = new Map<string, Leaf>()
+	
+	walkJson(obj2, ({value, path, isLeaf})=>{
+		if (!isLeaf) return
+		const pathStr = pathKey(path)
+		const v1 = pathMap.get(pathStr)
+		if (v1) {
+			align.set(pathStr, {obj1:v1, obj2:value})
+		} else {
+			separate2.set(pathStr, value as Leaf)
+		}
+	})
+
+	pathMap.forEach((value, key)=>{
+		if (!align.has(key)) separate1.set(key, value)
+	})
+
+	return {align, separate1, separate2}
 }
 
 

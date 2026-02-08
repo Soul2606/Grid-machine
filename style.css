@@ -216,6 +216,7 @@ main{
     border: solid white 1px;
     border-radius: 4px;
     box-sizing: border-box;
+    z-index: 9999;
 }
 
 .progress-bar{

@@ -361,6 +361,10 @@ export class MachineInstance {
 		return this.stack
 	}
 
+	getEnergy(){
+		return this.energy
+	}
+
 	craftableFromInventory(inv: Inventory, opt?: CraftingOptions){
 		return this.capableRecipes.map(r => {
 			return {
