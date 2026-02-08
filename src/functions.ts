@@ -447,6 +447,58 @@ export async function fetchData() {
 			return response.json()
 		})
 	}
+
+	function JSONSchema(obj: JSONValue, schema: JSONValue) {
+		type Tuple = string|number
+		const errors: string[] = []
+		const tCheck = (t:string,v:string|number|boolean|null)=>{
+			const T = t.endsWith("?")? t.slice(0,-1) : t;
+			if (!["any", "null", "boolean", "string", "number"].includes(T)) throw new Error("Invalid type string: " + T);
+			return (
+				T === "any" ||
+				(T === "null" && v === null) ||
+				(T !== "null" && typeof v === T)
+			)
+		}
+
+		function search(arr: Tuple[]) {
+			for (let i = 0; i < arr.length; i++) {
+				const element = arr.at(-1-i) // Search backwards
+				if (typeof element === "string") return {i, arr: arr.slice(0, -i)}
+			}
+			return {i: 0, arr: []}
+		}
+
+		const {align:al, separate1:sep1, separate2:sep2} = JSONAligned(obj, schema)
+
+		// Has more then needed?
+		for(const [path, val] of sep1.entries()){
+			const pathArr: Tuple[] = JSON.parse(path)
+			const res = search(pathArr)
+			const t = sep2.get(JSON.stringify(res.arr))
+			if (t === undefined) errors.push(`error: `)
+			if (typeof t !== "string") throw new Error("Invalid schema");
+			if (t === "any") continue // Anything goes with any
+			if (!t.endsWith("[]".repeat(res.i))) errors.push(`error: `) // Matches ["hi"] : "string[]", [["hi"]] : "string[][]" and so fourth
+			if (!tCheck(t.slice(0, -2 * res.i), val)) errors.push(`error: `)
+		}
+
+		// Needs more than has?
+		for(const [path, type] of sep2.entries()){
+			if (typeof type !== "string") throw new Error("Invalid schema");
+			if (!type.endsWith("?")) errors.push(`error: `)
+		}
+
+		// Align?
+		for(const [path, {obj1:val, obj2:type}] of al.entries()){
+			if (typeof type !== "string") throw new Error("Invalid schema");
+			if (!tCheck(type, val)) errors.push(`error: `)
+		}
+
+		//Everything passed
+		return errors
+	}
+
 	function compile(items: unknown, machines: unknown, recipes: unknown, extraction: unknown) {
 
 		if (!Array.isArray(items)) throw new Error("error")
