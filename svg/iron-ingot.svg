@@ -30,7 +30,7 @@
      inkscape:document-units="mm"
      inkscape:zoom="4.1620651"
      inkscape:cx="37.841792"
-     inkscape:cy="47.572538"
+     inkscape:cy="47.812803"
      inkscape:window-width="1440"
      inkscape:window-height="828"
      inkscape:window-x="0"
@@ -64,7 +64,7 @@
        id="path4"
        sodipodi:nodetypes="ccc" />
     <path
-       style="display:inline;fill:none;stroke:#9e9090;stroke-width:5;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       style="display:inline;fill:none;stroke:#6d6363;stroke-width:5;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
        d="M 5,50 55,10 95,20 V 50 L 45,90 5,80 Z"
        id="path3"
        sodipodi:nodetypes="ccccccc" />

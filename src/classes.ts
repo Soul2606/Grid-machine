@@ -1,5 +1,5 @@
-import { getItemFromId, JSONEquals, energyToNumber, maxCraftableCount, getRecipeInputs, resolveCraftingCosts, getRecipeOutputs, relu, distributeIntEvenly, clamp } from './functions.js';
-import type { CraftingOptions, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe } from './types.js';
+import { getItemFromId, JSONEquals, energyToNumber, maxCraftableCount, getRecipeInputs, getRecipeOutputs, relu, distributeIntEvenly, clamp, getRecipeFromId } from './functions.js';
+import type { CraftingOptions, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Output, Recipe, } from './types.js';
 
 
 
@@ -320,7 +320,7 @@ export class MachineInstance {
 	private energy:  number
 	private workers: number
 	private work: number    // 1 work equals 1 second of processing
-	private workingOn: {recipe: Recipe, amount: number, consumed: ItemInstance[]}[] // Queue system, first item is the one thats actually being worked on
+	private workingOn: {recipe: ResolvedRecipe, amount: number}[] // Queue system, first item is the one thats actually being worked on
 	constructor(machine: Machine, items: readonly Item[], recipes: readonly Recipe[], stack: number = 1, energy: number = 0, work: number = 0, workers = 0) {
 		this.machine = machine
 		this.items =   items
@@ -334,7 +334,9 @@ export class MachineInstance {
 	}
 
 	private craft(multiplier: number, recipe: Recipe) {
-		return getRecipeOutputs(recipe, this.items).map(itemInst=>{itemInst.amount *= multiplier; return itemInst})
+		const output = getRecipeOutputs(recipe, this.items)
+		if (output.type === "machine") return []
+		return output.items.map(itemInst=>{itemInst.amount *= multiplier; return itemInst})
 	}
 
 	/**Returns a serialized snapshot of the state of a machine instance. */
@@ -347,8 +349,20 @@ export class MachineInstance {
 			work: this.work,
 			workingOn: this.workingOn.map(wo => ({
 				amount: wo.amount,
-				recipeId: wo.recipe.id,
-				consumed: wo.consumed.map(c=>c.serialize())
+				recipe: {
+					id: wo.recipe.id,
+					inputs: wo.recipe.inputs.map(i=>i.serialize()),
+					outputs: (()=>{
+						if (wo.recipe.output.type === "item") return {
+							type: "item",
+							items: wo.recipe.output.items.map(i=>i.serialize())
+						}
+						return {
+							type: "machine",
+							id: wo.recipe.output.id
+						}
+					})()
+				}
 			}))
 		}
 	}
@@ -374,22 +388,22 @@ export class MachineInstance {
 		}).filter(r=>r.amount>0)
 	}
 
-	addWorkingOn(recipe: Recipe, amount: number, consumed: ItemInstance[]){
-		const existing = this.workingOn.find(wo => wo.recipe.id === recipe.id)
+	addWorkingOn(recipe: ResolvedRecipe, amount: number){
+		const existing = this.workingOn.find(wo => wo.recipe.equals(recipe))
 		if (existing) {
 			existing.amount += amount
-			existing.consumed = ItemInstance.squash(existing.consumed.concat(consumed))
 		} else {
-			this.workingOn.push({recipe, amount, consumed: consumed.map(ItemInstance.from)})
+			this.workingOn.push({recipe, amount})
 		}
 		return this
 	}
 
 	refundWorkingOn(recipeId: string): ItemInstance[]|"id_not_found"{
-		const idx = this.workingOn.findIndex(wo => wo.recipe.id === recipeId)
-		if (idx !== -1) {
-			const consumed = this.workingOn[idx]!.consumed
-			this.workingOn.splice(idx, 1)
+		const existing = this.workingOn.find(wo => wo.recipe.id === recipeId)
+		if (existing) {
+			const consumed = existing.recipe.inputs.map(item => ItemInstance.from(item, item.amount * existing.amount))
+			existing.amount = 0
+			this.workingOn = this.workingOn.filter(wo => wo.amount > 0) // prune
 			return consumed
 		}
 		return "id_not_found"
@@ -418,7 +432,10 @@ export class MachineInstance {
 	 */
 	tick(deltaMS: number, manually = false) {
 		const machine = this.machine
-		const workingOn = this.workingOn
+		const workingOn = this.workingOn.map(wo =>({
+			woQueue: wo,
+			recipe: getRecipeFromId(wo.recipe.id, this.recipes)
+		}))
 		const energy = this.energy
 
 		if (workingOn.length === 0) {
@@ -440,7 +457,7 @@ export class MachineInstance {
 			Number.isFinite(energy/energyPerWork) ? energy/energyPerWork : Infinity
 		)
 		
-		const	workDemand = workingOn.reduce((prev, val)=>prev + val.amount * val.recipe.processTimeSeconds, 0) // total demand, used and unfulfilled
+		const	workDemand = workingOn.reduce((prev, val)=>prev + val.woQueue.amount * val.recipe.processTimeSeconds, 0) // total demand, used and unfulfilled
 		const lowestDemand = Math.min(...workingOn.map(w => w.recipe.processTimeSeconds))
 
 		
@@ -454,12 +471,12 @@ export class MachineInstance {
 		const crafted: ItemInstance[] = []
 		for (const wo of workingOn) {
 			const sec = wo.recipe.processTimeSeconds
-			const amountOfCrafts = Math.min(wo.amount, Math.floor(this.work / sec))
+			const amountOfCrafts = Math.min(wo.woQueue.amount, Math.floor(this.work / sec))
 			crafted.push(...this.craft(amountOfCrafts, wo.recipe))
-			wo.amount -= amountOfCrafts
+			wo.woQueue.amount -= amountOfCrafts
 			this.work -= sec * amountOfCrafts
 		}
-		this.workingOn = this.workingOn.filter(w => w.amount > 0)
+		this.workingOn = this.workingOn.filter(w => w.amount > 0) // Prune
 
 
 		// Return status from simulation, can be used for ui elements
@@ -559,5 +576,41 @@ export class Signal<P = unknown, R = void> {
 		return api
 	}
 
+}
+
+
+
+
+/**
+ * This is simply a recipe with a resolved set of inputs
+ */
+export class ResolvedRecipe {
+	readonly id: string
+	readonly inputs: readonly ItemInstance[]
+	readonly output: Output
+	constructor(id:string, inputs: readonly ItemInstance[], outputs: Output){
+		this.id = id
+		this.inputs = inputs
+		this.output = outputs
+	}
+
+	equals(rr: ResolvedRecipe){
+		return this.id === rr.id && 
+		this.inputs.length == rr.inputs.length &&
+		this.inputs.every(input =>
+			rr.inputs.some(i=>input.isEqual(i))
+		) && ((
+			this.output.type === "machine" &&
+			rr.output.type === "machine" &&
+			this.output.id === rr.output.id
+		)||(
+			this.output.type === "item" &&
+			rr.output.type === "item" &&
+			this.output.items.every(output =>
+				//@ts-ignore ts rejects this line for some reason
+				rr.output.items.some(o=>output.isEqual(o))
+			)
+		)) 
+	}
 }
 

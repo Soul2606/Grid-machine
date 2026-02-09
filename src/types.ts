@@ -26,7 +26,7 @@ export type MachineInstanceSer = {
 	readonly energy: number
 	readonly workers: number
 	readonly work: number
-	readonly workingOn: readonly {amount: number, recipeId: string, consumed: ItemInstanceSer[]}[]
+	readonly workingOn: readonly {amount: number, recipe: ResolvedRecipeSer}[]
 }
 
 
@@ -69,7 +69,7 @@ export type RecipeInput = {
 export type Recipe = {
 	readonly id: string
 	readonly inputs: readonly RecipeInput[]
-	readonly outputs: readonly ItemInstanceSer[]
+	readonly outputs: readonly ItemInstanceSer[] | string
 	readonly requiredProcess: string
 	readonly requiredTier: number
 	readonly processTimeSeconds: number
@@ -94,6 +94,15 @@ export type Input = {
 	readonly amount: number
 }
 
+// type represents all Recipe outputs. 
+export type Output = {
+	readonly type: "item"
+	readonly items: readonly ItemInstance[]
+}|{
+	readonly type: "machine"
+	readonly id: string
+}
+
 // brand type
 export type Craftable = (Item|Machine) & { readonly __brand_craftable?: unique symbol }
 
@@ -110,4 +119,17 @@ export type CraftingOptions = Readonly<{ // defaults:
 	tagWhitelist?:    readonly string[]   // []
 	maximize?:        true                // undefined
 	capAtMax?:        true                // undefined
+}>
+
+
+export type ResolvedRecipeSer = Readonly<{
+	id: string
+	inputs: readonly ItemInstanceSer[]
+	outputs: {
+		readonly type: "item"
+		readonly items: readonly ItemInstanceSer[]
+	}|{
+		readonly type: "machine"
+		readonly id: string
+	}
 }>

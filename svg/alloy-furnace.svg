@@ -23,9 +23,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
-     inkscape:zoom="1.9505153"
-     inkscape:cx="110.99631"
-     inkscape:cy="108.68922"
+     inkscape:zoom="0.73575611"
+     inkscape:cx="-6.1161572"
+     inkscape:cy="126.40058"
      inkscape:window-width="1440"
      inkscape:window-height="828"
      inkscape:window-x="0"
@@ -34,23 +34,6 @@
      inkscape:current-layer="layer1" />
   <defs
      id="defs1">
-    <inkscape:path-effect
-       effect="fillet_chamfer"
-       id="path-effect3"
-       is_visible="true"
-       lpeversion="1"
-       nodesatellites_param="F,0,0,1,0,43.206443,0,1 @ F,0,1,1,0,43.206443,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,0,0,1"
-       radius="0"
-       unit="px"
-       method="auto"
-       mode="F"
-       chamfer_steps="1"
-       flexible="false"
-       use_knot_distance="true"
-       apply_no_radius="true"
-       apply_with_radius="true"
-       only_selected="false"
-       hide_knots="false" />
     <inkscape:path-effect
        effect="fillet_chamfer"
        id="path-effect1"
@@ -152,9 +135,17 @@
          id="path9" />
     </g>
     <path
-       id="rect1"
-       style="fill:#1d1c1a;stroke:#514f49;stroke-width:7.36994;stroke-linecap:round;paint-order:fill markers stroke"
-       d="m 81.17266,72.88858 h 37.65468 a 43.206443,43.206443 45 0 1 43.20644,43.20644 v 82.72001 H 37.966217 V 116.09502 A 43.206443,43.206443 135 0 1 81.17266,72.88858 Z" />
+       style="display:inline;fill:#1d1c1a;fill-opacity:1;stroke:#514f49;stroke-width:4.24039;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="M 50.283012,200.37981 H 149.71699 V 141.668 c 0,-17.69952 -14.34829,-32.04781 -32.04781,-32.04781 H 82.330822 c -17.699517,0 -32.04781,14.34829 -32.04781,32.04781 z"
+       id="path2"
+       sodipodi:nodetypes="cccccsc" />
+    <path
+       id="rect11"
+       style="fill:#1d1c1a;stroke:#514f49;stroke-width:5.4368;paint-order:fill markers stroke"
+       d="m 58.785539,36.459393 82.428921,0 a 28.56714,28.56714 45 0 1 28.56714,28.56714 V 87.827011 H 30.218399 V 65.026533 a 28.56714,28.56714 135 0 1 28.56714,-28.56714 z"
+       inkscape:path-effect="#path-effect11"
+       inkscape:original-d="M 30.218399,36.459393 H 169.7816 V 87.827011 H 30.218399 Z"
+       transform="translate(0,-10)" />
     <path
        style="fill:none;fill-opacity:1;stroke-width:10;paint-order:fill markers stroke;stroke:#514f49;stroke-opacity:1;stroke-dasharray:none"
        d="M 0,0 H 200 V 200 H 0 Z"

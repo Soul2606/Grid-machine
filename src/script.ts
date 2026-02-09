@@ -1,7 +1,7 @@
 
-import type { Item, Machine, Recipe, Extractor } from './types.js'
+import type { Item, Machine, Recipe, Extractor, CraftingOptions } from './types.js'
 import { clamp, fetchData, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, maxCraftableCount, resolveCraftingCosts } from './functions.js'
-import { Inventory, ItemInstance, MachineInstance, Signal } from './classes.js'
+import { Inventory, ItemInstance, MachineInstance, ResolvedRecipe, Signal } from './classes.js'
 
 type InfoPanelMethods = {
 	show: () => void
@@ -27,8 +27,20 @@ type MouseOverlayElements = {
 // Global functions
 
 
+function stepExponential(n: number){
+	const preset = [
+		1,5,10,20,30,40,50,100,200,300,400,500,600,700,800,900,1000,
+		2000,3000,4000,5000,6000,7000,8000,9000,10000,20000,30000,40000,
+		50000,60000,70000,80000,90000,100000,200000,300000,400000,500000,1000000
+	]
+	const candidates = preset.filter(v => v < n)
+	if (candidates[candidates.length - 1] !== n) candidates.push(n)
+	return {candidates, preset}
+}
 
-function createResourceCell(resource: Item) {
+
+
+function createItemCell(resource: Item) {
 	
 	const cell = document.createElement('div')
 	cell.className = 'inventory-grid-cell'
@@ -116,13 +128,24 @@ function createMachineUI() {
 		grid.innerHTML = ""
 		console.log(machine.capableRecipes)
 		machine.capableRecipes.forEach(cr => {
-			const count =  maxCraftableCount(getRecipeInputs(cr, machine.items), availableResources)
+			const options:CraftingOptions = {maximize:true}
+			const count =  maxCraftableCount(getRecipeInputs(cr, machine.items), availableResources, options)
 			console.log(count, cr)
 			if (count === 0) return
-			const out = getRecipeOutputs(cr, machine.items)[0]
+			const out = getRecipeOutputs(cr, machine.items)
 			console.log("out: ", out)
-			if (out) {
-				grid.append(createResourceCell(out.item).element)
+			if (out.type !== "item") return
+			const outI = out.items[0]
+			if (outI) {
+				const cell = createItemCell(outI.item)
+				cell.amountLabel.textContent = String(count)
+				cell.element.addEventListener("click", e => {
+					const resolve = resolveCraftingCosts(cr, availableResources, items, options)
+					if (!resolve) return
+					availableResources.subtractItems(resolve.inputs)
+					machine.addWorkingOn(resolve, count)
+				})
+				grid.append(cell.element)
 			} else {
 				throw new Error("Recipe produces nothing. id: " + cr.id);
 			}
@@ -140,6 +163,83 @@ function createMachineUI() {
 	}
 
 	return {element: root, refresh, refreshText}
+}
+
+
+
+
+/**
+ * When this function is called it will show the slider and set up events for items transfer of a specified item from the provided inventory into the transfer context
+ * from there you can resolve the transfer from anywhere in the script since transfer context is a global variable. 
+ * @param position slider spawn position
+ * @param inventory inventory class to transfer from
+ * @param item the item to transfer
+ * @returns void
+ */
+function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, item:ItemInstance): void {
+	console.log("doing item transfer. Context;", transferContext)
+	if (transferContext.kind !== "empty") return
+
+	const currentQty = Math.max(0, inventory.getAmount(item) || 0)
+	if (currentQty < 1) return
+
+	const {candidates, preset} = stepExponential(currentQty)
+
+	const steps = candidates.length
+	if (steps === 0) return
+
+	const formatLabel = (idx: number) => `${candidates[idx]}/${currentQty}`
+
+	quantitySlider.show(position.x, position.y, formatLabel(0), steps)
+
+	const onInput = (step: number) => {
+		const index = Math.max(0, Math.min(steps - 1, step - 1))
+		quantitySlider.setText(formatLabel(index))
+	}
+
+	const onEnd = (step: number) => {
+		quantitySlider.setInputCallback(null)
+		quantitySlider.setEndCallback(null)
+
+		const index = Math.max(0, Math.min(steps - 1, step - 1))
+		const amount = candidates[index] ? candidates[index] : preset[preset.length-1] as number
+
+		// try to subtract; if subtraction fails, restore UI and exit
+		const removed = inventory.subtractItem(item, amount)
+		if (!removed) {
+		// optionally show a feedback/error in UI here
+		return
+		}
+
+		// register the pending instance and transfer handler
+		const value = ItemInstance.from(item, amount)
+
+		MouseOverlay.elements.heldItemIcon.setText(`${value.item.name}:${value.amount}`)
+		MouseOverlay.elements.heldItemIcon.show()
+		MouseOverlay.show()
+
+		// transfer is called to resolve ItemTransferContext
+		const transfer = (success: boolean) => {
+			transferContext = {kind: "empty"}
+			MouseOverlay.elements.heldItemIcon.hide()
+			MouseOverlay.hide()
+			if (success) return
+			// on failure attempt refund 
+			if (!inventory.addItem(item, amount)) {
+				//If refund fail default to refunding the players inventory
+				if (!mainInventory.addItem(item, amount)) throw new Error("could not add items to mainInventory");
+			}
+		}
+
+		transferContext = {
+			kind: "item",
+			value,
+			transfer
+		}
+	}
+
+	quantitySlider.setInputCallback(onInput)
+	quantitySlider.setEndCallback(onEnd)
 }
 
 
@@ -454,107 +554,13 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 	document.body.classList.remove('loading')
 
-	// Data utility functions / Post compiled functions
-
-	/**
-	 * When this function is called it will show the slider and set up events for items transfer of a specified item from the provided inventory into the transfer context
-	 * from there you can resolve the transfer from anywhere in the script since transfer context is a global variable. 
-	 * @param event event listener event 
-	 * @param inventory inventory class to transfer from
-	 * @param item the item "class" to transfer
-	 * @param initiateTransferCall optional functions to add extra events upon transfer to transfer context
-	 * @param resolveTransferCall optional functions to add extra events upon transfer context resolution
-	 * @returns void
-	 */
-	function itemTransferEvent(event:MouseEvent, inventory:Inventory, item:Item, initiateTransferCall:Function=()=>{}, resolveTransferCall:((success:boolean)=>void)=()=>{}): void {
-		console.log("doing item transfer. Context;", transferContext)
-		if (transferContext.kind !== "empty") return
-
-		event.preventDefault()
-		event.stopPropagation()
-
-		const currentQty = Math.max(0, inventory.getAmount(ItemInstance.fromItem(item)) || 0)
-		if (currentQty < 1) return
-
-		const preset = [
-			1,5,10,20,30,40,50,100,200,300,400,500,600,700,800,900,1000,
-			2000,3000,4000,5000,6000,7000,8000,9000,10000,20000,30000,40000,
-			50000,60000,70000,80000,90000,100000,200000,300000,400000,500000,1000000
-		]
-		const candidates = preset.filter(v => v < currentQty)
-		if (candidates[candidates.length - 1] !== currentQty) candidates.push(currentQty)
-
-		const steps = candidates.length
-		if (steps === 0) return
-
-		const formatLabel = (idx: number) => `${candidates[idx]}/${currentQty}`
-
-		quantitySlider.show(event.pageX, event.pageY, formatLabel(0), steps)
-
-		const onInput = (step: number) => {
-			const index = Math.max(0, Math.min(steps - 1, step - 1))
-			quantitySlider.setText(formatLabel(index))
-		}
-
-		const onEnd = (step: number) => {
- 		   quantitySlider.setInputCallback(null)
- 		   quantitySlider.setEndCallback(null)
-
-			const index = Math.max(0, Math.min(steps - 1, step - 1))
-			const amount = candidates[index] ? candidates[index] : preset[preset.length-1] as number
-
-			// try to subtract; if subtraction fails, restore UI and exit
-			const removed = inventory.subtractItem(ItemInstance.fromItem(item), amount)
-			if (!removed) {
-			// optionally show a feedback/error in UI here
-			return
-			}
-
-			// register the pending instance and transfer handler
-			const value = new ItemInstance(item, amount)
-
-			MouseOverlay.elements.heldItemIcon.setText(`${value.item.name}:${value.amount}`)
-			MouseOverlay.elements.heldItemIcon.show()
-			MouseOverlay.show()
-
-			initiateTransferCall()
-
-			// transfer is called to resolve ItemTransferContext
-			const transfer = (success: boolean) => {
-				transferContext = {kind: "empty"}
-				MouseOverlay.elements.heldItemIcon.hide()
-				MouseOverlay.hide()
-				if (success) {
-					resolveTransferCall(success)
-					return
-				}
-				// on failure attempt refund 
-				if (!inventory.addItem(ItemInstance.fromItem(item), amount)) {
-					//If refund fail default to refunding the players inventory
-					if (!mainInventory.addItem(ItemInstance.fromItem(item), amount)) throw new Error("could not add items to mainInventory");
-				}
-
-				resolveTransferCall(success)
-			}
-
-			transferContext = {
-				kind: "item",
-				value,
-				transfer
-			}
-		}
-
-		quantitySlider.setInputCallback(onInput)
-		quantitySlider.setEndCallback(onEnd)
-	}
-
-
-
 	const invItemCells = items.map(r => {
-		const v = createResourceCell(r)
+		const v = createItemCell(r)
 		v.element.style.display = "none"
 		v.element.addEventListener('mousedown', e => {
-			itemTransferEvent(e,mainInventory, v.itemPointer)
+			e.preventDefault()
+			e.stopPropagation()
+			itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, ItemInstance.fromItem(v.itemPointer))
 		})
 		document.getElementById('inventory-grid')!.appendChild(v.element)
 		return v
@@ -616,9 +622,9 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 			}
 			const recipe = getRecipesProducing(machine, recipes)[0]
 			if (!recipe) throw new Error(`The machine: ${machine.id} is not craftable`);
-			const itemsUsed = resolveCraftingCosts(recipe, mainInventory, items)
-			if (!itemsUsed) return
-			if (!mainInventory.subtractItems(itemsUsed)) return
+			const resolved = resolveCraftingCosts(recipe, mainInventory, items)
+			if (!resolved) return
+			if (!mainInventory.subtractItems(resolved.inputs)) return
 			transferContext = {
 				kind: "machine",
 				value: machine,
@@ -626,7 +632,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 					transferContext = {kind: "empty"}
 					cell.style.backgroundColor = ''
 					if (success) return
-					mainInventory.addItems(itemsUsed)
+					mainInventory.addItems(resolved.inputs)
 				}
 			}
 			cell.style.backgroundColor = 'green'
@@ -747,20 +753,36 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 				if (!success) {
 					console.log("incoming item:", incoming)
 					const ri = machineInst.capableRecipes.map(r=>{ // Find a recipes that has 1 input and that input has at least 1 matching item
-						return {inputs:getRecipeInputs(r, items), recipe:r}
+						return {
+							recipe:r,
+							inputs:getRecipeInputs(r, items)
+						}
 					}).filter(obj=>
 						obj.inputs.length === 1
-					).find(obj=>
-						obj.inputs[0]!.items.some(i=>i.isEqual(incoming)) && obj.inputs[0]!.amount <= incoming.amount
-					)
+					).map(obj=>{
+						const slot = obj.inputs[0]!
+						const input = slot.items.find(i=>i.isEqual(incoming) && slot.amount <= incoming.amount)
+						if (input === undefined) return null
+						return{
+							recipe: obj.recipe,
+							input: ItemInstance.from(input, slot.amount)
+						} as const
+					}).find(ri => ri !== null)
 					console.log("found ri: ", ri)
 					if (ri) {
-						const cost1 = ri.inputs[0]!.amount
+						const cost1 = ri.input.amount
 						const batches = Math.floor(incoming.amount / cost1)
 						console.log("baches: ", batches)
 						if (batches > 0) {						
 							success = true // success so the main inventory does not get it back
-							machineInst.addWorkingOn(ri.recipe, batches, [ItemInstance.from(incoming, cost1 * batches)])
+							machineInst.addWorkingOn(
+								new ResolvedRecipe(
+									ri.recipe.id,
+									[ri.input],
+									getRecipeOutputs(ri.recipe, items)
+								),
+								batches
+							)
 							mainInventory.addItem(incoming, incoming.amount - cost1 * batches) // Give back leftovers
 						}
 					}

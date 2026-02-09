@@ -1,6 +1,6 @@
-import { ItemInstance } from './classes.js';
+import { ItemInstance, ResolvedRecipe } from './classes.js';
 import { Inventory } from './classes.js';
-import type { Craftable, CraftingOptions, Input, Item, ItemInstanceSer, JSONValue, MachineInstanceSer, Recipe } from "./types.js";
+import type { Craftable, CraftingOptions, Input, Item, ItemInstanceSer, JSONValue, MachineInstanceSer, Output, Recipe } from "./types.js";
 
 
 
@@ -186,6 +186,9 @@ export function clamp(val: number, min: number = 0, max: number = 1) {
  */
 export function getRecipesProducing(craftable: Craftable, recipes: readonly Recipe[]) {
 	return recipes.filter(recipe => {
+		if (typeof recipe.outputs === "string") {
+			return recipe.outputs === craftable.id
+		}
 		return recipe.outputs.some(output => output.id === craftable.id)
 	})
 }
@@ -219,7 +222,7 @@ export function getRecipeInputs(recipe: Recipe, items: readonly Item[]): Input[]
 
 export function getItemFromId(id: string, items: readonly Item[]): Item {
 	const item = items.find(item => item.id === id)
-	if (!item) throw new Error("Could not find item from id")
+	if (!item) throw new Error("Could not find item from id:" + id)
 	return item
 }
 
@@ -233,10 +236,26 @@ export function getItemsFromTag(tag: string, items: readonly Item[]): Item[] {
 
 
 
-export function getRecipeOutputs(recipe: Recipe, items: readonly Item[]): ItemInstance[] {
-	return recipe.outputs.map(output => 
-		new ItemInstance(getItemFromId(output.id, items), output.amount)
-	)
+export function getRecipeFromId(id: string, recipes: readonly Recipe[]): Recipe {
+	const item = recipes.find(item => item.id === id)
+	if (!item) throw new Error("Could not find recipe from id: " + id)
+	return item
+}
+
+
+
+
+
+export function getRecipeOutputs(recipe: Recipe, items: readonly Item[]): Output {
+	if (typeof recipe.outputs === "string") {
+		return {type:"machine", id: recipe.outputs}
+	}
+	return {
+		type: "item",
+		items: recipe.outputs.map(output => 
+			new ItemInstance(getItemFromId(output.id, items), output.amount)
+		)
+	}
 }
 
 
@@ -355,7 +374,7 @@ export function resolveCraftingCosts(
 	inventory: Inventory,
 	items: readonly Item[],
 	options: CraftingOptions = { multiply: 1 }
-	): readonly ItemInstance[] | false {
+	): ResolvedRecipe | false {
 	if (!(inventory instanceof Inventory)) return false
 	const inputs = applyCraftingOptions(options, getRecipeInputs(recipe, items))
 
@@ -387,7 +406,7 @@ export function resolveCraftingCosts(
 	}
 	if (chosenInstances.some(used => !inventory.canChange(used, used.amount))) return false
 
-	return chosenInstances
+	return new ResolvedRecipe(recipe.id, chosenInstances, getRecipeOutputs(recipe, items))
 }
 
 /*
@@ -473,11 +492,15 @@ export async function fetchData() {
 			limitKeysTo(item, ['id', 'inputs', 'outputs', 'requiredProcess', 'requiredTier', 'processTimeSeconds'])
 		})
 
-		const checkType = (obj: object, type: string) => {
-			if (type === 'array') {
-				if (!Array.isArray(obj)) throw new Error(`${obj} is not of an array`)
-			}
-			else if (typeof obj !== type) throw new Error(`${obj} is not of type ${type}`)
+		const checkType = (obj: object, type: string|string[]) => {
+			const TYPE = [type].flat()
+			const valid = TYPE.some(type => {
+				if (type === 'array') {
+					return Array.isArray(obj)
+				}
+				return typeof obj === type
+			})
+			if (!valid) throw new Error(`${obj} is not of type ${JSON.stringify(TYPE)}`)
 		}
 
 		for (const item of items) {
@@ -518,8 +541,8 @@ export async function fetchData() {
 				if (input.tag) checkType(input.tag, 'string')
 				checkType(input.amount, 'number')
 			})
-			checkType(recipe.outputs, 'array')
-			recipe.outputs.forEach((output: any) => {
+			checkType(recipe.outputs, ['array', "string"])
+			if (Array.isArray(recipe.outputs)) recipe.outputs.forEach((output: any) => {
 				limitKeysTo(output, ['id', 'tag', 'amount'])
 				if (output.id) checkType(output.id, 'string')
 				if (output.tag) checkType(output.tag, 'string')

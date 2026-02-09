@@ -40,7 +40,7 @@
 	{
 		"id":"craft_stone_furnace",
 		"inputs":[{"tag":"stone", "amount":6}],
-		"outputs":[{"id":"stone_furnace", "amount":1}],
+		"outputs":"stone_furnace",
 		"requiredProcess":"hand",
 		"requiredTier":0,
 		"processTimeSeconds":1
