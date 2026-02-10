@@ -425,6 +425,48 @@ export function resolveCraftingCosts(
 	return resolvedRecipes
 }
 
+
+
+
+/**
+ * Similar to resolveCraftingCosts but it actually executes the craft and mutates the provided inventory if craft is completely successful
+ */
+export function tryCraft(
+	recipe: Recipe,
+	inventory: Inventory,
+	items: readonly Item[],
+	options?: CraftingOptions
+	): ResolvedRecipe[] | false {
+	const resolve = resolveCraftingCosts(recipe, inventory, items, options)
+	if (!resolve) return resolve
+	if (!inventory.subtractItems(resolve.flatMap(res => res.inputs))) throw new Error("Invariant broke");
+	return resolve
+}
+
+
+
+
+/**
+ * Similar to tryCraft except it does not allow batch crafting
+ */
+export function trySingleCraft(
+	recipe: Recipe,
+	inventory: Inventory,
+	items: readonly Item[],
+	options: CraftingOptions = {multiply: 1}
+	): ResolvedRecipe | false {
+	if (options.multiply !== 1 || options.maximize) {
+		console.warn("Invalid options", JSON.stringify(options))
+		return false
+	}
+	const resolve = resolveCraftingCosts(recipe, inventory, items, options)
+	if (!resolve) return false
+	const res = resolve[0]
+	if (res === undefined) return false
+	if (!inventory.subtractItems(res.inputs)) throw new Error("Invariant broke");
+	return res
+}
+
 /*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Core functions END !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */

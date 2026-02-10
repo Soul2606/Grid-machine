@@ -1,6 +1,6 @@
 
 import type { Item, Machine, Recipe, Extractor, CraftingOptions } from './types.js'
-import { clamp, fetchData, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, maxCraftableCount, resolveCraftingCosts } from './functions.js'
+import { clamp, fetchData, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, maxCraftableCount, resolveCraftingCosts, tryCraft } from './functions.js'
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe, Signal } from './classes.js'
 
 type InfoPanelMethods = {
@@ -111,27 +111,58 @@ function createMachine(machine: Machine) {
 
 
 
-function createMachineUI() {
+function createMachineUI(recipes: readonly Recipe[], items: readonly Item[]) {
+	// What currently owns this ui element. Updated when refresh is called
+	let context: null | {
+		owner: MachineInstance
+		inv: Inventory
+		callback: (()=>void)
+	} = null
+	
+
 	const root = document.createElement("div")
+
 	const header = document.createElement("div")
 	root.append(header)
 	const pe = document.createElement("p")
 	header.append(pe)
 	const pw = document.createElement("p")
 	header.append(pw)
+	const stackUp = document.createElement("button")
+	stackUp.textContent = "Stack up"
+	stackUp.addEventListener("click", e => {
+		e.stopPropagation()
+		console.log("Clicked stack up");
+		if (context === null) return
+		const r = getRecipesProducing(context.owner.machine, recipes)[0]
+		if (r === undefined) return
+		const resolve = tryCraft(r, context.inv, items)
+		console.log("tried a craft: ", resolve)
+		if (!resolve) return
+		context.owner.setStack(context.owner.getStack() + 1)
+		context.callback()
+	})
+	header.append(stackUp)
 
 	const grid = document.createElement("div")
 	root.append(grid)
 
-	let unsubscribe = ()=>{}
+	let subscribers: (()=>number)[] = []
+	pubSubTick.subscribe(()=>{
+		subscribers.forEach(f=>f())
+	})
 
-	const refresh = (machine: MachineInstance, availableResources: Inventory)=>{
+	const refresh = (machine: MachineInstance, availableResources: Inventory, mutatedMachine: ()=>void)=>{
 		refreshText(machine)
-		unsubscribe()
+		context = {
+			owner:machine,
+			inv:availableResources,
+			callback: mutatedMachine
+		}
 
 		grid.innerHTML = ""
 		console.log(machine.capableRecipes)
-		const subscribers: (()=>number)[] = []
+		subscribers = []
 		machine.capableRecipes.forEach(cr => {
 			const options:CraftingOptions = {maximize:true}
 
@@ -162,10 +193,6 @@ function createMachineUI() {
 			
 			subscribers.push(getCount)
 		});
-
-		unsubscribe = pubSubTick.subscribe(()=>{
-			subscribers.forEach(f=>f())
-		})
 	}
 
 	const refreshText = (machine: MachineInstance) => {
@@ -731,7 +758,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 
 
-	const machineUI = {...createMachineUI(), owner: null as null | MachineInstance}
+	const machineUI = {...createMachineUI(recipes, items), owner: null as null | MachineInstance}
 	document.getElementById("machine-window")!.append(machineUI.element)
 
 
@@ -749,7 +776,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		machineCell.addEventListener('click',()=>{
 			if (transferContext.kind === "empty") {
 				machineUI.owner = machineInst
-				machineUI.refresh(machineInst, mainInventory)
+				machineUI.refresh(machineInst, mainInventory, ()=>setStack(String(machineInst.getStack())))
 				document.getElementById("machine-window")!.style.display = ""
 			} else if (transferContext.kind === "machine") {
 				if (transferContext.value.id === machineInst.machine.id) {
