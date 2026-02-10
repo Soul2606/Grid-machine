@@ -35,18 +35,26 @@ They are treated as pure configuration objects and may be freely shared.
 
 ItemInstance
 
-Represents a specific item reference, optionally augmented with runtime state.
+Represents a specific item reference.
 Properties:
 - item: reference to an immutable Item
 - metadata: additional runtime data
-- amount: numeric quantity
 
 Notes:
-amount and metadata may be irrelevant in some contexts
-amount === 0 → quantity is irrelevant
-empty object metadata → metadata is irrelevant
+metadata is important for equality, if two item instances have different metadata then they are not equal
 
 ItemInstance is often used as an identity key, not a quantity holder
+
+
+
+ItemEntry
+
+extends ItemInstance
+Represents a specific item reference and quantity.
+Additional properties
+- amount: number
+
+ItemEntry is used as an identity key and quantity holder
 
 
 
@@ -61,26 +69,6 @@ An Inventory is conceptually just an array of ItemInstances, but with complex ru
 
 Because these rules are non-trivial, inventory logic is encapsulated in a dedicated class rather than operating directly on arrays.
 
-Shared Inventories
-
-An inventory may reference other inventories as shared inventories.
-Items in shared inventories are treated as available to the inventory, but are not owned by it.
-Rules
-Shared inventories are only allowed when:
-- max === Infinity
-- maxSlots === Infinity
-Shared inventories are never written to directly when adding items.
-Subtraction behavior
-When subtracting items:
-- Items are removed from the local inventory first
-- Any remaining amount is removed evenly from shared inventories
-- If the total available amount is insufficient, the operation fails and nothing is changed
-Planning
-Shared inventory logic uses a two-phase model:
-- First, compute whether the operation is possible
-- Then apply mutations atomically
-Shared inventories model access, not ownership.
-
 
 
 Input
@@ -89,6 +77,17 @@ Represents a single recipe input slot.
 Usually used as an array of Inputs
 Each Input contains an array of ItemInstances and an amount
 The reason for the array of ItemInstances is  because multiple different items may satisfy a single input slot
+
+
+
+Output
+
+Represents every output of a single recipe
+It has two types
+- type: "machine"
+- type: "items"
+
+That is because a recipe can either output a set of items or a single machine, never both.
 
 
 
@@ -116,6 +115,17 @@ This allows the same simulation to be run:
 - inside the main UI
 - in a separate HTML file
 - in automated tests
+
+
+
+ResolvedRecipe
+rr for short
+Represents a fully resolved, atomic execution of a single recipe.
+Notes:
+- Atomic: Represents one execution only
+- Irreversible: Cannot reconstruct the source recipe batch
+- Designed for inventory mutation and machine execution.
+- Equal rrs can be stacked to save on memory
 
 
 
