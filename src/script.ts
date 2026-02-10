@@ -1,7 +1,7 @@
 
 import type { Item, Machine, Recipe, Extractor, CraftingOptions } from './types.js'
 import { clamp, fetchData, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, maxCraftableCount, resolveCraftingCosts } from './functions.js'
-import { Inventory, ItemInstance, MachineInstance, ResolvedRecipe, Signal } from './classes.js'
+import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe, Signal } from './classes.js'
 
 type InfoPanelMethods = {
 	show: () => void
@@ -123,33 +123,49 @@ function createMachineUI() {
 	const grid = document.createElement("div")
 	root.append(grid)
 
+	let unsubscribe = ()=>{}
+
 	const refresh = (machine: MachineInstance, availableResources: Inventory)=>{
 		refreshText(machine)
+		unsubscribe()
+
 		grid.innerHTML = ""
 		console.log(machine.capableRecipes)
+		const subscribers: (()=>number)[] = []
 		machine.capableRecipes.forEach(cr => {
 			const options:CraftingOptions = {maximize:true}
-			const count =  maxCraftableCount(getRecipeInputs(cr, machine.items), availableResources, options)
-			console.log(count, cr)
-			if (count === 0) return
+
 			const out = getRecipeOutputs(cr, machine.items)
+			console.log(cr)
 			console.log("out: ", out)
 			if (out.type !== "item") return
-			const outI = out.items[0]
-			if (outI) {
-				const cell = createItemCell(outI.item)
+
+			const outFirst = out.items[0]
+			if (outFirst === undefined) throw new Error("Recipe produces nothing. id: " + cr.id);
+			
+			const cell = createItemCell(outFirst.item)
+
+			const getCount = ()=>{
+				const count =  maxCraftableCount(getRecipeInputs(cr, machine.items), availableResources, options)
 				cell.amountLabel.textContent = String(count)
-				cell.element.addEventListener("click", e => {
-					const resolve = resolveCraftingCosts(cr, availableResources, items, options)
-					if (!resolve) return
-					availableResources.subtractItems(resolve.inputs)
-					machine.addWorkingOn(resolve, count)
-				})
-				grid.append(cell.element)
-			} else {
-				throw new Error("Recipe produces nothing. id: " + cr.id);
+				return count
 			}
+			getCount()
+
+			cell.element.addEventListener("click", e => {
+				const resolve = resolveCraftingCosts(cr, availableResources, items, options)
+				if (!resolve) return
+				if (!availableResources.subtractItems(resolve.flatMap(res => res.inputs))) throw new Error("Invariant broke");
+				machine.addWorkingOn(resolve)
+			})
+			grid.append(cell.element)
+			
+			subscribers.push(getCount)
 		});
+
+		unsubscribe = pubSubTick.subscribe(()=>{
+			subscribers.forEach(f=>f())
+		})
 	}
 
 	const refreshText = (machine: MachineInstance) => {
@@ -212,7 +228,7 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 		}
 
 		// register the pending instance and transfer handler
-		const value = ItemInstance.from(item, amount)
+		const value = ItemEntry.fromInst(item, amount)
 
 		MouseOverlay.elements.heldItemIcon.setText(`${value.item.name}:${value.amount}`)
 		MouseOverlay.elements.heldItemIcon.show()
@@ -372,7 +388,7 @@ type TransferContext = {
 }
 | {
 	kind: "item"
-	value: ItemInstance
+	value: ItemEntry
 	transfer: (success:boolean) => void
 }
 | {
@@ -568,7 +584,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 
 
-	mainInventory.signal.subscribe((itemInstance: ItemInstance)=>{
+	mainInventory.signal.subscribe((itemInstance)=>{
 		const item = itemInstance.item
 		const amount = itemInstance.amount
 		for(const cellElement of invItemCells){
@@ -617,14 +633,16 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 		cell.addEventListener('click',()=>{
 			if (transferContext.kind !== "empty") {
-				if (transferContext.transfer) transferContext.transfer(false)
+				transferContext.transfer(false)
 				return
 			}
+			console.log("Clicked machine cell");
 			const recipe = getRecipesProducing(machine, recipes)[0]
 			if (!recipe) throw new Error(`The machine: ${machine.id} is not craftable`);
 			const resolved = resolveCraftingCosts(recipe, mainInventory, items)
+			console.log("Resolved recipes", resolved);
 			if (!resolved) return
-			if (!mainInventory.subtractItems(resolved.inputs)) return
+			if (!mainInventory.subtractItems(resolved.flatMap(res => res.inputs))) return
 			transferContext = {
 				kind: "machine",
 				value: machine,
@@ -632,7 +650,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 					transferContext = {kind: "empty"}
 					cell.style.backgroundColor = ''
 					if (success) return
-					mainInventory.addItems(resolved.inputs)
+					mainInventory.addItems(resolved.flatMap(res => res.inputs))
 				}
 			}
 			cell.style.backgroundColor = 'green'
@@ -765,7 +783,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 						if (input === undefined) return null
 						return{
 							recipe: obj.recipe,
-							input: ItemInstance.from(input, slot.amount)
+							input: ItemEntry.fromInst(input, slot.amount)
 						} as const
 					}).find(ri => ri !== null)
 					console.log("found ri: ", ri)
@@ -776,12 +794,11 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 						if (batches > 0) {						
 							success = true // success so the main inventory does not get it back
 							machineInst.addWorkingOn(
-								new ResolvedRecipe(
+								Array(batches).fill(new ResolvedRecipe(
 									ri.recipe.id,
 									[ri.input],
 									getRecipeOutputs(ri.recipe, items)
-								),
-								batches
+								))
 							)
 							mainInventory.addItem(incoming, incoming.amount - cost1 * batches) // Give back leftovers
 						}

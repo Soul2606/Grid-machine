@@ -1,5 +1,5 @@
 import { getItemFromId, JSONEquals, energyToNumber, maxCraftableCount, getRecipeInputs, getRecipeOutputs, relu, distributeIntEvenly, clamp, getRecipeFromId } from './functions.js';
-import type { CraftingOptions, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Output, Recipe, } from './types.js';
+import type { CraftingOptions, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Output, Recipe, ResolvedRecipeSer, } from './types.js';
 
 
 
@@ -18,11 +18,11 @@ export class Inventory {
 		return false
 	}
 
-	private itemInstances: ItemInstance[]; // !!!!Important!!!! The actual items in the inventory
+	private itemInstances: ItemEntry[]; // !!!!Important!!!! The actual items in the inventory
 	private readonly max: number;          // Max for each item, not amount in total
 	private readonly maxSlots: number;     // Max amount of different items
-	private readonly contentChangeSignal: Signal<ItemInstance>;
-	readonly signal: SignalInterfaceT<ItemInstance, void>
+	private readonly contentChangeSignal: Signal<ItemEntry>;
+	readonly signal: SignalInterfaceT<ItemEntry, void>
 	public shared: Inventory[]
 	constructor(
 		max: number = Infinity,
@@ -34,7 +34,7 @@ export class Inventory {
 		if (max < 1) throw new Error("max must be a natural number");
 
 		this.itemInstances = [];
-		this.contentChangeSignal = new Signal<ItemInstance>();
+		this.contentChangeSignal = new Signal<ItemEntry>();
 		this.signal = this.contentChangeSignal.createInterface(true)
 		this.max = Math.ceil(max);
 		this.maxSlots = Math.ceil(maxSlots);
@@ -44,7 +44,7 @@ export class Inventory {
 	/**
 	 * Finds an instance of the item in !ONLY THIS! inventory. Use with caution, this returns direct references!
 	 */
-	private findInstance(item: ItemInstance): ItemInstance | undefined {
+	private findInstance(item: ItemInstance) {
 		return this.itemInstances.find(entry => entry.isEqual(item));
 	}
 
@@ -57,7 +57,7 @@ export class Inventory {
 		if (!existing) {
 			if (this.itemInstances.length + 1 > this.maxSlots) return false;
 			if (amount > this.max) return false;
-			if (!dryRun) this.itemInstances.push(ItemInstance.from(item, amount));
+			if (!dryRun) this.itemInstances.push(ItemEntry.fromInst(item, amount));
 		} else {
 			const nextAmount = existing.amount + amount;
 			if (nextAmount < 0 || nextAmount > this.max) return false;
@@ -78,7 +78,7 @@ export class Inventory {
 
 	// ====== Execution ======
 
-		clear(){
+	clear(){
 		this.itemInstances = []
 		return this
 	}
@@ -151,7 +151,8 @@ export class Inventory {
 	/**
 	 * Tries to change every item at once. if any item can't be changed then nothing gets changed and it returns false
 	 */
-	changeItems(items: readonly ItemInstance[]): boolean {
+	changeItems(items: readonly ItemEntry[]): boolean {
+		console.log("changing items: ", items)
 		if (items.every(item => this.changeItem(item, item.amount, true))) { // This check is not strong enough. Even if every item can be added individually, then that does not mean they can all be added at once
 			for (const itemInstance of items) {
 				if (!this.changeItem(itemInstance, itemInstance.amount)) throw new Error("Invariant broken: inventory may be unpredictably mutated");
@@ -164,15 +165,15 @@ export class Inventory {
 	/**
 	 * Tries to add every item at once. if any item can't be added then nothing gets added and it returns false
 	 */
-	addItems(items: readonly ItemInstance[]): boolean {
+	addItems(items: readonly ItemEntry[]): boolean {
 		return this.changeItems(items);
 	}
 
 	/**
 	 * Tries to subtract every item at once. if any item can't be subtracted then nothing gets subtracted and it returns false
 	 */
-	subtractItems(items: readonly ItemInstance[]): boolean {
-		return this.changeItems(items.map(v => new ItemInstance(v.item, -v.amount, v.metadata)));
+	subtractItems(items: readonly ItemEntry[]): boolean {
+		return this.changeItems(items.map(v => new ItemEntry(v.item, v.metadata, -v.amount)));
 	}
 
 	// ====== Queries ======
@@ -196,10 +197,10 @@ export class Inventory {
 	/**
 	 * Returns an item based on content in this and shared inventories, does not return direct reference
 	 */
-	getReflection(item: ItemInstance): ItemInstance {
+	getReflection(item: ItemInstance): ItemEntry {
 		const instance = this.getAllItemInstances().find(v=>v.isEqual(item));
 		if (instance) return instance.clone();
-		return new ItemInstance(item.item, 0);
+		return ItemEntry.fromInst(item, 0);
 	}
 
 	getAmount(item: ItemInstance): number {
@@ -209,7 +210,7 @@ export class Inventory {
 	/**
 	 * Returns item instances based on content in this and shared inventories, does not return direct reference
 	 */
-	getAllItemInstances(): ItemInstance[] {
+	getAllItemInstances(){
 		return ItemInstance.squash(this.itemInstances.concat(...this.shared.flatMap(inv=>inv.itemInstances)));
 	}
 
@@ -242,8 +243,8 @@ export class Inventory {
 	 * Copies and overwrites content of provided inventory from this inventory
 	 */
 	copyContent(inv: Inventory) {
-		inv.itemInstances = Array.from(this.itemInstances)
-		return inv;
+		this.itemInstances = inv.getAllItemInstances()
+		return this
 	}
 }
 
@@ -251,12 +252,17 @@ export class Inventory {
 
 
 export class ItemInstance {
-	static from(inst: ItemInstance, amount?: number):ItemInstance{
-		return new ItemInstance(inst.item, amount === undefined ? inst.amount : amount, inst.metadata)
+	static from(inst: ItemInstance):ItemInstance{
+		return new ItemInstance(inst.item, inst.metadata)
 	}
 
-	static fromRef(ref: ItemInstanceSer, items:Item[]):ItemInstance{
-		return new ItemInstance(getItemFromId(ref.id, items), ref.amount, ref.metadata)
+	static fromRef(ref: ItemInstanceSer, items:Item[]){
+		const item = getItemFromId(ref.id, items)
+		const meta = ref.metadata === undefined? null : ref.metadata
+		if (ref.amount === undefined){
+			return new ItemInstance(item, meta)
+		}
+		return new ItemEntry(item, meta, ref.amount)
 	}
 
 	static fromItem(item: Item, amount?: number): ItemInstance {
@@ -266,34 +272,32 @@ export class ItemInstance {
 	/**
 	 * Does not mutate provided values
 	 */
-	static squash(items: readonly ItemInstance[]){
-		const squashed = new Map<string, ItemInstance>()
+	static squash(items: readonly ItemEntry[]){
+		const squashed = new Map<string, ItemEntry>()
 		for (const inst of items) {
 			const f = squashed.get(inst.item.id)
 			if (f) {
 				f.amount += inst.amount
 			} else {
-				squashed.set(inst.item.id, ItemInstance.from(inst))
+				squashed.set(inst.item.id, ItemEntry.from(inst))
 			}
 		}
 		return squashed.values().toArray()
 	}
 
 	readonly item: Item
-	amount: number
 	metadata: JSONValue
-	constructor(item: Item, amount = 0, metadata: JSONValue = null) {
+	constructor(item: Item, metadata: JSONValue = null) {
 		this.item = item
-		this.amount = amount
 		this.metadata = structuredClone(metadata)
 	}
 
 	clone() {
-		return new ItemInstance(this.item, this.amount, this.metadata)
+		return new ItemInstance(this.item, this.metadata)
 	}
 
 	serialize():ItemInstanceSer{
-		return {id: this.item.id, amount: this.amount, metadata: this.metadata}
+		return {id: this.item.id, metadata: this.metadata}
 	}
 
 	isEqual(itemInstance: ItemInstance) {
@@ -303,6 +307,35 @@ export class ItemInstance {
 			&&
 			JSONEquals(this.metadata, itemInstance.metadata)
 		)
+	}
+}
+
+
+
+
+export class ItemEntry extends ItemInstance {
+	static from(ent: ItemEntry){
+		return new ItemEntry(ent.item, structuredClone(ent.metadata), ent.amount)
+	}
+	static fromInst(inst: ItemInstance, amount: number){
+		return new ItemEntry(inst.item, structuredClone(inst.metadata), amount)
+	}
+	amount: number
+	constructor(item: Item, metadata: JSONValue, amount: number) {
+		super(item, metadata)
+		this.amount = amount
+	}
+
+	clone(): ItemEntry {
+		return new ItemEntry(this.item, this.metadata, this.amount)
+	}
+
+	serialize():ItemInstanceSer{
+		return {id: this.item.id, metadata: this.metadata, amount: this.amount}
+	}
+
+	strictEquals(ent: ItemEntry){
+		return this.isEqual(ent) && this.amount === ent.amount
 	}
 }
 
@@ -336,7 +369,7 @@ export class MachineInstance {
 	private craft(multiplier: number, recipe: Recipe) {
 		const output = getRecipeOutputs(recipe, this.items)
 		if (output.type === "machine") return []
-		return output.items.map(itemInst=>{itemInst.amount *= multiplier; return itemInst})
+		return output.items.map(ent=>{ent.amount *= multiplier; return ent})
 	}
 
 	/**Returns a serialized snapshot of the state of a machine instance. */
@@ -349,20 +382,7 @@ export class MachineInstance {
 			work: this.work,
 			workingOn: this.workingOn.map(wo => ({
 				amount: wo.amount,
-				recipe: {
-					id: wo.recipe.id,
-					inputs: wo.recipe.inputs.map(i=>i.serialize()),
-					outputs: (()=>{
-						if (wo.recipe.output.type === "item") return {
-							type: "item",
-							items: wo.recipe.output.items.map(i=>i.serialize())
-						}
-						return {
-							type: "machine",
-							id: wo.recipe.output.id
-						}
-					})()
-				}
+				recipe: wo.recipe.serialize()
 			}))
 		}
 	}
@@ -388,12 +408,14 @@ export class MachineInstance {
 		}).filter(r=>r.amount>0)
 	}
 
-	addWorkingOn(recipe: ResolvedRecipe, amount: number){
-		const existing = this.workingOn.find(wo => wo.recipe.equals(recipe))
-		if (existing) {
-			existing.amount += amount
-		} else {
-			this.workingOn.push({recipe, amount})
+	addWorkingOn(recipes: ResolvedRecipe[]){
+		for (const recipe of recipes) {
+			const existing = this.workingOn.find(wo => wo.recipe.equals(recipe))
+			if (existing) {
+				existing.amount ++
+			} else {
+				this.workingOn.push({recipe, amount:1})
+			}
 		}
 		return this
 	}
@@ -401,7 +423,7 @@ export class MachineInstance {
 	refundWorkingOn(recipeId: string): ItemInstance[]|"id_not_found"{
 		const existing = this.workingOn.find(wo => wo.recipe.id === recipeId)
 		if (existing) {
-			const consumed = existing.recipe.inputs.map(item => ItemInstance.from(item, item.amount * existing.amount))
+			const consumed = existing.recipe.inputs.map(item => ItemEntry.fromInst(item, item.amount * existing.amount))
 			existing.amount = 0
 			this.workingOn = this.workingOn.filter(wo => wo.amount > 0) // prune
 			return consumed
@@ -468,7 +490,7 @@ export class MachineInstance {
 		this.energy -= energyNeeded
 		this.work += workAdded
 		
-		const crafted: ItemInstance[] = []
+		const crafted: ItemEntry[] = []
 		for (const wo of workingOn) {
 			const sec = wo.recipe.processTimeSeconds
 			const amountOfCrafts = Math.min(wo.woQueue.amount, Math.floor(this.work / sec))
@@ -487,7 +509,7 @@ export class MachineInstance {
 		}
 	}
 
-	addFuel(fuel: ItemInstance):"success" | "incapable" | "incompatible" | "no_energy_in_item"{
+	addFuel(fuel: ItemEntry):"success" | "incapable" | "incompatible" | "no_energy_in_item"{
 		const fuelNeeds = this.machine.fuelNeeds
 		if (!fuelNeeds) return "incapable"
 		if (this.energy === null) return "incapable"
@@ -519,6 +541,7 @@ export class MachineInstance {
 		return this.workers
 	}
 }
+
 
 
 
@@ -582,23 +605,47 @@ export class Signal<P = unknown, R = void> {
 
 
 /**
- * This is simply a recipe with a resolved set of inputs
+ * A fully resolved, irreversible execution of a single recipe.
+ *
+ * - Inputs and outputs are fixed and exact.
+ * - Cannot be reversed back into its source recipe.
+ * - id: is the id from the recipe that was resolved 
+ *
+ * This is the authoritative result produced by recipe resolution.
  */
 export class ResolvedRecipe {
 	readonly id: string
-	readonly inputs: readonly ItemInstance[]
+	readonly inputs: readonly ItemEntry[]
 	readonly output: Output
-	constructor(id:string, inputs: readonly ItemInstance[], outputs: Output){
+	constructor(
+		id:string,
+		inputs: readonly ItemEntry[],
+		output: Output
+	){
 		this.id = id
 		this.inputs = inputs
-		this.output = outputs
+		this.output = output
+	}
+
+	serialize():ResolvedRecipeSer{
+		return {
+			id: this.id,
+			inputs: this.inputs.map(ent => ent.serialize()),
+			output: this.output.type === "machine" ?
+				this.output :
+				({
+					type: "item",
+					items: this.output.items.map(ent => ent.serialize())
+				})
+			
+		}
 	}
 
 	equals(rr: ResolvedRecipe){
 		return this.id === rr.id && 
 		this.inputs.length == rr.inputs.length &&
 		this.inputs.every(input =>
-			rr.inputs.some(i=>input.isEqual(i))
+			rr.inputs.some(i=>input.strictEquals(i))
 		) && ((
 			this.output.type === "machine" &&
 			rr.output.type === "machine" &&
@@ -607,10 +654,10 @@ export class ResolvedRecipe {
 			this.output.type === "item" &&
 			rr.output.type === "item" &&
 			this.output.items.every(output =>
-				//@ts-ignore ts rejects this line for some reason
-				rr.output.items.some(o=>output.isEqual(o))
+				rr.output.type === "item" &&
+				rr.output.items.some(o=>output.strictEquals(o))
 			)
-		)) 
+		))
 	}
 }
 

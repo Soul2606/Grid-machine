@@ -1,4 +1,4 @@
-import { ItemInstance, ResolvedRecipe } from './classes.js';
+import { ItemEntry, ItemInstance, ResolvedRecipe } from './classes.js';
 import { Inventory } from './classes.js';
 import type { Craftable, CraftingOptions, Input, Item, ItemInstanceSer, JSONValue, MachineInstanceSer, Output, Recipe } from "./types.js";
 
@@ -210,7 +210,7 @@ export function getRecipeInputs(recipe: Recipe, items: readonly Item[]): Input[]
 		}
 		return {
 			items: Array.from(inputItems).map(item=>
-				new ItemInstance(item,1,input.meta)
+				new ItemInstance(item, input.meta)
 			),
 			amount: input.amount
 		}
@@ -253,7 +253,7 @@ export function getRecipeOutputs(recipe: Recipe, items: readonly Item[]): Output
 	return {
 		type: "item",
 		items: recipe.outputs.map(output => 
-			new ItemInstance(getItemFromId(output.id, items), output.amount)
+			new ItemEntry(getItemFromId(output.id, items), null, output.amount === undefined ? 0 : output.amount)
 		)
 	}
 }
@@ -366,15 +366,17 @@ export function maxCraftableCount(inputs: readonly Input[], inventory: Inventory
 
 /**
  * Resolves a recipe against an inventory under given options.
- * Returns the concrete ItemInstances required to craft,
+ * Returns a resolved recipe,
  * or false if the recipe is not affordable.
+ * 
+ * Does not mutate any give value
  */
 export function resolveCraftingCosts(
 	recipe: Recipe,
 	inventory: Inventory,
 	items: readonly Item[],
 	options: CraftingOptions = { multiply: 1 }
-	): ResolvedRecipe | false {
+	): ResolvedRecipe[] | false {
 	if (!(inventory instanceof Inventory)) return false
 	const inputs = applyCraftingOptions(options, getRecipeInputs(recipe, items))
 
@@ -389,24 +391,38 @@ export function resolveCraftingCosts(
 		multiplier = Math.max(0, Math.floor(options.multiply ?? 1))
 	}
 
-	// Build chosen ItemInstances
-	const chosenInstances = []
-	for (const input of inputs) {
-		let remaining = input.amount * multiplier
-		for (const item of input.items) {
-			if (remaining <= 0) break
-			const available = inventory.getAmount(item)
-			const take = Math.min(available, remaining)
-			if (take > 0) {
-				chosenInstances.push(new ItemInstance(item.item, take, item.metadata))
-				remaining -= take
-			}
-		}
-		if (remaining > 0) return false // not enough items
-	}
-	if (chosenInstances.some(used => !inventory.canChange(used, used.amount))) return false
+	const output = getRecipeOutputs(recipe, items)
 
-	return new ResolvedRecipe(recipe.id, chosenInstances, getRecipeOutputs(recipe, items))
+	// Simulated inventory
+	const simInv = inventory.clone()
+
+	// Build ResolvedRecipe
+	const resolvedRecipes = []
+	for (let i = 0; i < multiplier; i++) {
+		// Build chosen ItemEntries
+		const chosenInstances = []
+		for (const input of inputs) {
+			let remaining = input.amount
+			// Try to satisfy remaining from pool of accepted items
+			for (const item of input.items) {
+				if (remaining <= 0) break
+				const available = simInv.getAmount(item)
+				const take = Math.min(available, remaining)
+				if (take > 0) {
+					chosenInstances.push(new ItemEntry(item.item, item.metadata, take))
+					if (!simInv.subtractItem(item, take)) throw new Error("Invariant broke");
+					remaining -= take
+				}
+			}
+			if (remaining > 0) return false // not enough items
+		}
+		resolvedRecipes.push(new ResolvedRecipe(
+			recipe.id,
+			chosenInstances,
+			output
+		))
+	}
+	return resolvedRecipes
 }
 
 /*

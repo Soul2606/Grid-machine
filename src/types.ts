@@ -1,6 +1,6 @@
 // types.ts
 
-import type { ItemInstance } from "./classes"
+import type { ItemEntry, ItemInstance } from "./classes"
 
 
 export type JSONValue = 
@@ -15,7 +15,7 @@ export type JSONValue =
 // A json friendly way to reference an ItemInstance (class)
 export type ItemInstanceSer = {
 	readonly id: string
-	readonly amount: number
+	readonly amount?: number
 	readonly metadata?: JSONValue
 }
 
@@ -97,7 +97,15 @@ export type Input = {
 // type represents all Recipe outputs. 
 export type Output = {
 	readonly type: "item"
-	readonly items: readonly ItemInstance[]
+	readonly items: readonly ItemEntry[]
+}|{
+	readonly type: "machine"
+	readonly id: string
+}
+
+export type OutputSer = {
+	readonly type: "item"
+	readonly items: readonly ItemInstanceSer[]
 }|{
 	readonly type: "machine"
 	readonly id: string
@@ -125,11 +133,5 @@ export type CraftingOptions = Readonly<{ // defaults:
 export type ResolvedRecipeSer = Readonly<{
 	id: string
 	inputs: readonly ItemInstanceSer[]
-	outputs: {
-		readonly type: "item"
-		readonly items: readonly ItemInstanceSer[]
-	}|{
-		readonly type: "machine"
-		readonly id: string
-	}
+	output: OutputSer
 }>
