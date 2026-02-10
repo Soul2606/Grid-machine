@@ -27,6 +27,13 @@ type MouseOverlayElements = {
 // Global functions
 
 
+
+function updateWorkers() {
+	document.getElementById("resources-workers")!.textContent = String(workers)
+}
+
+
+
 function stepExponential(n: number){
 	const preset = [
 		1,5,10,20,30,40,50,100,200,300,400,500,600,700,800,900,1000,
@@ -290,6 +297,8 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 //Global Variables
 
 let dataIsCompiled = false
+
+var workers = 3
 
 /* These will be assigned after compilation. Should be validated outside the main function*/
 
@@ -596,6 +605,8 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 	extraction  = response.extraction
 
 	document.body.classList.remove('loading')
+
+	updateWorkers()
 
 	const invItemCells = items.map(r => {
 		const v = createItemCell(r)

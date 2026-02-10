@@ -244,3 +244,12 @@ main{
     width: 100%;
     aspect-ratio: 1/1;
 }
+
+.resources{
+    display: flex;
+    border-top-style: solid;
+    border-top-color: white;
+    border-top-width: 2px;
+    gap: 40px;
+    overflow-x: scroll;
+}

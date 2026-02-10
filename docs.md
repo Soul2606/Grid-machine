@@ -14,7 +14,7 @@ Runtime simulation logic
 
 User interface (optional / external)
 
-The system is designed so that the core simulation can run headlessly, without any UI, allowing deterministic testing and alternative frontends.
+The system is designed so that the core simulation can run headlessly, without any UI, allowing the user to switch between different html files while the simulation runs in the background from a universal script file
 
 
 
@@ -43,7 +43,7 @@ Properties:
 Notes:
 metadata is important for equality, if two item instances have different metadata then they are not equal
 
-ItemInstance is often used as an identity key, not a quantity holder
+ItemInstance is often used as an identity key
 
 
 
