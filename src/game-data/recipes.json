@@ -36,13 +36,5 @@
 		"requiredProcess":"electrolyze",
 		"requiredTier":1,
 		"processTimeSeconds":120
-	},
-	{
-		"id":"craft_stone_furnace",
-		"inputs":[{"tag":"stone", "amount":6}],
-		"outputs":"stone_furnace",
-		"requiredProcess":"hand",
-		"requiredTier":0,
-		"processTimeSeconds":1
 	}
 ]

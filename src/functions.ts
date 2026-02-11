@@ -247,15 +247,9 @@ export function getRecipeFromId(id: string, recipes: readonly Recipe[]): Recipe 
 
 
 export function getRecipeOutputs(recipe: Recipe, items: readonly Item[]): Output {
-	if (typeof recipe.outputs === "string") {
-		return {type:"machine", id: recipe.outputs}
-	}
-	return {
-		type: "item",
-		items: recipe.outputs.map(output => 
-			new ItemEntry(getItemFromId(output.id, items), null, output.amount === undefined ? 0 : output.amount)
-		)
-	}
+	return recipe.outputs.map(output => 
+		new ItemEntry(getItemFromId(output.id, items), null, output.amount === undefined ? 0 : output.amount)
+	)
 }
 
 
@@ -540,17 +534,19 @@ export async function fetchData() {
 		})
 
 		machines.forEach(item => {
-			includeKeys(item, ['id', 'name', 'capabilities', 'tier'])
+			includeKeys(item, ['id', 'name', 'capabilities', 'tier', "cost"])
 		})
 		machines.forEach(item => {
-			limitKeysTo(item, ['id', 'name', 'capabilities', 'tier', "img", 'energyNeeds', 'fuelNeeds', "workerNeeds"])
+			limitKeysTo(item, ['id', 'name', 'capabilities', 'tier', "cost", "img", 'energyNeeds', 'fuelNeeds', "workerNeeds"])
 		})
 
 		recipes.forEach(item => {
 			limitKeysTo(item, ['id', 'inputs', 'outputs', 'requiredProcess', 'requiredTier', 'processTimeSeconds'])
 		})
 
-		const checkType = (obj: object, type: string|string[]) => {
+		type Types = "string" | "number" | "boolean" | "array" | "object"
+		const ct = (obj: any, type: Types|Types[], optional?: true) => {
+			if (optional && obj === undefined) return
 			const TYPE = [type].flat()
 			const valid = TYPE.some(type => {
 				if (type === 'array') {
@@ -562,50 +558,55 @@ export async function fetchData() {
 		}
 
 		for (const item of items) {
-			checkType(item.id, 'string')
-			checkType(item.name, 'string')
-			checkType(item.tags, 'array')
-			if (item.img) checkType(item.img, "string")
-			item.tags.forEach((tag: any) => checkType(tag, 'string'))
+			ct(item.id, 'string')
+			ct(item.name, 'string')
+			ct(item.tags, 'array')
+			ct(item.img, "string", true)
+			item.tags.forEach((tag: any) => ct(tag, 'string'))
 		}
 
 		for (const machine of machines) {
-			checkType(machine.id, 'string')
-			checkType(machine.name, 'string')
-			checkType(machine.tier, 'number')
-			checkType(machine.capabilities, 'array')
-			machine.capabilities.forEach((item: any) => checkType(item, 'string'))
-			if (machine.img) checkType(machine.img, "string")
+			ct(machine.id, 'string')
+			ct(machine.name, 'string')
+			ct(machine.tier, 'number')
+			ct(machine.cost, "array")
+			for (const cost of machine.cost) {
+				ct(cost.id, "string")
+				ct(cost.amount, "number")
+			}
+			ct(machine.capabilities, 'array')
+			machine.capabilities.forEach((item: any) => ct(item, 'string'))
+			ct(machine.img, "string", true)
 			if (machine.fuelNeeds) {
-				checkType(machine.fuelNeeds.tags, 'array')
-				machine.fuelNeeds.tags.forEach((v: any) => checkType(v, 'string'))
-				checkType(machine.fuelNeeds.energy, 'string')
+				ct(machine.fuelNeeds.tags, 'array')
+				machine.fuelNeeds.tags.forEach((v: any) => ct(v, 'string'))
+				ct(machine.fuelNeeds.energy, 'string')
 			}
 			if (machine.energyNeeds) {
-				checkType(machine.energyNeeds.voltageTier, 'number')
-				checkType(machine.energyNeeds.energy, 'string')
+				ct(machine.energyNeeds.voltageTier, 'number')
+				ct(machine.energyNeeds.energy, 'string')
 			}
 		}
 
 		for (const recipe of recipes) {
-			checkType(recipe.id, 'string')
-			checkType(recipe.requiredProcess, 'string')
-			checkType(recipe.requiredTier, 'number')
-			checkType(recipe.processTimeSeconds, 'number')
-			checkType(recipe.inputs, 'array')
-			recipe.inputs.forEach((input: any) => {
+			ct(recipe.id, 'string')
+			ct(recipe.requiredProcess, 'string')
+			ct(recipe.requiredTier, 'number')
+			ct(recipe.processTimeSeconds, 'number')
+			ct(recipe.inputs, 'array')
+			for(const input of recipe.inputs){
 				limitKeysTo(input, ['id', 'tag', 'amount'])
-				if (input.id) checkType(input.id, 'string')
-				if (input.tag) checkType(input.tag, 'string')
-				checkType(input.amount, 'number')
-			})
-			checkType(recipe.outputs, ['array', "string"])
-			if (Array.isArray(recipe.outputs)) recipe.outputs.forEach((output: any) => {
+				ct(input.id, 'string', true)
+				ct(input.tag, 'string', true)
+				ct(input.amount, 'number')
+			}
+			ct(recipe.outputs, "array")
+			for (const output of recipe.outputs){
 				limitKeysTo(output, ['id', 'tag', 'amount'])
-				if (output.id) checkType(output.id, 'string')
-				if (output.tag) checkType(output.tag, 'string')
-				checkType(output.amount, 'number')
-			})
+				ct(output.id, 'string', true)
+				ct(output.tag, 'string', true)
+				ct(output.amount, 'number')
+			}
 		}
 
 

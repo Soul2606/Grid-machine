@@ -5,6 +5,7 @@
 		"capabilities":["smelt"],
 		"tier":0,
 		"img":"svg/stone-furnace.svg",
+		"cost":[{"id":"stone", "amount":6}],
 		"fuelNeeds":{
 			"tags":["primitive_fuel"],
 			"energy":"90kJ"
@@ -15,6 +16,7 @@
 		"name":"Water pump",
 		"capabilities":["extract_water"],
 		"tier":0,
+		"cost":[{"id":"iron_ingot", "amount":6}],
 		"energyNeeds":{
 			"voltageTier":1,
 			"energy":"2kJ"
@@ -25,6 +27,7 @@
 		"name":"Iron anvil",
 		"capabilities":["anvil"],
 		"tier":0,
+		"cost":[{"id":"iron_ingot", "amount":4}],
 		"workerNeeds":{
 			"minimum":1,
 			"maximum":1

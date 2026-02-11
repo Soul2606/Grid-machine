@@ -44,6 +44,7 @@ export type Machine = {
 	readonly name: string
 	readonly tier: number
 	readonly capabilities: readonly string[]
+	readonly cost: readonly ItemInstanceSer[]
 	readonly img?: string
 	readonly fuelNeeds?: {
 		readonly tags: readonly string[],
@@ -69,7 +70,7 @@ export type RecipeInput = {
 export type Recipe = {
 	readonly id: string
 	readonly inputs: readonly RecipeInput[]
-	readonly outputs: readonly ItemInstanceSer[] | string
+	readonly outputs: readonly ItemInstanceSer[]
 	readonly requiredProcess: string
 	readonly requiredTier: number
 	readonly processTimeSeconds: number
@@ -95,21 +96,10 @@ export type Input = {
 }
 
 // type represents all Recipe outputs. 
-export type Output = {
-	readonly type: "item"
-	readonly items: readonly ItemEntry[]
-}|{
-	readonly type: "machine"
-	readonly id: string
-}
+export type Output = readonly ItemEntry[]
 
-export type OutputSer = {
-	readonly type: "item"
-	readonly items: readonly ItemInstanceSer[]
-}|{
-	readonly type: "machine"
-	readonly id: string
-}
+export type OutputSer = readonly ItemInstanceSer[]
+
 
 // brand type
 export type Craftable = (Item|Machine) & { readonly __brand_craftable?: unique symbol }

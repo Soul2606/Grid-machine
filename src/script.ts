@@ -141,11 +141,12 @@ function createMachineUI(recipes: readonly Recipe[], items: readonly Item[]) {
 		e.stopPropagation()
 		console.log("Clicked stack up");
 		if (context === null) return
-		const r = getRecipesProducing(context.owner.machine, recipes)[0]
-		if (r === undefined) return
-		const resolve = tryCraft(r, context.inv, items)
-		console.log("tried a craft: ", resolve)
-		if (!resolve) return
+		const cost = context.owner.machine.cost.map(ref =>
+			ItemEntry.fromRef(ref, items)
+		)
+		const afford = context.inv.subtractItems(cost)
+		console.log("affordable?: ", afford)
+		if (!afford) return
 		context.owner.setStack(context.owner.getStack() + 1)
 		context.callback()
 	})
@@ -176,9 +177,8 @@ function createMachineUI(recipes: readonly Recipe[], items: readonly Item[]) {
 			const out = getRecipeOutputs(cr, machine.items)
 			console.log(cr)
 			console.log("out: ", out)
-			if (out.type !== "item") return
 
-			const outFirst = out.items[0]
+			const outFirst = out[0]
 			if (outFirst === undefined) throw new Error("Recipe produces nothing. id: " + cr.id);
 			
 			const cell = createItemCell(outFirst.item)
@@ -645,15 +645,13 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		document.getElementById('machines-grid')!.appendChild(cell)
 
 		cell.addEventListener('mouseenter', ()=>{
-			const recipe = getRecipesProducing(machine, recipes)[0]
-			if (!recipe) return
+			const inputs = machine.cost
 
 			MouseOverlay.show()
 			MouseOverlay.elements.infoPanel.show()
 
-			const text = recipe.inputs.map(input=>{
+			const text = inputs.map(input=>{
 				let item = items.find(item=>item.id === input.id)
-				if (!item) item = items.find(item=>input.tag && item.tags.includes(input.tag))
 				if (item) {
 					return `${item.name}: ${input.amount}, `
 				} else {
@@ -675,12 +673,11 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 				return
 			}
 			console.log("Clicked machine cell");
-			const recipe = getRecipesProducing(machine, recipes)[0]
-			if (!recipe) throw new Error(`The machine: ${machine.id} is not craftable`);
-			const resolved = resolveCraftingCosts(recipe, mainInventory, items)
-			console.log("Resolved recipes", resolved);
-			if (!resolved) return
-			if (!mainInventory.subtractItems(resolved.flatMap(res => res.inputs))) return
+			const cost = machine.cost.map(ser =>
+				ItemEntry.fromRef(ser, items)
+			)
+			console.log("machine costs: ", cost);
+			if (!mainInventory.subtractItems(cost)) return
 			transferContext = {
 				kind: "machine",
 				value: machine,
@@ -688,7 +685,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 					transferContext = {kind: "empty"}
 					cell.style.backgroundColor = ''
 					if (success) return
-					mainInventory.addItems(resolved.flatMap(res => res.inputs))
+					mainInventory.addItems(cost)
 				}
 			}
 			cell.style.backgroundColor = 'green'

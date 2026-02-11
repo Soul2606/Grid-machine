@@ -251,17 +251,15 @@ export class Inventory {
 
 
 export class ItemInstance {
+
 	static from(inst: ItemInstance):ItemInstance{
 		return new ItemInstance(inst.item, inst.metadata)
 	}
 
-	static fromRef(ref: ItemInstanceSer, items:Item[]){
+	static fromRef(ref: ItemInstanceSer, items:readonly Item[]){
 		const item = getItemFromId(ref.id, items)
 		const meta = ref.metadata === undefined? null : ref.metadata
-		if (ref.amount === undefined){
-			return new ItemInstance(item, meta)
-		}
-		return new ItemEntry(item, meta, ref.amount)
+		return new ItemInstance(item, meta)
 	}
 
 	static fromItem(item: Item, amount?: number): ItemInstance {
@@ -313,12 +311,22 @@ export class ItemInstance {
 
 
 export class ItemEntry extends ItemInstance {
+
 	static from(ent: ItemEntry){
 		return new ItemEntry(ent.item, structuredClone(ent.metadata), ent.amount)
 	}
+
 	static fromInst(inst: ItemInstance, amount: number){
 		return new ItemEntry(inst.item, structuredClone(inst.metadata), amount)
 	}
+
+	static fromRef(ref: ItemInstanceSer, items:readonly Item[]){
+		const item = getItemFromId(ref.id, items)
+		const meta = ref.metadata === undefined? null : ref.metadata
+		const amount = ref.amount === undefined ? 0 : ref.amount
+		return new ItemEntry(item, meta, amount)
+	}
+
 	amount: number
 	constructor(item: Item, metadata: JSONValue, amount: number) {
 		super(item, metadata)
@@ -367,8 +375,7 @@ export class MachineInstance {
 
 	private craft(multiplier: number, recipe: Recipe) {
 		const output = getRecipeOutputs(recipe, this.items)
-		if (output.type === "machine") return []
-		return output.items.map(ent=>{ent.amount *= multiplier; return ent})
+		return output.map(ent=>{ent.amount *= multiplier; return ent})
 	}
 
 	/**Returns a serialized snapshot of the state of a machine instance. */
@@ -630,33 +637,19 @@ export class ResolvedRecipe {
 		return {
 			id: this.id,
 			inputs: this.inputs.map(ent => ent.serialize()),
-			output: this.output.type === "machine" ?
-				this.output :
-				({
-					type: "item",
-					items: this.output.items.map(ent => ent.serialize())
-				})
-			
+			output: this.output.map(ent => ent.serialize())
 		}
 	}
 
 	equals(rr: ResolvedRecipe){
 		return this.id === rr.id && 
 		this.inputs.length == rr.inputs.length &&
-		this.inputs.every(input =>
-			rr.inputs.some(i=>input.strictEquals(i))
-		) && ((
-			this.output.type === "machine" &&
-			rr.output.type === "machine" &&
-			this.output.id === rr.output.id
-		)||(
-			this.output.type === "item" &&
-			rr.output.type === "item" &&
-			this.output.items.every(output =>
-				rr.output.type === "item" &&
-				rr.output.items.some(o=>output.strictEquals(o))
-			)
-		))
+		this.inputs.every(inp =>
+			rr.inputs.some(i=>inp.strictEquals(i))
+		) && 
+		this.output.every(out =>
+			rr.output.some(i=>out.strictEquals(i))
+		)
 	}
 }
 
