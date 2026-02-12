@@ -144,8 +144,10 @@ function createMachineUI(recipes: readonly Recipe[], items: readonly Item[]) {
 		const cost = context.owner.machine.cost.map(ref =>
 			ItemEntry.fromRef(ref, items)
 		)
+		console.log("inv: ", context.inv);
+		
 		const afford = context.inv.subtractItems(cost)
-		console.log("affordable?: ", afford)
+		console.log("affordable?: ", afford, "cost: ", cost)
 		if (!afford) return
 		context.owner.setStack(context.owner.getStack() + 1)
 		context.callback()
@@ -541,7 +543,7 @@ const quantitySlider = (()=>{// Item amount slider
 
 
 /* Used to decide what is shown in the machines tab */
-const machinesUnlocked = new Set(['stone_furnace'])
+const machinesUnlocked = new Set(['stone_furnace', "iron_anvil"])
 
 
 

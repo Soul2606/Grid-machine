@@ -41,5 +41,41 @@
 		"name":"Iron ingot",
 		"tags":["metal"],
 		"img":"svg/iron-ingot.svg"
+	},
+	{
+		"id":"clay",
+		"name":"Clay",
+		"tags":[],
+		"img":"svg/clay.svg"
+	},
+	{
+		"id":"ceramic",
+		"name":"Ceramic",
+		"tags":[],
+		"img":"svg/ceramic.svg"
+	},
+	{
+		"id":"sand",
+		"name":"Sand",
+		"tags":[],
+		"img":"svg/sand.svg"
+	},
+	{
+		"id":"wood",
+		"name":"Wood",
+		"tags":[],
+		"img":"svg/wood.svg"
+	},
+	{
+		"id":"sticky_resin",
+		"name":"Sticky resin",
+		"tags":[],
+		"img":"svg/sticky-resin.svg"
+	},
+	{
+		"id":"glass_tube",
+		"name":"Glass tube",
+		"tags":[],
+		"img":"svg/glass-tube.svg"
 	}
 ]

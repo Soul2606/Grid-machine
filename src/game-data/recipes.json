@@ -36,5 +36,13 @@
 		"requiredProcess":"electrolyze",
 		"requiredTier":1,
 		"processTimeSeconds":120
+	},
+	{
+		"id":"form_glass_tube",
+		"inputs":[{"id":"sand", "amount":1}],
+		"outputs":[{"id":"glass_tube", "amount":1}],
+		"requiredProcess":"smelt",
+		"requiredTier":0,
+		"processTimeSeconds":10
 	}
 ]

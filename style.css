@@ -143,6 +143,12 @@ main{
     align-items: center;
     justify-content: space-between;
     background-size: cover;
+    width: 100px;
+    height: 100px;
+}
+
+.machine > p{
+    margin: 0;
 }
 
 .machine-line{

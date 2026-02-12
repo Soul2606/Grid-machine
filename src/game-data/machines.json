@@ -27,6 +27,7 @@
 		"name":"Iron anvil",
 		"capabilities":["anvil"],
 		"tier":0,
+		"img":"svg/iron-anvil.svg",
 		"cost":[{"id":"iron_ingot", "amount":4}],
 		"workerNeeds":{
 			"minimum":1,

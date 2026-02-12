@@ -8,22 +8,11 @@ import type { CraftingOptions, Item, ItemInstanceSer, JSONValue, Machine, Machin
  * Class for managing data of item instances. inventory can be constructed and configured before compilation.
  */
 export class Inventory {
-
-	static hasInfiniteSharingLoo(inv:Inventory, checked = new Set<Inventory>()): boolean{
-		if (checked.has(inv)) return true
-		checked.add(inv)
-		for (const i of inv.shared) {
-			if (this.hasInfiniteSharingLoo(i, checked)) return true
-		}
-		return false
-	}
-
 	private itemInstances: ItemEntry[]; // !!!!Important!!!! The actual items in the inventory
 	private readonly max: number;          // Max for each item, not amount in total
 	private readonly maxSlots: number;     // Max amount of different items
 	private readonly contentChangeSignal: Signal<ItemEntry>;
 	readonly signal: SignalInterfaceT<ItemEntry, void>
-	public shared: Inventory[]
 	constructor(
 		max: number = Infinity,
 		maxSlots: number = Infinity
@@ -38,7 +27,6 @@ export class Inventory {
 		this.signal = this.contentChangeSignal.createInterface(true)
 		this.max = Math.ceil(max);
 		this.maxSlots = Math.ceil(maxSlots);
-		this.shared = []
 	}
 
 	/**
@@ -48,15 +36,29 @@ export class Inventory {
 		return this.itemInstances.find(entry => entry.isEqual(item));
 	}
 
+	// ====== Execution ======
+
+	clear(){
+		this.itemInstances = []
+		return this
+	}
+
 	/**
-	 * Try to change content, only amount and max filter apply, does not use shared inventories
+	 * Used to add/subtract an item from inventory.
+	 * @param item Item instance to be added to inventory
+	 * @param amount negative integers
+	 * @param dryRun If true then no item will be added but you will still get the success value
+	 * @returns success
 	 */
-	private changeItemDirect(item: ItemInstance, amount: number, dryRun = false): boolean {
+	changeItem(item: ItemInstance, amount: number, dryRun: boolean = false): boolean {
+		if (!Number.isInteger(amount)) return false;
+
 		const existing = this.findInstance(item);
 
 		if (!existing) {
 			if (this.itemInstances.length + 1 > this.maxSlots) return false;
 			if (amount > this.max) return false;
+			if (amount < 0) return false;
 			if (!dryRun) this.itemInstances.push(ItemEntry.fromInst(item, amount));
 		} else {
 			const nextAmount = existing.amount + amount;
@@ -70,74 +72,6 @@ export class Inventory {
 		}
 		this.contentChangeSignal.send(this.getReflection(item))
 		return true;
-	}
-
-	private shareAllowed(){
-		return this.max === Infinity && this.maxSlots === Infinity
-	}
-
-	// ====== Execution ======
-
-	clear(){
-		this.itemInstances = []
-		return this
-	}
-
-	/**
-	 * Used to add/subtract an item from inventory.
-	 * @param item Item instance to be added to inventory
-	 * @param amount The amount that will change
-	 * @param dryRun If true then no item will be added but you will still get the success value
-	 * @returns success
-	 */
-	changeItem(item: ItemInstance, amount: number, dryRun: boolean = false): boolean {
-		if (!Number.isInteger(amount)) return false;
-		if (this.shareAllowed() && amount < 0 && this.shared.length > 0) {
-			const toRemove = -amount;
-
-			// --- Phase 1: compute how much we can remove ---
-			const localInst = this.findInstance(item);
-			const localAvailable = localInst ? localInst.amount : 0;
-
-			let remaining = toRemove;
-
-			const sharedPlans: { inv: Inventory; take: number }[] = [];
-
-			// Take from local first
-			const takeLocal = Math.min(localAvailable, remaining);
-			remaining -= takeLocal;
-
-			// Then evenly from shared inventories
-			if (remaining > 0 && this.shared.length > 0) {
-				const candidates = this.shared.map(inv=>{
-					const inst = inv.findInstance(item)
-					return inst?inst.amount:0
-				})
-
-				const distribution = distributeIntEvenly(remaining, candidates)
-				if (distribution.reduce((p,n)=>p+n,0) < remaining) return false
-				distribution.forEach((take, i)=>{
-					const inv = this.shared[i]!
-					sharedPlans.push({inv, take})
-				})
-			}
-
-			// --- Phase 2: apply mutations ---
-			if (!dryRun) {
-				// Apply local
-				if (takeLocal > 0 && localInst) {
-					if (!this.changeItemDirect(item, -takeLocal)) throw new Error("Invariant broke");
-				}
-
-				// Apply shared
-				for (const plan of sharedPlans) {
-					if (!plan.inv.subtractItem(item, plan.take)) throw new Error("Invariant broke");
-				}
-			}
-
-			return true;
-		}
-		return this.changeItemDirect(item, amount, dryRun)
 	}
 
 	addItem(item: ItemInstance, amount: number): boolean {
@@ -210,7 +144,7 @@ export class Inventory {
 	 * Returns item instances based on content in this and shared inventories, does not return direct reference
 	 */
 	getAllItemInstances(){
-		return ItemInstance.squash(this.itemInstances.concat(...this.shared.flatMap(inv=>inv.itemInstances)));
+		return this.itemInstances.map(ent => ItemEntry.from(ent))
 	}
 
 	/**

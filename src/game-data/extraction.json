@@ -6,9 +6,12 @@
 		"requiredPower":1,
 		"yields":[
 			{"itemId":"stone", "weight":6},
+			{"itemId":"wood", "weight":6},
 			{"itemId":"raw_coal", "weight":2},
-			{"itemId":"hematite", "weight":1},
-			{"itemId":"water", "weight":1}
+			{"itemId":"clay", "weight":2},
+			{"itemId":"sand", "weight":2},
+			{"itemId":"sticky_resin", "weight":1},
+			{"itemId":"hematite", "weight":1}
 		]
 	}
 ]
