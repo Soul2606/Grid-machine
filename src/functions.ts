@@ -1,6 +1,6 @@
-import { ItemEntry, ItemInstance, ResolvedRecipe } from './classes.js';
+import { ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js';
 import { Inventory } from './classes.js';
-import type { Craftable, CraftingOptions, Input, Item, ItemInstanceSer, JSONValue, MachineInstanceSer, Output, Recipe } from "./types.js";
+import type { Craftable, CraftingOptions, Input, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe } from "./types.js";
 
 
 
@@ -197,6 +197,26 @@ export function getRecipesProducing(craftable: Craftable, recipes: readonly Reci
 
 
 /**
+ * returns each recipe that consumes every provided item
+ * @param consumed items the recipe must consume
+ * @param recipes recipes checked
+ * @param items all items
+ */
+export function getRecipesConsuming(consumed: ItemInstance|(readonly ItemInstance[]), recipes: readonly Recipe[], items: readonly Item[]) {
+	const CONSUMED = Array.isArray(consumed) ? consumed : [consumed]
+	return recipes.filter(recipe => 
+		getRecipeInputs(recipe, items).every(input =>
+			input.items.some(i =>
+				CONSUMED.some(j => j.isEqual(i))
+			)
+		)
+	)
+}
+
+
+
+
+/**
  * Returns every input with each item that is valid for that input of the recipe. think of it like this (item||item...)&&(item||item...)...
  */
 export function getRecipeInputs(recipe: Recipe, items: readonly Item[]): Input[] {
@@ -245,8 +265,7 @@ export function getRecipeFromId(id: string, recipes: readonly Recipe[]): Recipe 
 
 
 
-
-export function getRecipeOutputs(recipe: Recipe, items: readonly Item[]): Output {
+export function getRecipeOutputs(recipe: Recipe, items: readonly Item[]): readonly ItemEntry[] {
 	return recipe.outputs.map(output => 
 		new ItemEntry(getItemFromId(output.id, items), null, output.amount === undefined ? 0 : output.amount)
 	)
@@ -288,6 +307,116 @@ export function energyToNumber(energyString: string): number {
 	const multiplier = { kJ: 1000, MJ: 1000000, GJ: 1000000000 }[prefix]
 	if (!multiplier) throw new Error("Invalid energy prefix, must be 'kJ, MJ or GJ'")
 	return Number(value) * multiplier
+}
+
+
+
+
+export function capableRecipes(recipes: readonly Recipe[], machine: Machine) {
+	return recipes.filter(recipe=>machine.capabilities.includes(recipe.requiredProcess))
+}
+
+
+
+
+/**
+ * From a machine line and initial input, tries to rout the output from each machine to the input of the next machine.
+ * 
+ * If a machine down the line has multiple outputs it will try to route the first output that can be taken unambiguously by the current machine.
+ * Unambiguously mans exactly one recipe is capable of taking the item.
+ * The rest of the incoming items go directly to output.
+ * 
+ * If you get the "branching_inputs" status then that means the no input items can be taken unambiguously by the current machine. 
+ * - incoming: the set of incoming items.
+ * - step: where along the machine line we are.
+ * 
+ * If you get the "no_output" status then the selected recipe has no outputs. This is usually an issue with the game data and not the machine line. 
+ * - recipe: the recipe with no output.
+ * - step
+ * @param line order matters, can contain duplicates
+ * @param input in not mutated
+ * @param recipes all
+ * @param items all
+ * @returns object with status: string
+ */
+export function runProcessingLine(
+	line: readonly Machine[],
+	input: readonly ItemEntry[],
+	recipes: readonly Recipe[], 
+	items: readonly Item[]
+) {
+	let current: readonly ItemEntry[] = input
+	const output: ItemEntry[] = []
+	for (let i=0; i<line.length; i++) {
+		const machine = line[i]!
+		let recipe: Recipe|undefined
+		for (let j=0; j<current.length; j++) {
+			const c = current[j]!
+			const rec = getRecipesConsuming(c, capableRecipes(recipes, machine), items)
+			if (rec.length === 1) {
+				recipe = rec[0]
+				output.push(...current.toSpliced(j, 1))
+				break
+			}
+		}	
+		if (!recipe) {
+			return {
+				status:"branching_inputs",
+				incoming:current,
+				step:i
+			} as const
+		}
+		const out = getRecipeOutputs(recipe, items)
+		if (out.length === 0) {
+			return {
+				status:"no_output",
+				recipe:recipe,
+				step:i
+			} as const
+		}
+		current = out
+	}
+	output.push(...current)
+	return {
+		status:"ok",
+		output,
+	} as const
+}
+
+
+
+
+/**
+ * Tries to compile an entire machine line into a set of super recipes (recipe derived from a chain of recipes) based on the capabilities of the first machine in line.
+ * @param line order matters, can contain duplicates
+ * @param recipes all
+ * @param items all
+ * @returns 
+ */
+export function parseProcessingLine(
+	line: readonly Machine[],
+	recipes: readonly Recipe[], 
+	items: readonly Item[]
+) {
+	const problems = []
+	const superRecipes = []
+	const firstM = line[0]
+	if (!firstM) return {status: "empty_line"} as const
+	const capable = capableRecipes(recipes, firstM)
+	for (const recipe of capable) {
+		const inputs = getRecipeInputs(recipe, items)
+		const outputs = getRecipeOutputs(recipe, items)
+		const result = runProcessingLine(line.toSpliced(0,1), outputs, recipes, items)
+		if (result.status !== "ok") {
+			problems.push(result)
+			continue
+		}
+		superRecipes.push({
+			input: inputs,
+			output: result.output,
+		})
+	}
+	return {superRecipes, problems, status:"ok"} as const
 }
 
 

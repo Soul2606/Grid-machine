@@ -1,5 +1,5 @@
 import { getItemFromId, JSONEquals, energyToNumber, maxCraftableCount, getRecipeInputs, getRecipeOutputs, relu, distributeIntEvenly, clamp, getRecipeFromId } from './functions.js';
-import type { CraftingOptions, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Output, Recipe, ResolvedRecipeSer, } from './types.js';
+import type { CraftingOptions, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe, ResolvedRecipeSer, } from './types.js';
 
 
 
@@ -556,11 +556,11 @@ export class Signal<P = unknown, R = void> {
 export class ResolvedRecipe {
 	readonly id: string
 	readonly inputs: readonly ItemEntry[]
-	readonly output: Output
+	readonly output: readonly ItemEntry[]
 	constructor(
 		id:string,
 		inputs: readonly ItemEntry[],
-		output: Output
+		output: readonly ItemEntry[]
 	){
 		this.id = id
 		this.inputs = inputs

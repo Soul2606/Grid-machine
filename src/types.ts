@@ -95,10 +95,6 @@ export type Input = {
 	readonly amount: number
 }
 
-// type represents all Recipe outputs. 
-export type Output = readonly ItemEntry[]
-
-export type OutputSer = readonly ItemInstanceSer[]
 
 
 // brand type
@@ -123,5 +119,5 @@ export type CraftingOptions = Readonly<{ // defaults:
 export type ResolvedRecipeSer = Readonly<{
 	id: string
 	inputs: readonly ItemInstanceSer[]
-	output: OutputSer
+	output: readonly ItemInstanceSer[]
 }>
