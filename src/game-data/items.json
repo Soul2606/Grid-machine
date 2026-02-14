@@ -37,10 +37,40 @@
 		"img":"svg/hematite.svg"
 	},
 	{
+		"id":"malachite",
+		"name":"Malachite",
+		"tags":[],
+		"img":"svg/malachite.svg"
+	},
+	{
+		"id":"cassiterite",
+		"name":"Cassiterite",
+		"tags":[],
+		"img":"svg/Cassiterite.svg"
+	},
+	{
+		"id":"sphalerite",
+		"name":"Sphalerite",
+		"tags":[],
+		"img":"svg/sphalerite.svg"
+	},
+	{
 		"id":"iron_ingot",
 		"name":"Iron ingot",
 		"tags":["metal"],
 		"img":"svg/iron-ingot.svg"
+	},
+	{
+		"id":"zinc_ingot",
+		"name":"Zinc ingot",
+		"tags":["metal"],
+		"img":"svg/zinc-ingot.svg"
+	},
+	{
+		"id":"tin_ingot",
+		"name":"Tin ingot",
+		"tags":["metal"],
+		"img":"svg/tin-ingot.svg"
 	},
 	{
 		"id":"clay",
@@ -77,5 +107,104 @@
 		"name":"Glass tube",
 		"tags":[],
 		"img":"svg/glass-tube.svg"
+	},
+	{
+		"id":"iron_plate",
+		"name":"Iron plate",
+		"tags":[]
+	},
+	{
+		"id":"iron_rod",
+		"name":"Iron rod",
+		"tags":[]
+	},
+	{
+		"id":"bronze_ingot",
+		"name":"Bronze ingot",
+		"tags":[],
+		"img":"svg/bronze-ingot.svg"
+	},
+	{
+		"id":"bronze_plate",
+		"name":"Bronze plate",
+		"tags":[],
+		"img":"svg/bronze-plate.svg"
+	},
+	{
+		"id":"bronze_gear",
+		"name":"Bronze gear",
+		"tags":[],
+		"img":"svg/bronze-gear.svg"
+	},
+	{
+		"id":"brass_ingot",
+		"name":"Brass ingot",
+		"tags":[],
+		"img":"svg/brass-ingot.svg"
+	},
+	{
+		"id":"brass_plate",
+		"name":"Brass plate",
+		"tags":[],
+		"img":"svg/brass-plate.svg"
+	},
+	{
+		"id":"steel_ingot",
+		"name":"Steel ingot",
+		"tags":[],
+		"img":"svg/steel-ingot.svg"
+	},
+	{
+		"id":"steel_rod",
+		"name":"Steel rod",
+		"tags":[],
+		"img":"svg/steel-rod.svg"
+	},
+	{
+		"id":"copper_ingot",
+		"name":"Copper ingot",
+		"tags":[],
+		"img":"svg/copper-ingot.svg"
+	},
+	{
+		"id":"copper_plate",
+		"name":"Copper plate",
+		"tags":[],
+		"img":"svg/copper-plate.svg"
+	},
+	{
+		"id":"crude_copper_wire",
+		"name":"Crude copper wire",
+		"tags":[],
+		"img":"svg/crude-copper-wire.svg"
+	},
+	{
+		"id":"wood_board",
+		"name":"Wood board",
+		"tags":[],
+		"img":"svg/wood-board.svg"
+	},
+	{
+		"id":"vacuum_tube",
+		"name":"Vacuum tube",
+		"tags":[],
+		"img":"svg/vacuum-tube.svg"
+	},
+	{
+		"id":"wooden_circuit_board",
+		"name":"Wooden circuit board",
+		"tags":[],
+		"img":"svg/logic-circuit-board.svg"
+	},
+	{
+		"id":"basic_electric_motor",
+		"name":"Basic electric motor",
+		"tags":[]
+	},
+	{
+		"id":"basic_machine_hull",
+		"name":"Basic machine hull",
+		"tags":[],
+		"img":"svg/basic-machine-hull.svg"
 	}
 ]

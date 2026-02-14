@@ -8,34 +8,12 @@
 		"processTimeSeconds":5
 	},
 	{
-		"id":"extract_water",
-		"inputs":[],
-		"outputs":[{"id":"water", "amount":1}],
-		"requiredProcess":"extract_water",
+		"id":"smelt_clay",
+		"inputs":[{"id":"clay", "amount":1}],
+		"outputs":[{"id":"ceramic", "amount":1}],
+		"requiredProcess":"smelt",
 		"requiredTier":0,
-		"processTimeSeconds":0.1
-	},
-	{
-		"id":"produce_water",
-		"inputs":[
-			{"id":"hydrogen", "amount":2},
-			{"id":"oxygen", "amount":1}
-		],
-		"outputs":[{"id":"water", "amount":1}],
-		"requiredProcess":"chemical_reactor",
-		"requiredTier":1,
-		"processTimeSeconds":1
-	},
-	{
-		"id":"electrolyze_water",
-		"inputs":[{"id":"water", "amount":1}],
-		"outputs":[
-			{"id":"hydrogen", "amount":2},
-			{"id":"oxygen", "amount":1}
-		],
-		"requiredProcess":"electrolyze",
-		"requiredTier":1,
-		"processTimeSeconds":120
+		"processTimeSeconds":5
 	},
 	{
 		"id":"form_glass_tube",

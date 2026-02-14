@@ -12,14 +12,15 @@
 		}
 	},
 	{
-		"id":"water_pump",
-		"name":"Water pump",
-		"capabilities":["extract_water"],
+		"id":"alloy_furnace",
+		"name":"Alloy furnace",
+		"capabilities":["alloy"],
 		"tier":0,
-		"cost":[{"id":"iron_ingot", "amount":6}],
-		"energyNeeds":{
-			"voltageTier":1,
-			"energy":"2kJ"
+		"img":"svg/alloy-furnace.svg",
+		"cost":[{"id":"ceramic", "amount":12}],
+		"fuelNeeds":{
+			"tags":["primitive_fuel"],
+			"energy":"140kJ"
 		}
 	},
 	{
@@ -32,6 +33,60 @@
 		"workerNeeds":{
 			"minimum":1,
 			"maximum":1
+		}
+	},
+	{
+		"id":"workshop",
+		"name":"Workshop",
+		"capabilities":["workshop"],
+		"tier":0,
+		"img":"svg/workshop.svg",
+		"cost":[
+			{"id":"iron_plate", "amount":2},
+			{"id":"wood", "amount":12}
+		],
+		"workerNeeds":{
+			"minimum":1,
+			"maximum":1
+		}
+	},
+	{
+		"id":"basic_wiremill",
+		"name":"Basic Wiremill",
+		"capabilities":["wire_extrusion"],
+		"tier":0,
+		"img":"svg/basic-wiremill.svg",
+		"cost":[
+			{"id":"wooden_circuit_board", "amount":1},
+			{"id":"basic_machine_hull", "amount":1},
+			{"id":"iron_rod", "amount":8},
+			{"id":"basic_electric_motor", "amount":2},
+			{"id":"bronze_gear", "amount":12},
+			{"id":"crude_copper_wire", "amount":2},
+			{"id":"bronze_plate", "amount":1}
+		],
+		"energyNeeds":{
+			"voltageTier":1,
+			"energy":"2kJ"
+		}
+	},
+	{
+		"id":"basic_metal_bender",
+		"name":"Basic Metal Bender",
+		"capabilities":["metal_bending"],
+		"tier":0,
+		"img":"svg/basic-metal-bender.svg",
+		"cost":[
+			{"id":"wooden_circuit_board", "amount":1},
+			{"id":"basic_machine_hull", "amount":1},
+			{"id":"iron_rod", "amount":4},
+			{"id":"basic_electric_motor", "amount":6},
+			{"id":"crude_copper_wire", "amount":1},
+			{"id":"bronze_plate", "amount":2}
+		],
+		"energyNeeds":{
+			"voltageTier":1,
+			"energy":"2kJ"
 		}
 	}
 ]

@@ -613,11 +613,24 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 	const invItemCells = items.map(r => {
 		const v = createItemCell(r)
 		v.element.style.display = "none"
+
+		v.element.addEventListener("mouseenter", e => {
+			MouseOverlay.show()
+			MouseOverlay.elements.infoPanel.show()
+			MouseOverlay.elements.infoPanel.setText(r.name)
+		})
+
+		v.element.addEventListener('mouseleave', ()=>{
+			MouseOverlay.elements.infoPanel.hide()
+			MouseOverlay.elements.infoPanel.setText('')
+		})
+
 		v.element.addEventListener('mousedown', e => {
 			e.preventDefault()
 			e.stopPropagation()
 			itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, ItemInstance.fromItem(v.itemPointer))
 		})
+		
 		document.getElementById('inventory-grid')!.appendChild(v.element)
 		return v
 	})
