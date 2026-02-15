@@ -267,7 +267,7 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 		const value = ItemEntry.fromInst(item, amount)
 
 		MouseOverlay.elements.heldItemIcon.setText(`${value.item.name}:${value.amount}`)
-		MouseOverlay.elements.heldItemIcon.show()
+		MouseOverlay.elements.heldItemIcon.show(true)
 		MouseOverlay.show()
 
 		// transfer is called to resolve ItemTransferContext
@@ -324,70 +324,95 @@ const mainInventory = new Inventory()
 
 
 /*This is a singleton for managing the elements that follow the mouse*/
-const MouseOverlay = new class {
-	#element
-	elements: MouseOverlayElements
-	constructor(){
-		this.#element = document.getElementById('mouse-icon')!
-		const elements = {} as MouseOverlayElements
-		window.addEventListener('mousemove',e=>{
-			if (this.#element.style.display === 'none') return
-			this.#element.style.top = e.pageY + 'px'
-			this.#element.style.left = e.pageX + 'px'
-		})
+const MouseOverlay = (()=>{
+	const element = document.getElementById('mouse-icon')
+	if (element === null) throw new Error("No root mouse element found");
+	let visible = false
 
-		{// Info panel
-			const root = document.createElement('div')
-			root.className = 'mouse-info-panel'
-			root.style.display = 'none'
-			this.#element.appendChild(root)
-			const methods = {
-				show:()=>{root.style.display = ''},
-				hide:()=>{root.style.display = 'none'},
-				setText:(text:string)=>{
-					root.textContent = text
+	window.addEventListener('mousemove',e=>{
+		if (!visible) return
+		element.style.transform = `translate(${e.pageX}px, ${e.pageY}px)`
+
+	})
+
+	let active: undefined | HTMLElement
+	function common(root:HTMLElement) {
+		return {
+			show:(force?:true) => {
+				if (active === root) return
+				if (active) {
+					if (!force) return
+					active.style.display = "none"
 				}
-			} as const
-			elements.infoPanel = methods
+				active = root
+				root.style.display = ""
+			},
+			hide:() => {
+				if (active === root) active = undefined
+				root.style.display = "none"
+			},
+			isActive:() => active === root
 		}
+	}
 
-		{// Held item icon
-			const root = document.createElement('div')
-			root.className = 'held-item-icon'
-			root.style.display = 'none'
+	return {
+		element,
 
-			const p = document.createElement('p')
-			root.appendChild(p)
+		active,
 
-			const img = document.createElement('img')
-			root.appendChild(img)
+		show:() => {
+			visible = true
+			element.style.display = ''
+		},
+	
+		hide:() => {
+			visible = false
+			element.style.display = 'none'
+		},
+		
+		elements:{
 
-			this.#element.appendChild(root)
-			const methods = {
-				show:()=>{root.style.display = ''},
-				hide:()=>{root.style.display = 'none'},
-				setText:(text: string)=>{
-					p.textContent = text
-				},
-				setImage:(src: string)=>{
-					img.src = src
-				},
-			} as const
-			elements.heldItemIcon = methods 
+			// =============================== Held item icon
+			heldItemIcon:(()=>{
+				const root = document.createElement('div')
+				root.className = 'held-item-icon'
+				root.style.display = 'none'
+
+				const p = document.createElement('p')
+				root.appendChild(p)
+
+				const img = document.createElement('img')
+				root.appendChild(img)
+
+				element.appendChild(root)
+				return {
+					...common(root),
+					setText:(text: string)=>{
+						p.textContent = text
+					},
+					setImage:(src: string)=>{
+						img.src = src
+					},
+				} as const
+			})(),
+
+			// =============================== Info panel
+			infoPanel:(()=>{
+				const root = document.createElement('div')
+				root.className = 'mouse-info-panel'
+				root.style.display = 'none'
+				element.appendChild(root)
+				return {
+					...common(root),
+					setText:(text:string)=>{
+						root.textContent = text
+					}
+				} as const
+			})(),
+
 		}
-
-		this.elements = elements
-		Object.freeze(this.elements)
-	}
-
-	show(){
-		this.#element.style.display = ''
-	}
-
-	hide(){
-		this.#element.style.display = 'none'
-	}
-}
+	} as const
+})()
 
 
 

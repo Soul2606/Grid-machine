@@ -30,6 +30,7 @@ main{
     position: fixed;
     z-index: 9999;
     pointer-events: none;
+    will-change: transform;
 }
 
 .stack{
