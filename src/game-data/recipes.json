@@ -16,10 +16,58 @@
 		"processTimeSeconds":5
 	},
 	{
+		"id":"smelt_copper",
+		"inputs":[{"id":"malachite", "amount":1}],
+		"outputs":[{"id":"copper_ingot", "amount":1}],
+		"requiredProcess":"smelt",
+		"requiredTier":0,
+		"processTimeSeconds":5
+	},
+	{
+		"id":"smelt_tin",
+		"inputs":[{"id":"cassiterite", "amount":1}],
+		"outputs":[{"id":"tin_ingot", "amount":1}],
+		"requiredProcess":"smelt",
+		"requiredTier":0,
+		"processTimeSeconds":5
+	},
+	{
+		"id":"smelt_zinc",
+		"inputs":[{"id":"sphalerite", "amount":1}],
+		"outputs":[{"id":"zinc_ingot", "amount":1}],
+		"requiredProcess":"smelt",
+		"requiredTier":0,
+		"processTimeSeconds":5
+	},
+	{
 		"id":"form_glass_tube",
 		"inputs":[{"id":"sand", "amount":1}],
 		"outputs":[{"id":"glass_tube", "amount":1}],
 		"requiredProcess":"smelt",
+		"requiredTier":0,
+		"processTimeSeconds":10
+	},
+	{
+		"id":"alloy_bronze",
+		"inputs":[{"id":"copper_ingot", "amount":1}, {"id":"tin_ingot", "amount":1}],
+		"outputs":[{"id":"bronze_ingot", "amount":1}],
+		"requiredProcess":"alloy",
+		"requiredTier":0,
+		"processTimeSeconds":5
+	},
+	{
+		"id":"alloy_brass",
+		"inputs":[{"id":"copper_ingot", "amount":1}, {"id":"zinc_ingot", "amount":1}],
+		"outputs":[{"id":"brass_ingot", "amount":1}],
+		"requiredProcess":"alloy",
+		"requiredTier":0,
+		"processTimeSeconds":5
+	},
+	{
+		"id":"alloy_steel",
+		"inputs":[{"id":"iron_ingot", "amount":2}],
+		"outputs":[{"id":"steel_ingot", "amount":1}],
+		"requiredProcess":"alloy",
 		"requiredTier":0,
 		"processTimeSeconds":10
 	}

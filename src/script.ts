@@ -302,6 +302,11 @@ let dataIsCompiled = false
 
 var workers = 3
 
+/**
+ * What state the side menu is in.
+ */
+var sideMenuMode: undefined | "recipes" | "inventory" | "machines"
+
 /* These will be assigned after compilation. Should be validated outside the main function*/
 
 var items: readonly Item[]
@@ -311,40 +316,6 @@ var machines: readonly Machine[]
 var recipes: readonly Recipe[]
 
 var extraction: readonly Extractor[]
-
-
-
-const GameStates = (()=>{
-
-	const GameStateLog = []
-
-	const initState = (initial:string)=>{
-		let value = initial
-		return {
-			set:(string:string, optionalContext:string)=>{
-				GameStateLog.push({
-					timestamp: new Date().toISOString(),
-					oldValue:value,
-					newValue:string,
-					context:optionalContext
-				});
-				value = string;
-			},
-			get: () => value
-		}
-	} // returns {set:(string, optionalContext)=>{...}, get:()=>{...}}
-
-	//Game States structure
-	return {
-		ui:{
-			sideMenuSection:initState('hidden')
-		},
-		mouse:{
-			action:initState('none')
-		}
-	}
-})();
-
 
 
 // Main global inventory
@@ -643,7 +614,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		for(const cellElement of invItemCells){
 			if (cellElement.itemPointer !== item) continue
 			cellElement.amountLabel.textContent = String(amount) // Yes this is correct
-			if (GameStates.ui.sideMenuSection.get() === 'recipes') continue
+			if (sideMenuMode === 'recipes') continue
 			cellElement.element.style.display = ''
 		}
 	})
@@ -730,7 +701,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 	
 	document.getElementById('side-menu-recipes-button')!
 	.addEventListener('click', () => {
-		GameStates.ui.sideMenuSection.set('recipes', 'side-menu-recipes-button clicked')
+		sideMenuMode = 'recipes'
 		showGrid(true, true);
 		for (const inventoryCell of invItemCells) {
 			inventoryCell.element.style.display = '' 
@@ -743,14 +714,14 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 	
 	document.getElementById('side-menu-inventory-button')!
 	.addEventListener('click', () => {
-		GameStates.ui.sideMenuSection.set('inventory', 'side-menu-inventory-button clicked')
+		sideMenuMode = 'inventory'
 		showGrid(true, false);
 		repairCells();
 	});
 	
 	document.getElementById('side-menu-machines-button')!
 	.addEventListener('click', () => {
-		GameStates.ui.sideMenuSection.set('machines', 'side-menu-machines-button clicked')
+		sideMenuMode = 'machines'
 		showGrid(false, true);
 		repairCells();
 	});

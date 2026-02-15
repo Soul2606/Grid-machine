@@ -111,11 +111,13 @@
 	{
 		"id":"iron_plate",
 		"name":"Iron plate",
+		"img":"svg/iron-plate.svg",
 		"tags":[]
 	},
 	{
 		"id":"iron_rod",
 		"name":"Iron rod",
+		"img":"svg/iron-rod.svg",
 		"tags":[]
 	},
 	{
