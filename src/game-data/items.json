@@ -1,212 +1,177 @@
-[
-	{
-		"id":"stone",
+{
+	"stone":{
 		"name":"Stone",
 		"tags":["stone"],
 		"img":"svg/stone.svg"
 	},
-	{
-		"id":"raw_coal",
+	"raw_coal":{
 		"name":"Raw coal",
 		"tags":["primitive_fuel"],
 		"img":"svg/raw-coal.svg",
 		"energy":"4MJ"
 	},
-	{
-		"id":"water",
+	"water":{
 		"name":"Water",
 		"tags":[],
 		"img":"svg/water.svg"
 	},
-	{
-		"id":"hydrogen",
+	"hydrogen":{
 		"name":"Hydrogen gas",
 		"tags":[],
 		"img":"svg/hydrogen-gas.svg"
 	},
-	{
-		"id":"oxygen",
+	"oxygen":{
 		"name":"Oxygen gas",
 		"tags":[],
 		"img":"svg/oxygen-gas.svg"
 	},
-	{
-		"id":"hematite",
+	"hematite":{
 		"name":"Hematite",
 		"tags":[],
 		"img":"svg/hematite.svg"
 	},
-	{
-		"id":"malachite",
+	"malachite":{
 		"name":"Malachite",
 		"tags":[],
 		"img":"svg/malachite.svg"
 	},
-	{
-		"id":"cassiterite",
+	"cassiterite":{
 		"name":"Cassiterite",
 		"tags":[],
 		"img":"svg/Cassiterite.svg"
 	},
-	{
-		"id":"sphalerite",
+	"sphalerite":{
 		"name":"Sphalerite",
 		"tags":[],
 		"img":"svg/sphalerite.svg"
 	},
-	{
-		"id":"iron_ingot",
+	"iron_ingot":{
 		"name":"Iron ingot",
 		"tags":["metal"],
 		"img":"svg/iron-ingot.svg"
 	},
-	{
-		"id":"zinc_ingot",
+	"zinc_ingot":{
 		"name":"Zinc ingot",
 		"tags":["metal"],
 		"img":"svg/zinc-ingot.svg"
 	},
-	{
-		"id":"tin_ingot",
+	"tin_ingot":{
 		"name":"Tin ingot",
 		"tags":["metal"],
 		"img":"svg/tin-ingot.svg"
 	},
-	{
-		"id":"clay",
+	"clay":{
 		"name":"Clay",
 		"tags":[],
 		"img":"svg/clay.svg"
 	},
-	{
-		"id":"ceramic",
+	"ceramic":{
 		"name":"Ceramic",
 		"tags":[],
 		"img":"svg/ceramic.svg"
 	},
-	{
-		"id":"sand",
+	"sand":{
 		"name":"Sand",
 		"tags":[],
 		"img":"svg/sand.svg"
 	},
-	{
-		"id":"wood",
+	"wood":{
 		"name":"Wood",
 		"tags":[],
 		"img":"svg/wood.svg"
 	},
-	{
-		"id":"sticky_resin",
+	"sticky_resin":{
 		"name":"Sticky resin",
 		"tags":[],
 		"img":"svg/sticky-resin.svg"
 	},
-	{
-		"id":"glass_tube",
+	"glass_tube":{
 		"name":"Glass tube",
 		"tags":[],
 		"img":"svg/glass-tube.svg"
 	},
-	{
-		"id":"iron_plate",
+	"iron_plate":{
 		"name":"Iron plate",
 		"img":"svg/iron-plate.svg",
 		"tags":[]
 	},
-	{
-		"id":"iron_rod",
+	"iron_rod":{
 		"name":"Iron rod",
 		"img":"svg/iron-rod.svg",
 		"tags":[]
 	},
-	{
-		"id":"bronze_ingot",
+	"bronze_ingot":{
 		"name":"Bronze ingot",
 		"tags":[],
 		"img":"svg/bronze-ingot.svg"
 	},
-	{
-		"id":"bronze_plate",
+	"bronze_plate":{
 		"name":"Bronze plate",
 		"tags":[],
 		"img":"svg/bronze-plate.svg"
 	},
-	{
-		"id":"bronze_gear",
+	"bronze_gear":{
 		"name":"Bronze gear",
 		"tags":[],
 		"img":"svg/bronze-gear.svg"
 	},
-	{
-		"id":"brass_ingot",
+	"brass_ingot":{
 		"name":"Brass ingot",
 		"tags":[],
 		"img":"svg/brass-ingot.svg"
 	},
-	{
-		"id":"brass_plate",
+	"brass_plate":{
 		"name":"Brass plate",
 		"tags":[],
 		"img":"svg/brass-plate.svg"
 	},
-	{
-		"id":"steel_ingot",
+	"steel_ingot":{
 		"name":"Steel ingot",
 		"tags":[],
 		"img":"svg/steel-ingot.svg"
 	},
-	{
-		"id":"steel_rod",
+	"steel_rod":{
 		"name":"Steel rod",
 		"tags":[],
 		"img":"svg/steel-rod.svg"
 	},
-	{
-		"id":"copper_ingot",
+	"copper_ingot":{
 		"name":"Copper ingot",
 		"tags":[],
 		"img":"svg/copper-ingot.svg"
 	},
-	{
-		"id":"copper_plate",
+	"copper_plate":{
 		"name":"Copper plate",
 		"tags":[],
 		"img":"svg/copper-plate.svg"
 	},
-	{
-		"id":"crude_copper_wire",
+	"crude_copper_wire":{
 		"name":"Crude copper wire",
 		"tags":[],
 		"img":"svg/crude-copper-wire.svg"
 	},
-	{
-		"id":"wood_board",
+	"wood_board":{
 		"name":"Wood board",
 		"tags":[],
 		"img":"svg/wood-board.svg"
 	},
-	{
-		"id":"vacuum_tube",
+	"vacuum_tube":{
 		"name":"Vacuum tube",
 		"tags":[],
 		"img":"svg/vacuum-tube.svg"
 	},
-	{
-		"id":"wooden_circuit_board",
+	"wooden_circuit_board":{
 		"name":"Wooden circuit board",
 		"tags":[],
 		"img":"svg/logic-circuit-board.svg"
 	},
-	{
-		"id":"basic_electric_motor",
+	"basic_electric_motor":{
 		"name":"Basic electric motor",
 		"tags":[]
 	},
-	{
-		"id":"basic_machine_hull",
+	"basic_machine_hull":{
 		"name":"Basic machine hull",
 		"tags":[],
 		"img":"svg/basic-machine-hull.svg"
 	}
-]
+}

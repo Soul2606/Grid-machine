@@ -70,5 +70,21 @@
 		"requiredProcess":"alloy",
 		"requiredTier":0,
 		"processTimeSeconds":10
+	},
+	{
+		"id":"craft_copper_plate",
+		"inputs":[{"id":"copper_ingot", "amount":1}],
+		"outputs":[{"id":"copper_plate", "amount":2}],
+		"requiredProcess":"anvil",
+		"requiredTier":0,
+		"processTimeSeconds":5
+	},
+	{
+		"id":"craft_iron_plate",
+		"inputs":[{"id":"iron_ingot", "amount":1}],
+		"outputs":[{"id":"iron_plate", "amount":2}],
+		"requiredProcess":"anvil",
+		"requiredTier":0,
+		"processTimeSeconds":5
 	}
 ]

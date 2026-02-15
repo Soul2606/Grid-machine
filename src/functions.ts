@@ -642,9 +642,9 @@ export async function fetchData() {
 		})
 	}
 
-	function compile(items: unknown, machines: unknown, recipes: unknown, extraction: unknown) {
+	function compile(items: Record<string, unknown>, machines: unknown, recipes: unknown, extraction: unknown) {
 
-		if (!Array.isArray(items)) throw new Error("error")
+		if (typeof items !== "object" || items === null) throw new Error("error")
 		if (!Array.isArray(machines)) throw new Error("error")
 		if (!Array.isArray(recipes)) throw new Error("error")
 		if (!Array.isArray(extraction)) throw new Error("error")
@@ -658,8 +658,8 @@ export async function fetchData() {
 			if (keys.some(key => !Object.keys(obj).includes(key))) throw new Error(`${obj.id} has invalid keys, object must include these keys:${keys}`)
 		}
 
-		items.forEach(item => {
-			includeKeys(item, ['id', 'name', 'tags'])
+		Object.values(items).forEach(item => {
+			includeKeys(item, ['name', 'tags'])
 		})
 
 		machines.forEach(item => {
@@ -686,8 +686,8 @@ export async function fetchData() {
 			if (!valid) throw new Error(`${obj} is not of type ${JSON.stringify(TYPE)}`)
 		}
 
-		for (const item of items) {
-			ct(item.id, 'string')
+		for (const key in items) {
+			const item: any = items[key]
 			ct(item.name, 'string')
 			ct(item.tags, 'array')
 			ct(item.img, "string", true)
@@ -739,24 +739,32 @@ export async function fetchData() {
 		}
 
 
-		const hasDuplicateIds = (array: any[]) => {
-			const previousIds = new Set()
-			const duplicates = new Set()
-			for (const item of array) {
-				if (previousIds.has(item.id)) duplicates.add(item.id)
-				previousIds.add(item.id)
+		const hasDuplicateIds = (array: string[]) => {
+			const previousIds = new Set<string>()
+			const duplicates = new Set<string>()
+			for (const str of array) {
+				if (previousIds.has(str)) duplicates.add(str)
+				previousIds.add(str)
 			}
 			return duplicates.size === 0 ? false : duplicates
 		}
 		{
-			const result = hasDuplicateIds(items.concat(machines))
+			const result = hasDuplicateIds(Object.keys(items).concat(machines.map(m => m.id)))
 			if (result) throw new Error(`Machines and Items has duplicate IDs, ${result}`)
 		}
 		{
 			const result = hasDuplicateIds(recipes)
 			if (result) throw new Error(`Recipes has duplicate IDs, ${result}`)
 		}
-		return { items, machines, recipes, extraction }
+		return { 
+			items: Object.keys(items).map(key =>
+				//@ts-ignore
+				({...items[key], id:key})
+			),
+			machines,
+			recipes,
+			extraction
+		}
 	}
 	const items = await fetchJSON('src/game-data/items.json')
 	const machines = await fetchJSON('src/game-data/machines.json')
