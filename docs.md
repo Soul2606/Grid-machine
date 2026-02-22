@@ -9,43 +9,28 @@ This project is a data-driven game simulation with a strict separation between:
 
 The system is designed so that the core simulation can run headlessly, without any UI, allowing the user to switch between different html files while the simulation runs in the background from a universal script file
 
-## Folder structure
-The folder **game-data** contains high level game configuration, called **Game Content**.
+## Code Structure
+Below is an overview of classes, types, modules and the higher level architecture of the codebase.
 
-This is the highest level of configuration in the project and defines the **content of the game** rather than its behavior.
+### Game Data
+---
+The folder **game-data** contains game configuration. This is the highest level of configuration in the project and defines the **content of the game** rather than its behavior.
 
 All data defined here is:
 - Constant.
 - Deeply immutable at runtime.
 
-They are treated as pure configuration objects and may be freely shared.
+They are usually fetched and stored as global variables in whatever module they are used in.
 
+#### Recipes, Extraction, Machines
+These have no class tied to them, that means no class directly contain them but some classes can be constructed based on them. They can be used as a schematic for constructing classes and objects. Or used as config data.
 
-## Code Structure
-Below is an overview of classes, types, modules and the higher level architecture of the codebase.
+These allow for custom content.
 
-### Game Content
----
-These are the immutable **JSON** objects talked about in **Folder structure**.
+#### Items
+This type has a corresponding runtime classes that is coupled to it. Equality can be determined via the shared **id**.
 
-They determine the content of the game, they are usually fetched and stored as global variables in whatever module they are used in.
-
-#### Recipes, Extraction
-These are simple, they have no class tied to them. They are just used as a schematic for constructing classes and objects.
-
-#### Items, Machines
-**Item** and **Machine** each have corresponding runtime classes. The **content** types act as **schematics / blueprints** for constructing these classes.
-
-Some runtime classes are **content-coupled**, while others are **content-agnostic**:
-
-- **Content-coupled classes** reference a specific game-content object.
-  - Equality can be determined via the shared **id**.
-  - Instances correspond directly to defined **game content**.
-- **Content-agnostic classes** do not depend on predefined content.
-  - They may be created procedurally or customized at runtime.
-  - They do not relate to **game content** at all and they rarely have any way to compare equality to each-other.
-
-This distinction allows the simulation to support both predefined content and fully custom runtime entities.
+Content is limited.
 
 ### ItemInstance "Class"
 ---
