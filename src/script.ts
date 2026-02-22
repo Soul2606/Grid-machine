@@ -141,9 +141,7 @@ function createMachineUI(recipes: readonly Recipe[], items: readonly Item[]) {
 		e.stopPropagation()
 		console.log("Clicked stack up");
 		if (context === null) return
-		const cost = context.owner.machine.cost.map(ref =>
-			ItemEntry.fromRef(ref, items)
-		)
+		const cost = context.owner.cost
 		console.log("inv: ", context.inv);
 		
 		const afford = context.inv.subtractItems(cost)
@@ -205,12 +203,17 @@ function createMachineUI(recipes: readonly Recipe[], items: readonly Item[]) {
 	}
 
 	const refreshText = (machine: MachineInstance) => {
-		pe.textContent = `Energy: ${machine.getEnergy()}`
-		if (machine.machine.workerNeeds) {
-			pw.style.display = ""
-			pw.textContent = `Workers: ${machine.getWorkers()}/${machine.machine.workerNeeds.maximum}`
+		const fNeed = machine.getFuelNeed()
+		if (fNeed) {
+			pe.textContent = `Energy: ${fNeed.energy}`
 		} else {
-			pw.style.display = "none"
+			pe.textContent = ""
+		}
+		const wNeed = machine.getWorkerNeed()
+		if (wNeed) {
+			pw.textContent = `Workers: ${wNeed.workers}/${wNeed.maximum}`
+		} else {
+			pw.textContent = ""
 		}
 	}
 
@@ -790,7 +793,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		const {element:machineCell, setStack, setProgress, setWarning} = createMachine(machineObject)
 		setWarning('no_fuel')
 
-		const machineInst = new MachineInstance(machineObject, items, recipes)
+		const machineInst = MachineInstance.fromMachine(machineObject, items, recipes)
 
 		machineCell.addEventListener('click',()=>{
 			if (transferContext.kind === "empty") {
@@ -798,7 +801,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 				machineUI.refresh(machineInst, mainInventory, ()=>setStack(String(machineInst.getStack())))
 				document.getElementById("machine-window")!.style.display = ""
 			} else if (transferContext.kind === "machine") {
-				if (transferContext.value.id === machineInst.machine.id) {
+				if (transferContext.value.id === machineObject.id) {
 					machineInst.setStack(1 + machineInst.getStack())
 					setStack(String(machineInst.getStack()))
 					transferContext.transfer(true)
