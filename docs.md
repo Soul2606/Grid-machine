@@ -1,66 +1,79 @@
-docs.md
-
-High-level overview
-
-
-
-Project overview
+# Documentation
+## Project overview
 
 This project is a data-driven game simulation with a strict separation between:
 
-Game configuration data
-
-Runtime simulation logic
-
-User interface (optional / external)
+- Game configuration data.
+- Runtime simulation logic.
+- User interface (optional / external).
 
 The system is designed so that the core simulation can run headlessly, without any UI, allowing the user to switch between different html files while the simulation runs in the background from a universal script file
 
+## Folder structure
+The folder **game-data** contains high level game configuration, called **Game Content**.
 
-
-Folder structure
-
-game-data/
-Contains high-level game configuration.
-
-This is the highest level of configuration in the project and defines the content of the game rather than its behavior.
+This is the highest level of configuration in the project and defines the **content of the game** rather than its behavior.
 
 All data defined here is:
-- constant
-- deeply immutable at runtime
+- Constant.
+- Deeply immutable at runtime.
 
 They are treated as pure configuration objects and may be freely shared.
 
 
+## Code Structure
+Below is an overview of classes, types, modules and the higher level architecture of the codebase.
 
-ItemInstance
+### Game Content
+---
+These are the immutable **JSON** objects talked about in **Folder structure**.
 
-Represents a specific item reference.
+They determine the content of the game, they are usually fetched and stored as global variables in whatever module they are used in.
+
+#### Recipes, Extraction
+These are simple, they have no class tied to them. They are just used as a schematic for constructing classes and objects.
+
+#### Items, Machines
+**Item** and **Machine** each have corresponding runtime classes. The **content** types act as **schematics / blueprints** for constructing these classes.
+
+Some runtime classes are **content-coupled**, while others are **content-agnostic**:
+
+- **Content-coupled classes** reference a specific game-content object.
+  - Equality can be determined via the shared **id**.
+  - Instances correspond directly to defined **game content**.
+- **Content-agnostic classes** do not depend on predefined content.
+  - They may be created procedurally or customized at runtime.
+  - They do not relate to **game content** at all and they rarely have any way to compare equality to each-other.
+
+This distinction allows the simulation to support both predefined content and fully custom runtime entities.
+
+### ItemInstance "Class"
+---
+Represents a specific item reference. It is used as an identity key since it includes metadata unlike the **Item** type.
+
 Properties:
-- item: reference to an immutable Item
-- metadata: additional runtime data
+- item: reference to an immutable **Item**.
+- metadata: additional runtime data as **JSON**.
 
 Notes:
-metadata is important for equality, if two item instances have different metadata then they are not equal
+- Metadata is important for equality, if two item instances have different metadata then they are not equal.
+- Can be serialized.
 
-ItemInstance is often used as an identity key
+### ItemEntry "Class"
+---
+Extends ItemInstance.
 
+Represents a specific item reference and quantity. It is used as an identity key and quantity holder.
 
-
-ItemEntry
-
-extends ItemInstance
-Represents a specific item reference and quantity.
-Additional properties
+Additional properties:
 - amount: number
 
-ItemEntry is used as an identity key and quantity holder
+Notes:
+- Can be serialized.
 
-
-
-Inventory
-
-An Inventory is conceptually just an array of ItemInstances, but with complex rules:
+### Inventory "Class"
+---
+An Inventory is conceptually just an array of **ItemInstances**, but with complex rules:
 - per-item maximum amount
 - maximum number of distinct item types
 - atomic add/remove operations
@@ -69,69 +82,55 @@ An Inventory is conceptually just an array of ItemInstances, but with complex ru
 
 Because these rules are non-trivial, inventory logic is encapsulated in a dedicated class rather than operating directly on arrays.
 
-
-
-Input
-
+### Input "Type"
+---
 Represents a single recipe input slot.
-Usually used as an array of Inputs
-Each Input contains an array of ItemInstances and an amount
-The reason for the array of ItemInstances is  because multiple different items may satisfy a single input slot
+Usually used as an array of Inputs.
+Each Input contains an array of **ItemInstances** and an **amount**.
 
+The reason for the array of **ItemInstances** is because multiple different items may satisfy a single input slot.
 
+Notes:
+- Can be serialized.
 
-Output
-
-Represents every output of a single recipe
-It has two types
-- type: "machine"
-- type: "items"
-
-That is because a recipe can either output a set of items or a single machine, never both.
-
-
-
-CraftingOptions
-
+### CraftingOptions "Type"
+---
 Used to configure multiple crafting-related functions, such as:
 - maxCraftableCount
 - resolveCraftingCosts
 
-If different crafting functions are invoked with different CraftingOptions, they may disagree about the same state.
+If different crafting functions are invoked with different **CraftingOptions**, they may disagree about the same state.
 Correct usage requires that all related crafting operations share the same options instance.
 
+### MachineInstance "Class"
+---
+Responsible for simulating machines and recipe processing. It is not tied to **Machine** at all, **Machine** is a schematic for creating a **MachineInstance**.
 
-
-MachineInstance
-
-Responsible for simulating machines and recipe processing.
 Characteristics:
-- operates purely on data
-- no UI dependencies
-- deterministic simulation
-- suitable for headless execution
+- Operates purely on data.
+- No UI dependencies.
+- Deterministic simulation.
+- Suitable for headless execution.
 
 This allows the same simulation to be run:
-- inside the main UI
-- in a separate HTML file
-- in automated tests
+- Inside the main UI.
+- In a separate HTML file.
+- In automated tests.
 
+### ResolvedRecipe "Class"
+---
+**"rr"** for short. Represents a fully resolved, atomic execution of a single recipe.
 
-
-ResolvedRecipe
-rr for short
-Represents a fully resolved, atomic execution of a single recipe.
 Notes:
-- Atomic: Represents one execution only
-- Irreversible: Cannot reconstruct the source recipe batch
+- Atomic: Represents one execution only.
+- Irreversible: Cannot reconstruct the source recipe batch.
 - Designed for inventory mutation and machine execution.
-- Equal rrs can be stacked to save on memory
+- Equal **rr**s can be stacked to save on memory.
+- Can be serialized.
 
+## Technical notes:
+The term **Item** is not entirely accurate as represents real life objects that might not fall under the category "item" such as liquids, gasses or energy. Resource is the more accurate term, but its still not perfect. Regardless **Item** is the chosen name.
 
+Sometimes different function can disagree on the truth of the same state, in that case: Prediction functions are advisory; execution functions are authoritative. All execution functions should return enough data that any script from the outside can know exactly what happened. 
 
-Technical notes:
-The term Item is a misnomer in this project. Resource is the more accurate term. Wherever Item appears in code or documentation, it should be understood as referring to a Resource.
-
-Sometimes different function can disagree on the truth of the same state, in that case: Prediction functions are advisory; execution functions are authoritative.
-
-resolveCraftingCosts is a super important function, it is responsible for taking huge amount of data and turn that into a definitive set of items that can be used to satisfy the provided recipe.
+**resolveCraftingCosts** is a super important function, it is responsible for taking huge amount of data and turn that into a definitive set of items that can be used to satisfy the provided recipe.
