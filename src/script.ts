@@ -29,7 +29,7 @@ type MouseOverlayElements = {
 
 
 function updateWorkers() {
-	document.getElementById("resources-workers")!.textContent = String(workers)
+	document.getElementById("resources-workers")!.textContent = String(workers.amount)
 }
 
 
@@ -131,10 +131,13 @@ function createMachineUI(recipes: readonly Recipe[], items: readonly Item[]) {
 
 	const header = document.createElement("div")
 	root.append(header)
+
 	const pe = document.createElement("p")
 	header.append(pe)
+
 	const pw = document.createElement("p")
 	header.append(pw)
+
 	const stackUp = document.createElement("button")
 	stackUp.textContent = "Stack up"
 	stackUp.addEventListener("click", e => {
@@ -151,6 +154,41 @@ function createMachineUI(recipes: readonly Recipe[], items: readonly Item[]) {
 		context.callback()
 	})
 	header.append(stackUp)
+
+	const assignWorker = document.createElement("button")
+	assignWorker.textContent = "Assign worker"
+	assignWorker.style.display = "none"
+	assignWorker.addEventListener("click", e => {
+		if (workers.amount < 1) return
+		const owner = context?.owner
+		if (!owner) return
+		const need = owner.getWorkerNeed()
+		if (!need) return
+		const status = owner.changeWorker(1)
+		if (status === "success") {
+			workers.transfer(1, owner)
+		} else {
+			console.log(status)
+		}
+	})
+	header.append(assignWorker)
+
+	const layOffWorker = document.createElement("button")
+	layOffWorker.textContent = "Lay off worker"
+	layOffWorker.style.display = "none"
+	layOffWorker.addEventListener("click", e => {
+		const owner = context?.owner
+		if (!owner) return
+		const need = owner.getWorkerNeed()
+		if (!need) return
+		const status = owner.changeWorker(-1)
+		if (status === "success") {
+			workers.transfer(-1, owner)
+		} else {
+			console.log(status)
+		}
+	})
+	header.append(layOffWorker)
 
 	const grid = document.createElement("div")
 	root.append(grid)
@@ -211,9 +249,13 @@ function createMachineUI(recipes: readonly Recipe[], items: readonly Item[]) {
 		}
 		const wNeed = machine.getWorkerNeed()
 		if (wNeed) {
+			assignWorker.style.display = ""
+			layOffWorker.style.display = ""
 			pw.textContent = `Workers: ${wNeed.workers}/${wNeed.maximum}`
 		} else {
 			pw.textContent = ""
+			assignWorker.style.display = "none"
+			layOffWorker.style.display = "none"
 		}
 	}
 
@@ -303,7 +345,21 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 
 let dataIsCompiled = false
 
-var workers = 3
+const workers = {
+	amount: 10,
+	provenance: new Map<object,number>(),
+	transfer: (amount:number, recipientId:object) => {
+		let n = workers.provenance.get(recipientId) ?? 0
+		const delta = Math.max(Math.min(amount, workers.amount), -n)
+		n += delta
+		workers.amount -= delta
+		n === 0 ? workers.provenance.delete(recipientId)
+		: workers.provenance.set(recipientId, n)
+		updateWorkers()
+		return delta
+	},
+}
+
 
 /**
  * What state the side menu is in.
@@ -541,10 +597,6 @@ const quantitySlider = (()=>{// Item amount slider
 
 
 
-/* Used to decide what is shown in the machines tab */
-const machinesUnlocked = new Set(['stone_furnace', "iron_anvil"])
-
-
 
 const pubSubTick = (()=>{
 	const signal = new Signal<number>()
@@ -654,7 +706,6 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		const cell = document.createElement('div')
 		cell.className = 'inventory-grid-cell'
 		cell.textContent = machine.name
-		cell.style.display = 'none'
 		if (machine.img) cell.style.backgroundImage = `url(${machine.img})`
 		document.getElementById('machines-grid')!.appendChild(cell)
 
@@ -721,9 +772,6 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 			const entry = mainInventory.getAllItemInstances().find(e => e.item === inventoryCell.itemPointer);
 			inventoryCell.element.style.display = entry && entry.amount > 0 ? '' : 'none';
 			inventoryCell.amountLabel.style.display = ''
-		}
-		for (const machineCell of machineCellElements) {
-			machineCell.element.style.display = machinesUnlocked.has(machineCell.machinePointer.id) ? '' : 'none';
 		}
 	};
 	
