@@ -7,7 +7,23 @@ This project is a data-driven game simulation with a strict separation between:
 - Runtime simulation logic.
 - User interface (optional / external).
 
-The system is designed so that the core simulation can run headlessly, without any UI, allowing the user to switch between different html files while the simulation runs in the background from a universal script file
+The system is designed so that the core simulation can run headlessly, without any UI, allowing the user to switch between different html files while the simulation runs in the background from a universal script file.
+
+It is possible to keep the state of the game when moving between different html files. Thats why many of the classes and types can be serialized.
+
+One of the big selling points of this game is the ability to connects machines together. There is two ways to do this: Processing lines and Factories.
+
+### Processing line
+
+Is a linear line of machine instances where the output of one machine routes to the input of the next machine. A machine line can only be built if every possible output can be routed without *ambiguity* (further details in the code). 
+
+Processing lines allow recipes to be compressed into 1 and allow for basic automation. 
+
+### Factories
+
+Factories ar much simpler but much more powerful. Here everything is defined and every route is built by the user, this allows a factory to contain super complex chains of machines that can preform any recipe chain. The most powerful thing about Factories is that they can be compiled into a single process making them super performant. 
+
+Because factories act so similar to machines, they can used inside factories, creating a potentially infinite recursions of factories within factories that has not performance impact because pf the compilation. This has a limit: compiling a factory is not reversible, so the factory has to remember its internal graph of machines and recipes. This is the limiting factor becaus you will eventually run out of memory.
 
 ## Code Structure
 Below is an overview of classes, types, modules and the higher level architecture of the codebase.
@@ -22,15 +38,25 @@ All data defined here is:
 
 They are usually fetched and stored as global variables in whatever module they are used in.
 
-#### Recipes, Extraction, Machines
-These have no class tied to them, that means no class directly contain them but some classes can be constructed based on them. They can be used as a schematic for constructing classes and objects. Or used as config data.
+#### Extraction, Items
+These types form the Fixed Ontology (Non‑Customizable) of the game world.
+They define the fundamental building blocks of the universe and cannot be extended or modified at runtime.
 
-These allow for custom content.
+- **Items** describe the canonical object types that can exist. Runtime item instances reference these definitions by id.
 
-#### Items
-This type has a corresponding runtime classes that is coupled to it. Equality can be determined via the shared **id**.
+- **Extraction** describes the canonical extraction sources or extraction rules. Like Items, they are static and globally referenced.
 
-Content is limited.
+Both are immutable facts about the world, not behavior.
+
+#### Recipes
+Recipes describe what is theoretically possible, not what is currently happening.
+They define abstract conversions between items (inputs, outputs, time).
+
+They are not tied to any machine and should not be used to describe recipes in progress or recipes chosen.
+That is delegated to the **Resolved Recipe** class.
+
+#### Machines
+This type describe the blueprint for the default machines in the game. Machine Instances are not tied to the Machine type at all and custom machines can be built at runtime.
 
 ### ItemInstance "Class"
 ---
@@ -89,7 +115,7 @@ Correct usage requires that all related crafting operations share the same optio
 
 ### MachineInstance "Class"
 ---
-Responsible for simulating machines and recipe processing. It is not tied to **Machine** at all, **Machine** is a schematic for creating a **MachineInstance**.
+Responsible for simulating machines and recipe processing. It is not tied to **Machine** at all, **Machine** is a schematic for creating a **MachineInstance**. 
 
 Characteristics:
 - Operates purely on data.
