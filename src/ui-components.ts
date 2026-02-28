@@ -1,0 +1,280 @@
+import type { MachineInstance, Inventory, SignalInterface } from "./classes.js"
+import { clamp, getRecipeInputs, getRecipeOutputs, maxCraftableCount, resolveCraftingCosts } from "./functions.js"
+import type { CraftingOptions, Item, Machine, Recipe } from "./types.js"
+
+
+
+
+export function createQuantitySlider() {
+	const root = document.createElement("div")
+	root.className = "item-amount-slider"
+
+	const slider = document.createElement("input")
+	slider.type = 'range'
+	slider.className = "item-amount-slider-slider"
+	root.append(slider)
+
+	const p = document.createElement("p")
+	p.className = "item-amount-slider-text text-border"
+	root.append(p)
+
+	type QuantitySliderCallback = ((value: number) => void) | null
+
+	let endCallbackFunction: QuantitySliderCallback = null
+	let inputCallbackFunction: QuantitySliderCallback = null
+	let sliderDisabled = true
+
+	// Make it follow the mouse without pressing
+	document.addEventListener('mousemove', e => {
+		if (root.style.display === 'none') return
+		const rect = slider.getBoundingClientRect()
+
+		// Map mouse X position to slider range
+		const percent = (e.clientX - rect.left) / rect.width
+		const clamped = Math.min(Math.max(percent, 0), 1)
+
+		slider.value = String(Math.round(
+			Number(slider.min) + (Number(slider.max) - Number(slider.min)) * clamped
+		))
+		if (inputCallbackFunction) inputCallbackFunction(Number(slider.value))
+	})
+
+	document.addEventListener('mouseup', () => {
+		if (sliderDisabled) return
+		sliderDisabled = true
+		root.style.display = 'none'
+		if (endCallbackFunction) endCallbackFunction(Number(slider.value))
+	})
+
+	const setText = (text: string) => { p.textContent = text }
+
+	const methods = {
+		show: (x: number, y: number, text: string, length = 15) => {
+			// position is relative to the window, not the page
+			if (typeof length !== 'number' || Number.isNaN(length) || (!Number.isFinite(length))) throw new Error("length is not a valid number")
+			slider.max = String(length)
+			setText(text)
+			sliderDisabled = false
+			root.style.display = ''
+			// Position near mouse 
+			root.style.left = `${x}px`
+			root.style.top = `${y}px`
+
+			// Prevent clipping off screen
+			const rect = root.getBoundingClientRect()
+			if (rect.right > window.innerWidth) {
+				root.style.left = `${window.innerWidth - rect.width}px`
+			}
+			if (rect.bottom > window.innerHeight) {
+				root.style.top = `${window.innerHeight - rect.height}px`
+			}
+		},
+		setEndCallback: (func: QuantitySliderCallback) => {
+			endCallbackFunction = func
+		},
+		setInputCallback: (func: QuantitySliderCallback) => {
+			inputCallbackFunction = func
+		},
+		setText
+	} as const
+	return { element: root, methods } as const
+}
+
+
+
+
+export function createItemCell(resource: Item) {
+
+	const cell = document.createElement('div')
+	cell.className = 'inventory-grid-cell'
+	if (resource.img) cell.style.backgroundImage = `url(${resource.img})`
+
+	const number = document.createElement('p')
+	number.textContent = '0'
+	cell.appendChild(number)
+
+	return { element: cell, amountLabel: number, itemPointer: resource }
+}
+
+
+
+
+export function createMachine(machine: Machine) {
+	const cell = document.createElement('div')
+	cell.className = 'machine'
+	cell.textContent = machine.name
+	if (machine.img) cell.style.backgroundImage = `url(${machine.img})`
+
+	const stack = document.createElement('p')
+	stack.textContent = String(1)
+
+	const setStack = (text: string) => {
+		stack.textContent = text
+	}
+
+	cell.appendChild(stack)
+
+	const progressBar = document.createElement('div')
+	progressBar.className = 'progress-bar'
+	cell.appendChild(progressBar)
+
+	const progressBarFill = document.createElement('div')
+	progressBarFill.className = 'progress-bar-fill'
+
+	const setProgress = (n: number) => {
+		progressBarFill.style.width = String(clamp(n, 0, 100)) + '%'
+		if (n > 100) {
+			progressBarFill.classList.add('rainbow')
+		} else {
+			progressBarFill.classList.remove('rainbow')
+		}
+	}
+
+	progressBar.appendChild(progressBarFill)
+
+	const warning = document.createElement('div')
+	warning.className = 'warning-icon'
+	const noFuel = document.createElement('img')
+	noFuel.src = 'img/Fuel-icon-red.png'
+	noFuel.style.display = 'none'
+	warning.appendChild(noFuel)
+	const setWarning = (string: "" | "no_fuel") => {
+		switch (string) {
+			case 'no_fuel':
+				noFuel.style.display = ''
+				break
+			default:
+				noFuel.style.display = 'none'
+				break
+		}
+	}
+	cell.appendChild(warning)
+
+	return { element: cell, setStack, setProgress, setWarning }
+}
+
+
+
+export function createMachineUI(
+	recipes: readonly Recipe[],
+	items: readonly Item[],
+	pubSubTick?: SignalInterface<number, void>
+) {
+
+	/**
+	 * Events called by the ui component
+	 */
+	let events = {
+		onAssignWorker: () => { },
+		onLayOffWorker: () => { },
+		onStackUp: () => { },
+		onEvent: () => { },
+	}
+
+
+	const root = document.createElement("div")
+
+	const header = document.createElement("div")
+	root.append(header)
+
+	const pe = document.createElement("p")
+	header.append(pe)
+
+	const pw = document.createElement("p")
+	header.append(pw)
+
+	const stackUp = document.createElement("button")
+	stackUp.textContent = "Stack up"
+	stackUp.addEventListener("click", e => {
+		events.onStackUp()
+		events.onEvent()
+	})
+	header.append(stackUp)
+
+	const assignWorker = document.createElement("button")
+	assignWorker.textContent = "Assign worker"
+	assignWorker.style.display = "none"
+	assignWorker.addEventListener("click", e => {
+		events.onAssignWorker()
+		events.onEvent()
+	})
+	header.append(assignWorker)
+
+	const layOffWorker = document.createElement("button")
+	layOffWorker.textContent = "Lay off worker"
+	layOffWorker.style.display = "none"
+	layOffWorker.addEventListener("click", e => {
+		events.onLayOffWorker()
+		events.onEvent()
+	})
+	header.append(layOffWorker)
+
+	const grid = document.createElement("div")
+	root.append(grid)
+
+	let subscribers: (() => number)[] = []
+	pubSubTick?.subscribe(() => {
+		subscribers.forEach(f => f())
+	})
+
+	const refresh = (machine: MachineInstance, availableResources: Inventory) => {
+		refreshText(machine)
+
+		grid.innerHTML = ""
+		console.log(machine.capableRecipes)
+		subscribers = []
+		machine.capableRecipes.forEach(cr => {
+			const options: CraftingOptions = { maximize: true }
+
+			const out = getRecipeOutputs(cr, machine.items)
+			console.log(cr)
+			console.log("out: ", out)
+
+			const outFirst = out[0]
+			if (outFirst === undefined) throw new Error("Recipe produces nothing. id: " + cr.id)
+
+			const cell = createItemCell(outFirst.item)
+
+			const getCount = () => {
+				const count = maxCraftableCount(getRecipeInputs(cr, machine.items), availableResources, options)
+				cell.amountLabel.textContent = String(count)
+				return count
+			}
+			getCount()
+
+			cell.element.addEventListener("click", e => {
+				const resolve = resolveCraftingCosts(cr, availableResources, items, options)
+				if (!resolve) return
+				if (!availableResources.subtractItems(resolve.flatMap(res => res.inputs))) throw new Error("Invariant broke")
+				machine.addWorkingOn(resolve)
+			})
+			grid.append(cell.element)
+
+			subscribers.push(getCount)
+		})
+	}
+
+	const refreshText = (machine: MachineInstance) => {
+		const fNeed = machine.getFuelNeed()
+		if (fNeed) {
+			pe.textContent = `Energy: ${fNeed.energy}`
+		} else {
+			pe.textContent = ""
+		}
+		const wNeed = machine.getWorkerNeed()
+		if (wNeed) {
+			assignWorker.style.display = ""
+			layOffWorker.style.display = ""
+			pw.textContent = `Workers: ${wNeed.workers}/${wNeed.maximum}`
+		} else {
+			pw.textContent = ""
+			assignWorker.style.display = "none"
+			layOffWorker.style.display = "none"
+		}
+	}
+
+	return { element: root, refresh, refreshText, events }
+}
+
+
+

@@ -1,7 +1,8 @@
 
-import type { Item, Machine, Recipe, Extractor, CraftingOptions } from './types.js'
-import { clamp, fetchData, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, maxCraftableCount, resolveCraftingCosts, tryCraft } from './functions.js'
+import type { Item, Machine, Recipe, Extractor } from './types.js'
+import { fetchData, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, tryCraft } from './functions.js'
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe, Signal } from './classes.js'
+import { createItemCell, createMachine, createMachineUI, createQuantitySlider } from './ui-components.js'
 
 type InfoPanelMethods = {
 	show: () => void
@@ -14,11 +15,6 @@ type HeldItemIconMethods = {
 	hide: () => void
 	setText: (text: string) => void
 	setImage: (src: string) => void
-}
-
-type MouseOverlayElements = {
-	infoPanel: InfoPanelMethods
-	heldItemIcon: HeldItemIconMethods
 }
 
 
@@ -45,222 +41,6 @@ function stepExponential(n: number){
 	return {candidates, preset}
 }
 
-
-
-function createItemCell(resource: Item) {
-	
-	const cell = document.createElement('div')
-	cell.className = 'inventory-grid-cell'
-	if (resource.img) cell.style.backgroundImage = `url(${resource.img})`
-	
-	const number = document.createElement('p')
-	number.textContent = '0'
-	cell.appendChild(number)
-		
-	return {element:cell, amountLabel:number, itemPointer:resource}
-}
-
-
-
-function createMachine(machine: Machine) {
-	const cell = document.createElement('div')
-	cell.className = 'machine'
-	cell.textContent = machine.name
-	if (machine.img) cell.style.backgroundImage = `url(${machine.img})`
-
-	const stack = document.createElement('p')
-	stack.textContent = String(1)
-	
-	const setStack = (text:string)=>{
-		stack.textContent = text
-	}
-	
-	cell.appendChild(stack)
-
-	const progressBar = document.createElement('div')
-	progressBar.className = 'progress-bar'
-	cell.appendChild(progressBar)
-
-	const progressBarFill = document.createElement('div')
-	progressBarFill.className = 'progress-bar-fill'
-
-	const setProgress = (n: number)=>{
-		progressBarFill.style.width = String(clamp(n, 0, 100)) + '%'
-		if (n>100) {
-			progressBarFill.classList.add('rainbow')
-		} else {
-			progressBarFill.classList.remove('rainbow')
-		}
-	}
-
-	progressBar.appendChild(progressBarFill)
-
-	const warning = document.createElement('div')
-	warning.className = 'warning-icon'
-	const noFuel = document.createElement('img')
-	noFuel.src = 'img/Fuel-icon-red.png'
-	noFuel.style.display = 'none'
-	warning.appendChild(noFuel)
-	const setWarning = (string: "" | "no_fuel")=>{
-		switch (string) {
-			case 'no_fuel':
-				noFuel.style.display = ''
-			break;
-			default:
-				noFuel.style.display = 'none'
-			break;
-		}
-	}
-	cell.appendChild(warning)
-
-	return {element:cell, setStack, setProgress, setWarning}
-}
-
-
-
-function createMachineUI(recipes: readonly Recipe[], items: readonly Item[]) {
-	// What currently owns this ui element. Updated when refresh is called
-	let context: null | {
-		owner: MachineInstance
-		inv: Inventory
-		callback: (()=>void)
-	} = null
-	
-
-	const root = document.createElement("div")
-
-	const header = document.createElement("div")
-	root.append(header)
-
-	const pe = document.createElement("p")
-	header.append(pe)
-
-	const pw = document.createElement("p")
-	header.append(pw)
-
-	const stackUp = document.createElement("button")
-	stackUp.textContent = "Stack up"
-	stackUp.addEventListener("click", e => {
-		e.stopPropagation()
-		console.log("Clicked stack up");
-		if (context === null) return
-		const cost = context.owner.cost
-		console.log("inv: ", context.inv);
-		
-		const afford = context.inv.subtractItems(cost)
-		console.log("affordable?: ", afford, "cost: ", cost)
-		if (!afford) return
-		context.owner.setStack(context.owner.getStack() + 1)
-		context.callback()
-	})
-	header.append(stackUp)
-
-	const assignWorker = document.createElement("button")
-	assignWorker.textContent = "Assign worker"
-	assignWorker.style.display = "none"
-	assignWorker.addEventListener("click", e => {
-		if (workers.amount < 1) return
-		const owner = context?.owner
-		if (!owner) return
-		const need = owner.getWorkerNeed()
-		if (!need) return
-		const status = owner.changeWorker(1)
-		if (status === "success") {
-			workers.transfer(1, owner)
-		} else {
-			console.log(status)
-		}
-	})
-	header.append(assignWorker)
-
-	const layOffWorker = document.createElement("button")
-	layOffWorker.textContent = "Lay off worker"
-	layOffWorker.style.display = "none"
-	layOffWorker.addEventListener("click", e => {
-		const owner = context?.owner
-		if (!owner) return
-		const need = owner.getWorkerNeed()
-		if (!need) return
-		const status = owner.changeWorker(-1)
-		if (status === "success") {
-			workers.transfer(-1, owner)
-		} else {
-			console.log(status)
-		}
-	})
-	header.append(layOffWorker)
-
-	const grid = document.createElement("div")
-	root.append(grid)
-
-	let subscribers: (()=>number)[] = []
-	pubSubTick.subscribe(()=>{
-		subscribers.forEach(f=>f())
-	})
-
-	const refresh = (machine: MachineInstance, availableResources: Inventory, mutatedMachine: ()=>void)=>{
-		refreshText(machine)
-		context = {
-			owner:machine,
-			inv:availableResources,
-			callback: mutatedMachine
-		}
-
-		grid.innerHTML = ""
-		console.log(machine.capableRecipes)
-		subscribers = []
-		machine.capableRecipes.forEach(cr => {
-			const options:CraftingOptions = {maximize:true}
-
-			const out = getRecipeOutputs(cr, machine.items)
-			console.log(cr)
-			console.log("out: ", out)
-
-			const outFirst = out[0]
-			if (outFirst === undefined) throw new Error("Recipe produces nothing. id: " + cr.id);
-			
-			const cell = createItemCell(outFirst.item)
-
-			const getCount = ()=>{
-				const count =  maxCraftableCount(getRecipeInputs(cr, machine.items), availableResources, options)
-				cell.amountLabel.textContent = String(count)
-				return count
-			}
-			getCount()
-
-			cell.element.addEventListener("click", e => {
-				const resolve = resolveCraftingCosts(cr, availableResources, items, options)
-				if (!resolve) return
-				if (!availableResources.subtractItems(resolve.flatMap(res => res.inputs))) throw new Error("Invariant broke");
-				machine.addWorkingOn(resolve)
-			})
-			grid.append(cell.element)
-			
-			subscribers.push(getCount)
-		});
-	}
-
-	const refreshText = (machine: MachineInstance) => {
-		const fNeed = machine.getFuelNeed()
-		if (fNeed) {
-			pe.textContent = `Energy: ${fNeed.energy}`
-		} else {
-			pe.textContent = ""
-		}
-		const wNeed = machine.getWorkerNeed()
-		if (wNeed) {
-			assignWorker.style.display = ""
-			layOffWorker.style.display = ""
-			pw.textContent = `Workers: ${wNeed.workers}/${wNeed.maximum}`
-		} else {
-			pw.textContent = ""
-			assignWorker.style.display = "none"
-			layOffWorker.style.display = "none"
-		}
-	}
-
-	return {element: root, refresh, refreshText}
-}
 
 
 
@@ -527,72 +307,11 @@ window.addEventListener("keydown", e => {
 
 
 
-const quantitySlider = (()=>{// Item amount slider
-	const root = document.getElementById('item-amount-slider')!
-	
-	const slider = document.getElementById('item-amount-slider-slider') as HTMLInputElement
-	slider.type = 'range'
-
-	let endCallbackFunction:Function|null = ()=>{}
-	let inputCallbackFunction:Function|null = ()=>{}
-	let sliderDisabled = true
-	// Make it follow the mouse without pressing
-	document.addEventListener('mousemove', e => {
-		if (root.style.display === 'none') return
-		const rect = slider.getBoundingClientRect();
-
-		// Map mouse X position to slider range
-		const percent = (e.clientX - rect.left) / rect.width;
-		const clamped = Math.min(Math.max(percent, 0), 1);
-
-		slider.value = String(Math.round(
-			Number(slider.min) * 1 + (Number(slider.max) - Number(slider.min)) * clamped
-		));
-		if (inputCallbackFunction) inputCallbackFunction(Number(slider.value))
-	});
-
-	document.addEventListener('mouseup', ()=>{
-		if (sliderDisabled) return
-		sliderDisabled = true
-		root.style.display = 'none'
-		if (endCallbackFunction) endCallbackFunction(Number(slider.value))
-	})
-
-	const setText = (text: string)=>{
-		if (typeof text !== 'string') throw new Error("text is not a string");
-		document.getElementById('item-amount-slider-text')!.textContent = text
-	}
-
-	const methods = {
-		show: (x: number, y: number, text: string, length=15) => {
-			// position is relative to the window, not the page
-			if (typeof length !== 'number' || Number.isNaN(length) || (!Number.isFinite(length))) throw new Error("length is not a valid number");
-			slider.max = String(length)
-			setText(text)
-			sliderDisabled = false
-			root.style.display = '';
-			// Position near mouse 
-			root.style.left = `${x}px`;
-			root.style.top = `${y}px`;
-
-			// Prevent clipping off screen
-			const rect = root.getBoundingClientRect();
-			if (rect.right > window.innerWidth) {
-				root.style.left = `${window.innerWidth - rect.width}px`;
-			}
-			if (rect.bottom > window.innerHeight) {
-				root.style.top = `${window.innerHeight - rect.height}px`;
-			}
-		},
-		setEndCallback:(func: Function|null)=>{
-			endCallbackFunction = func
-		},
-		setInputCallback:(func: Function|null)=>{
-			inputCallbackFunction = func
-		},
-		setText
-	} as const
-	return methods
+// Item amount slider
+const quantitySlider = (()=>{
+	const slider = createQuantitySlider()
+	document.body.append(slider.element)
+	return slider.methods
 })();
 
 
@@ -828,8 +547,55 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 
 
 
-	const machineUI = {...createMachineUI(recipes, items), owner: null as null | MachineInstance}
+	const machineUI = {
+		...createMachineUI(recipes, items, pubSubTick),
+		owner: null as null | MachineInstance,
+	}
+
+	
+	machineUI.events.onAssignWorker = () => {
+		if (workers.amount < 1) return
+		const owner = machineUI?.owner
+		if (!owner) return
+		const need = owner.getWorkerNeed()
+		if (!need) return
+		const status = owner.changeWorker(1)
+		if (status === "success") {
+			workers.transfer(1, owner)
+		} else {
+			console.log(status)
+		}
+	}
+
+	machineUI.events.onLayOffWorker = () => {
+		const owner = machineUI?.owner
+		if (!owner) return
+		const need = owner.getWorkerNeed()
+		if (!need) return
+		const status = owner.changeWorker(-1)
+		if (status === "success") {
+			workers.transfer(-1, owner)
+		} else {
+			console.log(status)
+		}
+	}
+
+	machineUI.events.onStackUp = () => {
+		console.log("Clicked stack up");
+		const owner = machineUI.owner
+		if (owner === null) return
+		const cost = owner.cost
+		console.log("inv: ", mainInventory);
+		
+		const afford = mainInventory.subtractItems(cost)
+		console.log("affordable?: ", afford, "cost: ", cost)
+		if (!afford) return
+		owner.setStack(owner.getStack() + 1)
+	}
+	
+
 	document.getElementById("machine-window")!.append(machineUI.element)
+
 
 
 
@@ -846,7 +612,8 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		machineCell.addEventListener('click',()=>{
 			if (transferContext.kind === "empty") {
 				machineUI.owner = machineInst
-				machineUI.refresh(machineInst, mainInventory, ()=>setStack(String(machineInst.getStack())))
+				machineUI.events.onEvent = ()=>setStack(String(machineInst.getStack()))
+				machineUI.refresh(machineInst, mainInventory, )
 				document.getElementById("machine-window")!.style.display = ""
 			} else if (transferContext.kind === "machine") {
 				if (transferContext.value.id === machineObject.id) {

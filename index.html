@@ -8,16 +8,13 @@
 	<script type="module" src="dist/script.js" defer></script>
 </head>
 <body class="loading">
+	<!--Code injected by js-->
 	<section id="loading-screen">
 		Loading...
 	</section>
 	<div id="mouse-icon" style="display: none;"></div>
-	<div id="item-amount-slider" style="display: none;">
-		<input type="range" id="item-amount-slider-slider" min="1" max="40">
-		<p id="item-amount-slider-text" class="text-border">-</p>
-	</div>
 	<div style="display: flex; height: 100%;">
-		<div id="side-menu-container" style="width: 320px; flex-shrink: 0; position: relative;">
+		<section id="side-menu-container" style="width: 320px; flex-shrink: 0; position: relative;">
 			<div id="side-menu" class="side-menu" style="width: 300px;">
 				<button id="side-menu-width-button" class="side-menu-width-button"></button>
 				<button id="side-menu-inventory-button" class="side-menu-header-button">Inventory</button>
@@ -32,7 +29,7 @@
 					</div>
 				</div>
 			</div>
-		</div>
+		</section>
 		<main>
 			<div id="machine-window" class="machine-window" style="display: none;">
 				<button id="machine-window-button">x</button>

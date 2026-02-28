@@ -12,7 +12,7 @@ export class Inventory {
 	private readonly max: number;          // Max for each item, not amount in total
 	private readonly maxSlots: number;     // Max amount of different items
 	private readonly contentChangeSignal: Signal<ItemEntry>;
-	readonly signal: SignalInterfaceT<ItemEntry, void>
+	readonly signal: SignalInterface<ItemEntry, void>
 	constructor(
 		max: number = Infinity,
 		maxSlots: number = Infinity
@@ -535,7 +535,7 @@ export class MachineInstance {
 
 
 
-type SignalInterfaceT<P, R> = {
+export type SignalInterface<P, R> = {
 	subscribe: (fnc: (param: P) => R)=> () => boolean
 	once: (fnc: (param: P) => R)=> () => boolean
 	unsubscribe: (fnc: (param: P) => R)=> boolean
@@ -573,10 +573,10 @@ export class Signal<P = unknown, R = void> {
 		return results
 	}
 
-	createInterface(includeClear: boolean): SignalInterfaceT<P, R> {
+	createInterface(includeClear: boolean): SignalInterface<P, R> {
 		const self = this
 
-		const api: SignalInterfaceT<P, R> = {
+		const api: SignalInterface<P, R> = {
 			subscribe: fnc => self.subscribe(fnc),
 			once: fnc => self.once(fnc),
 			unsubscribe: fnc => self.unsubscribe(fnc),

@@ -180,19 +180,19 @@ main{
     gap: 5px;
 }
 
-#item-amount-slider{
+.item-amount-slider{
     position: fixed;
     z-index: 9999;
     background-color: rgba(10, 10, 10, 0.2);
     border-radius: 5px;
 }
 
-#item-amount-slider-slider{
+.item-amount-slider-slider{
     width: 250px;
     pointer-events: none;
 }
 
-#item-amount-slider-text{
+.item-amount-slider-text{
     margin: 0;
     text-align: center;
     font-size: 28px;
