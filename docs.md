@@ -60,44 +60,26 @@ This type describe the blueprint for the default machines in the game. Machine I
 
 ### ItemInstance "Class"
 ---
-Represents a specific item reference. It is used as an identity key since it includes metadata unlike the **Item** type.
-
-Properties:
-- item: reference to an immutable **Item**.
-- metadata: additional runtime data as **JSON**.
+Represents a specific item reference. It is used as an identity key since it includes metadata unlike the **Item** type. This class is tightly coupled to the **Item** type, this class acts like a wrapper for **Item**. 
 
 Notes:
-- Metadata is important for equality, if two item instances have different metadata then they are not equal.
 - Can be serialized.
 
 ### ItemEntry "Class"
 ---
-Extends ItemInstance.
-
 Represents a specific item reference and quantity. It is used as an identity key and quantity holder.
-
-Additional properties:
-- amount: number
 
 Notes:
 - Can be serialized.
 
 ### Inventory "Class"
 ---
-An Inventory is conceptually just an array of **ItemInstances**, but with complex rules:
-- per-item maximum amount
-- maximum number of distinct item types
-- atomic add/remove operations
-- validation and invariant enforcement
-- change signaling
-
-Because these rules are non-trivial, inventory logic is encapsulated in a dedicated class rather than operating directly on arrays.
+Inventory represents the universal item‑holding abstraction in the simulation. It provides a consistent interface for machines, factories, and player storage, and guarantees that all item movement respects global invariants.
 
 ### Input "Type"
 ---
 Represents a single recipe input slot.
 Usually used as an array of Inputs.
-Each Input contains an array of **ItemInstances** and an **amount**.
 
 The reason for the array of **ItemInstances** is because multiple different items may satisfy a single input slot.
 
@@ -106,11 +88,9 @@ Notes:
 
 ### CraftingOptions "Type"
 ---
-Used to configure multiple crafting-related functions, such as:
-- maxCraftableCount
-- resolveCraftingCosts
+Used to configure multiple crafting-related functions.
 
-If different crafting functions are invoked with different **CraftingOptions**, they may disagree about the same state.
+If different crafting functions are invoked with different **CraftingOptions**, they might disagree about the same state.
 Correct usage requires that all related crafting operations share the same options instance.
 
 ### MachineInstance "Class"
@@ -119,23 +99,19 @@ Responsible for simulating machines and recipe processing. It is not tied to **M
 
 Characteristics:
 - Operates purely on data.
-- No UI dependencies.
 - Deterministic simulation.
-- Suitable for headless execution.
 
 This allows the same simulation to be run:
 - Inside the main UI.
 - In a separate HTML file.
-- In automated tests.
 
 ### ResolvedRecipe "Class"
 ---
-**"rr"** for short. Represents a fully resolved, atomic execution of a single recipe.
+ResolvedRecipe (“rr”) is a fully resolved, atomic execution of a single recipe. Used as a recipe in process. 
 
 Notes:
 - Atomic: Represents one execution only.
 - Irreversible: Cannot reconstruct the source recipe batch.
-- Designed for inventory mutation and machine execution.
 - Equal **rr**s can be stacked to save on memory.
 - Can be serialized.
 
