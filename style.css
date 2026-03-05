@@ -1,10 +1,14 @@
 
 :root{
-    --text-color:                    white;
-    --border-color:                  white;
-    --background-color:              rgb(40 , 41 , 43 );
-    --background-color-accent:       rgb(56 , 57 , 67 );
-    --background-color-accent-hover: rgb(99 , 103, 114);
+    --text-color:                    hsl(0  , 0% , 100%);
+    --border-color:                  hsl(0  , 0% , 100%);
+    --border-color-dark:             hsl(224, 7% , 42%);
+    --background-color:              hsl(220, 4% , 16%);
+    --background-color-hover:        hsl(220, 4%, 28%);
+    --background-color-accent:       hsl(235, 9% , 24%);
+    --background-color-accent-hover: hsl(224, 7% , 42%);
+    --primary-color:                 hsl(219, 79%, 66%);
+    --accent-color:                  hsl(44 , 43%, 58%);
 }
 
 @keyframes blinker {
@@ -12,8 +16,8 @@
 }
 
 body{
-    color: white;
-    background-color: rgb(40, 41, 43);
+    color: var(--text-color);
+    background-color: var(--background-color);
     height: 100vh;
     margin-top: 0;
     margin-bottom: 0;
@@ -59,9 +63,9 @@ main{
     grid-template-columns: 1fr 1fr 1fr 20px;
     grid-template-rows: 60px auto;
     margin-right: 5px;
-    border: solid white 3px;
+    border: solid var(--border-color) 3px;
     border-radius: 5px;
-    background-color: rgb(56, 57, 67);
+    background-color: var(--background-color-accent);
     height: 98vh;
 }
 
@@ -72,21 +76,21 @@ main{
 
 .side-menu-width-button{
     grid-area: 1/4/3/5 ;
-    background-color: rgb(46, 46, 46);
+    background-color: var(--background-color);
     border: none;
     margin: 1px;
 }
 
 .side-menu-width-button:hover{
-    background-color: rgb(99, 103, 114);
+    background-color: var(--background-color-hover);
 }
 
 .side-menu-header-button{
     color: white;
-    background-color: rgb(68, 71, 78);
+    background-color: var(--background-color-accent);
     border: 2px;
     border-style: solid;
-    border-color: rgb(40, 41, 43);
+    border-color: var(--background-color);
     border-radius: 5px;
     margin: 5px;
     font-size: large;
@@ -94,11 +98,11 @@ main{
 }
 
 .side-menu-header-button:hover{
-    background-color: rgb(99, 103, 114);
+    background-color: var(--background-color-accent-hover);
 }
 
 .inventory-grid-cell{
-    background-color: rgb(99, 103, 114);
+    background-color: var(--border-color-dark);
     background-size: cover;
     margin: 2px;
     text-align: center;
@@ -107,41 +111,7 @@ main{
     user-select: none;
     border-width: 2px; 
     border-style: inset;
-    border-color: white;
-}
-
-.grid-cell{
-    background-color: gray;
-}
-
-.grid-cell1{
-    background-color: rgb(195, 170, 103);
-}
-
-.grid-tiny{
-    display: grid;
-    grid-template-columns: repeat(2, 100px);
-    grid-template-rows: repeat(2, 100px);
-    gap: 15px;
-}
-
-.empty-cell-tiny{
-    background-color: rgb(79, 75, 87);
-    border: 6px rgb(76, 55, 85);
-    border-style: inset;
-}
-
-.grid-small{
-    display: grid;
-    grid-template-columns: repeat(4, 100px);
-    grid-template-rows: repeat(4, 100px);
-    gap: 15px;
-}
-
-.empty-cell-small{
-    background-color: rgb(191, 203, 211);
-    border: 6px rgb(145, 172, 204);
-    border-style: inset;
+    border-color: var(--border-color);
 }
 
 .machine{
@@ -165,15 +135,15 @@ main{
     gap: 5px;
     justify-content: start;
     padding: 5px;
-    border: solid white 2px;
+    border: solid var(--border-color) 2px;
     border-radius: 5px;
 }
 
 .machine-line-cell{
     width: 100px;
     height: 100px;
-    border: dashed gray 2px;
-    background-color: rgba(126, 126, 126, 0);
+    border: dashed var(--border-color-dark) 2px;
+    background-color: var(--background-color);
     box-sizing: border-box;
     display: flex;
     align-items: center;
@@ -226,8 +196,8 @@ main{
     position: absolute;
     width: 100%;
     height: 95vh;
-    background-color: rgb(56, 57, 67);
-    border: solid white 1px;
+    background-color: var(--background-color-accent);
+    border: solid var(--border-color) 1px;
     border-radius: 4px;
     box-sizing: border-box;
     z-index: 9999;
@@ -238,12 +208,12 @@ main{
     width: 100%;
     height: 12px;
     border-radius: 6px;
-    border: solid white 1px;
+    border: solid var(--border-color) 1px;
     overflow: hidden;
 }
 
 .progress-bar-fill{
-    background-color: cornflowerblue;
+    background-color: var(--primary-color);
     height: 100%;
 }
 
@@ -262,7 +232,7 @@ main{
 .resources{
     display: flex;
     border-top-style: solid;
-    border-top-color: white;
+    border-top-color: var(--border-color);
     border-top-width: 2px;
     gap: 40px;
     overflow-x: scroll;
@@ -271,13 +241,13 @@ main{
 .processing-line-button {
   width: 100px;
   height: 100px;
-  border: dashed gray 2px;
+  border: dashed var(--border-color-dark) 2px;
   background-color: rgba(126, 126, 126, 0);
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: gray;
+  color: var(--border-color-dark);
   font-size: large;
   user-select: none;
 }

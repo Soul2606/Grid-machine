@@ -4,6 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+	 <style>
+		.grid-tiny{
+			display: grid;
+			grid-template-columns: repeat(2, 100px);
+			grid-template-rows: repeat(2, 100px);
+			gap: 15px;
+		}
+
+		.empty-cell-tiny{
+			background-color: rgb(79, 75, 87);
+			border: 6px rgb(76, 55, 85);
+			border-style: inset;
+		}
+
+		.grid-small{
+			display: grid;
+			grid-template-columns: repeat(4, 100px);
+			grid-template-rows: repeat(4, 100px);
+			gap: 15px;
+		}
+
+		.empty-cell-small{
+			background-color: rgb(191, 203, 211);
+			border: 6px rgb(145, 172, 204);
+			border-style: inset;
+		}
+	 </style>
 </head>
 <body>
     			<div class="grid-tiny">
