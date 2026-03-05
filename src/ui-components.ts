@@ -1,5 +1,5 @@
 import type { MachineInstance, Inventory, SignalInterface } from "./classes.js"
-import { clamp, getRecipeInputs, getRecipeOutputs, maxCraftableCount, resolveCraftingCosts } from "./functions.js"
+import { clamp, getRecipeInputs, getRecipeOutputs, maxCraftableCount, removeAllChildren, resolveCraftingCosts } from "./functions.js"
 import type { CraftingOptions, Item, Machine, Recipe } from "./types.js"
 
 
@@ -155,6 +155,7 @@ export function createMachine(machine: Machine) {
 
 
 
+
 export function createMachineUI(
 	recipes: readonly Recipe[],
 	items: readonly Item[],
@@ -274,6 +275,60 @@ export function createMachineUI(
 	}
 
 	return { element: root, refresh, refreshText, events }
+}
+
+
+
+
+export function createProcessingLine() {
+	const root = document.createElement("div")
+	root.className = "processing-line"
+
+	const addBtn = document.createElement("button")
+	addBtn.className = "processing-line-button"
+	addBtn.textContent = "+"
+	root.append(addBtn)
+	
+	/**
+	 * Mutate to use events
+	 */
+	const events = {
+		add:()=>{},
+		remove:(inst:MachineInstance)=>{},
+		right:(inst:MachineInstance)=>{},
+		left:(inst:MachineInstance)=>{},
+	}
+	
+	addBtn.addEventListener("click", ()=>events.add())
+
+	function setLine(mInst:readonly MachineInstance[]) {
+
+		removeAllChildren(root)
+
+		root.append(addBtn)
+		for (const inst of mInst) {
+			const cell = document.createElement("div")
+			cell.className = "processing-line-cell"
+			const removeBtn = document.createElement("button")
+			cell.append(removeBtn)
+			const rightBtn = document.createElement("button")
+			cell.append(rightBtn)
+			const leftBtn = document.createElement("button")
+			cell.append(leftBtn)
+
+			root.append(cell)
+
+			removeBtn.addEventListener("click", ()=>events.remove(inst))
+			rightBtn. addEventListener("click", ()=>events.right(inst))
+			leftBtn.  addEventListener("click", ()=>events.left(inst))
+		}
+	}
+
+	return {
+		element:root,
+		setLine,
+		events,
+	}
 }
 
 

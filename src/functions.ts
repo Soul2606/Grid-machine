@@ -12,6 +12,15 @@ export function relu(x: number) {
 
 
 
+export function removeAllChildren(element:HTMLElement) {
+	while (element.hasChildNodes()) {
+		element.firstChild?.remove()
+	}
+}
+
+
+
+
 /**
  * Distributes an integer evenly across an array without exceeding per-cell limits.
  * @param n integer to be distributed

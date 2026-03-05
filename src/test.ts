@@ -1,5 +1,6 @@
-import { fetchData, runProcessingLine } from "./functions.js";
-import type {Extractor, Item, Machine, Recipe} from "./types.js"
+import { createProcessingLine } from "./ui-components.js"
 
-//@ts-ignore
-console.log(runProcessingLine())
+
+const pl = createProcessingLine()
+document.body.append(pl.element)
+
