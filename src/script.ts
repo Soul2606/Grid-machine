@@ -367,7 +367,7 @@ document.getElementById('machine-window-button')!.addEventListener('click',()=>{
 
 fetchData().then(main)
 
-function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extraction:Extractor[]}) {
+function main(response:{items:readonly Item[], machines:readonly Machine[], recipes:readonly Recipe[], extraction:readonly Extractor[]}) {
 	dataIsCompiled = true
 
 	items = response.items
@@ -398,7 +398,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		v.element.addEventListener('mousedown', e => {
 			e.preventDefault()
 			e.stopPropagation()
-			itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, ItemInstance.fromItem(v.itemPointer))
+			itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, ItemInstance.fromItem(v.getItem()))
 		})
 		
 		document.getElementById('inventory-grid')!.appendChild(v.element)
@@ -411,7 +411,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 		const item = itemInstance.item
 		const amount = itemInstance.amount
 		for(const cellElement of invItemCells){
-			if (cellElement.itemPointer !== item) continue
+			if (cellElement.getItem() !== item) continue
 			cellElement.amountLabel.textContent = String(amount) // Yes this is correct
 			if (sideMenuMode === 'recipes') continue
 			cellElement.element.style.display = ''
@@ -488,7 +488,7 @@ function main(response:{items:Item[], machines:Machine[], recipes:Recipe[], extr
 	
 	const repairCells = () => {
 		for (const inventoryCell of invItemCells) {
-			const entry = mainInventory.getAllItemInstances().find(e => e.item === inventoryCell.itemPointer);
+			const entry = mainInventory.getAllItemInstances().find(e => e.item === inventoryCell.getItem());
 			inventoryCell.element.style.display = entry && entry.amount > 0 ? '' : 'none';
 			inventoryCell.amountLabel.style.display = ''
 		}

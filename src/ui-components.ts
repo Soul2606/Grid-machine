@@ -1,5 +1,5 @@
-import type { MachineInstance, Inventory, SignalInterface } from "./classes.js"
-import { clamp, getRecipeInputs, getRecipeOutputs, maxCraftableCount, removeAllChildren, resolveCraftingCosts } from "./functions.js"
+import { type MachineInstance, type Inventory, type SignalInterface, ResolvedRecipe, ItemEntry } from "./classes.js"
+import { clamp, getItemFromId, getItemsFromTag, getRecipeInputs, getRecipeOutputs, maxCraftableCount, removeAllChildren, resolveCraftingCosts } from "./functions.js"
 import type { CraftingOptions, Item, Machine, Recipe } from "./types.js"
 
 
@@ -83,17 +83,56 @@ export function createQuantitySlider() {
 
 
 
-export function createItemCell(resource: Item) {
-
+/**
+ * Can be mutated! Use itemPointer to get which item this cell currently represents.
+ * @param item The item that the cell represents
+ * @returns 
+ */
+export function createItemCell(item: Item) {
+	let itemPointer = item
 	const cell = document.createElement('div')
 	cell.className = 'inventory-grid-cell'
-	if (resource.img) cell.style.backgroundImage = `url(${resource.img})`
-
+	
 	const number = document.createElement('p')
 	number.textContent = '0'
 	cell.appendChild(number)
 
-	return { element: cell, amountLabel: number, itemPointer: resource }
+	function setItem(item:Item) {
+		itemPointer = item
+		cell.style.backgroundImage = item.img ? `url(${item.img})` : ''
+	}
+	setItem(item)
+
+	return {
+		element: cell,
+		amountLabel: number,
+		getItem:()=>itemPointer, 
+		setItem
+	} as const
+}
+
+
+
+
+export function createItemTagCell(tag:string, itemsAll:readonly Item[]) {
+
+	const items = getItemsFromTag(tag, itemsAll)
+	if (items.length === 0) return null
+
+	let index = 0
+	const cell = createItemCell(items[index]!)
+
+	function next() {
+		index = (index + 1) % items.length
+		cell.setItem(items[index]!)
+	}
+
+	return {
+		element:cell.element,
+		getItem:cell.getItem,
+		amountLabel:cell.amountLabel,
+		next,
+	} as const
 }
 
 
@@ -329,6 +368,77 @@ export function createProcessingLine() {
 		setLine,
 		events,
 	}
+}
+
+
+
+
+export function createRecipeCard() {
+	const root = document.createElement("div")
+	root.className = "recipe-card"
+
+	const input = document.createElement("div")
+	input.className = "recipe-card-io"
+	root.append(input)
+
+	const arrow = document.createElement("img")
+	arrow.src = "svg/arrow.svg"
+	arrow.style.width = "64px"
+	arrow.setAttribute("width", "64")
+	arrow.setAttribute("height", "64")
+	root.append(arrow)
+
+	const output = document.createElement("div")
+	output.className = "recipe-card-io"
+	root.append(output)
+
+	function setResolvedRecipe(recipe:ResolvedRecipe) {
+		removeAllChildren(input)
+		removeAllChildren(output)
+		for (const inItem of recipe.inputs) {
+			const cell = createItemCell(inItem.item)
+			cell.amountLabel.textContent = String(inItem.amount)
+			input.append(cell.element)
+		}
+		for (const outItem of recipe.output) {
+			const cell = createItemCell(outItem.item)
+			cell.amountLabel.textContent = String(outItem.amount)
+			output.append(cell.element)
+		}
+	}
+
+	function setRecipe(
+		recipe:Recipe,
+		itemsAll:readonly Item[]
+	) {
+		removeAllChildren(input)
+		removeAllChildren(output)
+
+		for (const rIn of recipe.inputs) {
+			if (rIn.id) {
+				const cell = createItemCell(getItemFromId(rIn.id, itemsAll))
+				cell.amountLabel.textContent = String(rIn.amount)
+				input.append(cell.element)
+			} else if (rIn.tag) {
+				const cell = createItemTagCell(rIn.tag, itemsAll)
+				if (cell === null) throw new Error(`Cannot find tag: ${rIn.tag} in items: ${itemsAll.map(v => v.id).join(", ")}`);
+				cell.amountLabel.textContent = String(rIn.amount)
+				input.append(cell.element)
+			}
+		}
+
+		for (const rOut of recipe.outputs) {
+			const cell = createItemCell(getItemFromId(rOut.id, itemsAll))
+			cell.amountLabel.textContent = String(rOut.amount || 1)
+			output.append(cell.element)
+		}
+	}
+
+	return {
+		element:root,
+		setRecipe,
+		setResolvedRecipe,
+	} as const
 }
 
 

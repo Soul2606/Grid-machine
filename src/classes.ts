@@ -196,8 +196,8 @@ export class ItemInstance {
 		return new ItemInstance(item, meta)
 	}
 
-	static fromItem(item: Item, amount?: number): ItemInstance {
-		return new ItemInstance(item, amount ?? 1)
+	static fromItem(item: Item) {
+		return new ItemInstance(item)
 	}
 
 	/**
@@ -252,6 +252,10 @@ export class ItemEntry extends ItemInstance {
 
 	static fromInst(inst: ItemInstance, amount: number){
 		return new ItemEntry(inst.item, structuredClone(inst.metadata), amount)
+	}
+
+	static fromItem(item: Item, amount: number = 1) {
+		return new ItemEntry(item, null, amount)
 	}
 
 	static fromRef(ref: ItemInstanceSer, items:readonly Item[]){

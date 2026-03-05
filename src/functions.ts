@@ -1,6 +1,6 @@
 import { ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js';
 import { Inventory } from './classes.js';
-import type { Craftable, CraftingOptions, Input, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe } from "./types.js";
+import type { Craftable, CraftingOptions, Extractor, Input, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe } from "./types.js";
 
 
 
@@ -773,7 +773,12 @@ export async function fetchData() {
 			machines,
 			recipes,
 			extraction
-		}
+		} as Readonly<{
+			items:readonly Item[],
+			machines:readonly Machine[],
+			recipes:readonly Recipe[],
+			extraction:readonly Extractor[]
+		}>
 	}
 	const items = await fetchJSON('src/game-data/items.json')
 	const machines = await fetchJSON('src/game-data/machines.json')
