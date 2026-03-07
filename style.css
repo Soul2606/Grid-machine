@@ -102,7 +102,7 @@ main{
 }
 
 .inventory-grid-cell{
-    background-color: var(--border-color-dark);
+    background-color: var(--surface-3-color);
     background-size: cover;
     margin: 2px;
     text-align: center;
@@ -256,10 +256,11 @@ main{
     display: flex;
     align-items: center;
     max-width: 500px;
+    background-color: var(--surface-2-color);
+    border: solid 2px var(--border-color);
 }
 
 .recipe-card-io{
-    display: flex;
-    flex-wrap: wrap;
-    width: fit-content;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
 }
