@@ -93,7 +93,7 @@ export function createItemCell(item: Item) {
 	const cell = document.createElement('div')
 	cell.className = 'inventory-grid-cell'
 	
-	const number = document.createElement('p')
+	const number = document.createElement('span')
 	number.textContent = '0'
 	cell.appendChild(number)
 
@@ -407,12 +407,15 @@ export function createRecipeCard() {
 		}
 	}
 
+	let animFunc:(()=>void)[] = []
+
 	function setRecipe(
 		recipe:Recipe,
 		itemsAll:readonly Item[]
 	) {
 		removeAllChildren(input)
 		removeAllChildren(output)
+		animFunc = []
 
 		for (const rIn of recipe.inputs) {
 			if (rIn.id) {
@@ -424,6 +427,7 @@ export function createRecipeCard() {
 				if (cell === null) throw new Error(`Cannot find tag: ${rIn.tag} in items: ${itemsAll.map(v => v.id).join(", ")}`);
 				cell.amountLabel.textContent = String(rIn.amount)
 				input.append(cell.element)
+				animFunc.push(cell.next)
 			}
 		}
 
@@ -438,6 +442,7 @@ export function createRecipeCard() {
 		element:root,
 		setRecipe,
 		setResolvedRecipe,
+		animate:()=>animFunc.forEach(f=>f())
 	} as const
 }
 
