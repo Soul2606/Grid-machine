@@ -167,7 +167,8 @@
 	},
 	"basic_electric_motor":{
 		"name":"Basic electric motor",
-		"tags":[]
+		"tags":[],
+		"img":"svg/basic-electric-motor.svg"
 	},
 	"basic_machine_hull":{
 		"name":"Basic machine hull",

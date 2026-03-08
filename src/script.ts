@@ -400,6 +400,7 @@ const main = (response:{items:readonly Item[], machines:readonly Machine[], reci
 	recipes = response.recipes
 
 	extraction  = response.extraction
+	console.log({items, machines, recipes, extraction})
 
 	document.body.classList.remove('loading')
 

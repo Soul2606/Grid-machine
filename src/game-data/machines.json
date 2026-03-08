@@ -1,6 +1,5 @@
-[
-	{
-		"id":"stone_furnace",
+{
+	"stone_furnace":{
 		"name":"Stone furnace",
 		"capabilities":["smelt"],
 		"tier":0,
@@ -11,8 +10,7 @@
 			"energy":"90kJ"
 		}
 	},
-	{
-		"id":"alloy_furnace",
+	"alloy_furnace":{
 		"name":"Alloy furnace",
 		"capabilities":["alloy"],
 		"tier":0,
@@ -23,8 +21,7 @@
 			"energy":"140kJ"
 		}
 	},
-	{
-		"id":"iron_anvil",
+	"iron_anvil":{
 		"name":"Iron anvil",
 		"capabilities":["anvil"],
 		"tier":0,
@@ -35,8 +32,7 @@
 			"maximum":1
 		}
 	},
-	{
-		"id":"workshop",
+	"workshop":{
 		"name":"Workshop",
 		"capabilities":["workshop"],
 		"tier":0,
@@ -50,8 +46,7 @@
 			"maximum":1
 		}
 	},
-	{
-		"id":"basic_wiremill",
+	"basic_wiremill":{
 		"name":"Basic Wiremill",
 		"capabilities":["wire_extrusion"],
 		"tier":0,
@@ -70,8 +65,7 @@
 			"energy":"2kJ"
 		}
 	},
-	{
-		"id":"basic_metal_bender",
+	"basic_metal_bender":{
 		"name":"Basic Metal Bender",
 		"capabilities":["metal_bending"],
 		"tier":0,
@@ -89,4 +83,4 @@
 			"energy":"2kJ"
 		}
 	}
-]
+}

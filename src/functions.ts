@@ -651,10 +651,10 @@ export async function fetchData() {
 		})
 	}
 
-	function compile(items: Record<string, unknown>, machines: unknown, recipes: unknown, extraction: unknown) {
+	function compile(items: Record<string, unknown>, machines: Record<string, unknown>, recipes: unknown, extraction: unknown) {
 
 		if (typeof items !== "object" || items === null) throw new Error("error")
-		if (!Array.isArray(machines)) throw new Error("error")
+		if (typeof machines !== "object" || machines === null) throw new Error("error")
 		if (!Array.isArray(recipes)) throw new Error("error")
 		if (!Array.isArray(extraction)) throw new Error("error")
 
@@ -671,11 +671,11 @@ export async function fetchData() {
 			includeKeys(item, ['name', 'tags'])
 		})
 
-		machines.forEach(item => {
-			includeKeys(item, ['id', 'name', 'capabilities', 'tier', "cost"])
+		Object.values(machines).forEach(item => {
+			includeKeys(item, ['name', 'capabilities', 'tier', "cost"])
 		})
-		machines.forEach(item => {
-			limitKeysTo(item, ['id', 'name', 'capabilities', 'tier', "cost", "img", 'energyNeeds', 'fuelNeeds', "workerNeeds"])
+		Object.values(machines).forEach(item => {
+			limitKeysTo(item, ['name', 'capabilities', 'tier', "cost", "img", 'energyNeeds', 'fuelNeeds', "workerNeeds"])
 		})
 
 		recipes.forEach(item => {
@@ -703,8 +703,8 @@ export async function fetchData() {
 			item.tags.forEach((tag: any) => ct(tag, 'string'))
 		}
 
-		for (const machine of machines) {
-			ct(machine.id, 'string')
+		for (const key in machines) {
+			const machine:any = machines[key]
 			ct(machine.name, 'string')
 			ct(machine.tier, 'number')
 			ct(machine.cost, "array")
@@ -758,7 +758,7 @@ export async function fetchData() {
 			return duplicates.size === 0 ? false : duplicates
 		}
 		{
-			const result = hasDuplicateIds(Object.keys(items).concat(machines.map(m => m.id)))
+			const result = hasDuplicateIds(Object.keys(items).concat(Object.keys(machines).map(id => id)))
 			if (result) throw new Error(`Machines and Items has duplicate IDs, ${result}`)
 		}
 		{
@@ -770,7 +770,10 @@ export async function fetchData() {
 				//@ts-ignore
 				({...items[key], id:key})
 			),
-			machines,
+			machines: Object.keys(machines).map(key =>
+				//@ts-ignore
+				({...machines[key], id:key})
+			),
 			recipes,
 			extraction
 		} as Readonly<{
