@@ -2,7 +2,7 @@
 import type { Item, Machine, Recipe, Extractor } from './types.js'
 import { fetchData, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, tryCraft } from './functions.js'
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe, Signal } from './classes.js'
-import { createItemCell, createMachine, createMachineUI, createQuantitySlider } from './ui-components.js'
+import { createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
 
 type InfoPanelMethods = {
 	show: () => void
@@ -159,6 +159,16 @@ var extraction: readonly Extractor[]
 
 // Main global inventory
 const mainInventory = new Inventory()
+
+
+const machineWindow = document.getElementById("machine-window")
+if (!machineWindow) throw new Error("error");
+const recipeWindow = document.getElementById("recipe-window")
+if (!recipeWindow) throw new Error("error");
+
+
+const recipeDisplay = createRecipeCard()
+recipeWindow.append(recipeDisplay.element)
 
 
 
@@ -335,6 +345,16 @@ const pubSubTick = (()=>{
 
 
 
+{
+let time = 0
+pubSubTick.subscribe(delta=>{
+	if (time + delta/1000 < 5) return
+	time = (time + delta/1000) % 5
+	recipeDisplay.animate()
+})
+}
+
+
 
 
 document.getElementById('side-menu-width-button')!.addEventListener('mousedown',e=>{
@@ -359,15 +379,20 @@ document.getElementById('side-menu-width-button')!.addEventListener('mousedown',
 
 
 document.getElementById('machine-window-button')!.addEventListener('click',()=>{
-	document.getElementById('machine-window')!.style.display = 'none'
+	machineWindow.style.display = 'none'
+})
+
+
+
+document.getElementById('recipe-window-button')!.addEventListener('click',()=>{
+	recipeWindow.style.display = 'none'
 })
 
 
 
 
-fetchData().then(main)
 
-function main(response:{items:readonly Item[], machines:readonly Machine[], recipes:readonly Recipe[], extraction:readonly Extractor[]}) {
+const main = (response:{items:readonly Item[], machines:readonly Machine[], recipes:readonly Recipe[], extraction:readonly Extractor[]}) => {
 	dataIsCompiled = true
 
 	items = response.items
@@ -398,7 +423,22 @@ function main(response:{items:readonly Item[], machines:readonly Machine[], reci
 		v.element.addEventListener('mousedown', e => {
 			e.preventDefault()
 			e.stopPropagation()
-			itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, ItemInstance.fromItem(v.getItem()))
+			if (sideMenuMode === "inventory") {
+				itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, ItemInstance.fromItem(v.getItem()))
+			} else if (sideMenuMode === "recipes") {
+				
+				const target = new ItemInstance(r)
+				const recipe = recipes.find(res =>
+					res.outputs.some(ser =>
+						ItemInstance.fromRef(ser, items).isEqual(target)
+					)
+				)
+
+				if (!recipe) return
+
+				recipeWindow.style.display = ""
+				recipeDisplay.setRecipe(recipe, items)
+			}
 		})
 		
 		document.getElementById('inventory-grid')!.appendChild(v.element)
@@ -452,27 +492,39 @@ function main(response:{items:readonly Item[], machines:readonly Machine[], reci
 		})
 
 		cell.addEventListener('click',()=>{
-			if (transferContext.kind !== "empty") {
-				transferContext.transfer(false)
-				return
-			}
-			console.log("Clicked machine cell");
-			const cost = machine.cost.map(ser =>
-				ItemEntry.fromRef(ser, items)
-			)
-			console.log("machine costs: ", cost);
-			if (!mainInventory.subtractItems(cost)) return
-			transferContext = {
-				kind: "machine",
-				value: machine,
-				transfer: (success)=>{
-					transferContext = {kind: "empty"}
-					cell.style.backgroundColor = ''
-					if (success) return
-					mainInventory.addItems(cost)
+			if (sideMenuMode === "machines") {
+				if (transferContext.kind !== "empty") {
+					transferContext.transfer(false)
+					return
 				}
+				console.log("Clicked machine cell");
+				const cost = machine.cost.map(ser =>
+					ItemEntry.fromRef(ser, items)
+				)
+				console.log("machine costs: ", cost);
+				if (!mainInventory.subtractItems(cost)) return
+				transferContext = {
+					kind: "machine",
+					value: machine,
+					transfer: (success)=>{
+						transferContext = {kind: "empty"}
+						cell.style.backgroundColor = ''
+						if (success) return
+						mainInventory.addItems(cost)
+					}
+				}
+				cell.style.backgroundColor = 'green'
+			} else if (sideMenuMode === "recipes") {
+				const recipe = new ResolvedRecipe(
+					machine.id,
+					machine.cost.map(ser=>
+						ItemEntry.fromRef(ser, items)
+					),
+					[new ItemEntry(items[0]!, null, 1)]
+				)
+				recipeWindow.style.display = ""
+				recipeDisplay.setResolvedRecipe(recipe)
 			}
-			cell.style.backgroundColor = 'green'
 		})
 
 		machineCellElements.push({element:cell, machinePointer:machine})
@@ -594,7 +646,7 @@ function main(response:{items:readonly Item[], machines:readonly Machine[], reci
 	}
 	
 
-	document.getElementById("machine-window")!.append(machineUI.element)
+	machineWindow.append(machineUI.element)
 
 
 
@@ -614,7 +666,7 @@ function main(response:{items:readonly Item[], machines:readonly Machine[], reci
 				machineUI.owner = machineInst
 				machineUI.events.onEvent = ()=>setStack(String(machineInst.getStack()))
 				machineUI.refresh(machineInst, mainInventory, )
-				document.getElementById("machine-window")!.style.display = ""
+				machineWindow.style.display = ""
 			} else if (transferContext.kind === "machine") {
 				if (transferContext.value.id === machineObject.id) {
 					machineInst.setStack(1 + machineInst.getStack())
@@ -705,6 +757,7 @@ function main(response:{items:readonly Item[], machines:readonly Machine[], reci
 }
 
 
+fetchData().then(main)
 
 setTimeout(()=>{
 	if (dataIsCompiled) return
