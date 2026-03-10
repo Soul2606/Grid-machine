@@ -1,6 +1,6 @@
 import { ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js';
 import { Inventory } from './classes.js';
-import type { Craftable, CraftingOptions, Extractor, Input, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe } from "./types.js";
+import type { CraftingOptions, Extractor, Input, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe } from "./types.js";
 
 
 
@@ -193,13 +193,10 @@ export function clamp(val: number, min: number = 0, max: number = 1) {
 /**
  * Get all recipes that crafts the provided item
  */
-export function getRecipesProducing(craftable: Craftable, recipes: readonly Recipe[]) {
-	return recipes.filter(recipe => {
-		if (typeof recipe.outputs === "string") {
-			return recipe.outputs === craftable.id
-		}
-		return recipe.outputs.some(output => output.id === craftable.id)
-	})
+export function getRecipesProducing(craftable: ItemInstance, recipesAll: readonly Recipe[], itemsAll: readonly Item[]) {
+	return recipesAll.filter(recipe =>
+		getRecipeOutputs(recipe, itemsAll).some(output => craftable.isEqual(output))
+	)
 }
 
 
@@ -283,6 +280,7 @@ export function getRecipeOutputs(recipe: Recipe, items: readonly Item[]): readon
 
 
 
+/*
 export function getAffordableRecipes(craftable: Craftable, inventory: Inventory, items: readonly Item[], recipes: readonly Recipe[]): Recipe[] {
 	if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory")
 	const allEntries = inventory.getAllItemInstances()
@@ -302,6 +300,7 @@ export function getAffordableRecipes(craftable: Craftable, inventory: Inventory,
 		})
 	})
 }
+*/
 
 
 

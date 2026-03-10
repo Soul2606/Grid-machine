@@ -57,6 +57,13 @@ main{
     will-change: transform;
 }
 
+.mouse-info-panel{
+    background-color: hsla(240, 50%, 20%, 90%);
+    border: solid hsl(207, 36%, 65%) 2px;
+    border-radius: 5px;
+    padding: 5px;
+}
+
 .stack{
     position: relative;
 }

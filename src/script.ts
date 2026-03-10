@@ -1,6 +1,6 @@
 
 import type { Item, Machine, Recipe, Extractor } from './types.js'
-import { fetchData, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, tryCraft } from './functions.js'
+import { fetchData, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, removeAllChildren, tryCraft } from './functions.js'
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe, Signal } from './classes.js'
 import { createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
 
@@ -163,12 +163,12 @@ const mainInventory = new Inventory()
 
 const machineWindow = document.getElementById("machine-window")
 if (!machineWindow) throw new Error("error");
+
 const recipeWindow = document.getElementById("recipe-window")
 if (!recipeWindow) throw new Error("error");
 
-
-const recipeDisplay = createRecipeCard()
-recipeWindow.append(recipeDisplay.element)
+const recipeDisplay = document.getElementById("recipe-display")
+if (!recipeDisplay) throw new Error("error");
 
 
 
@@ -345,6 +345,7 @@ const pubSubTick = (()=>{
 
 
 
+/*
 {
 let time = 0
 pubSubTick.subscribe(delta=>{
@@ -353,6 +354,7 @@ pubSubTick.subscribe(delta=>{
 	recipeDisplay.animate()
 })
 }
+*/
 
 
 
@@ -429,16 +431,15 @@ const main = (response:{items:readonly Item[], machines:readonly Machine[], reci
 			} else if (sideMenuMode === "recipes") {
 				
 				const target = new ItemInstance(r)
-				const recipe = recipes.find(res =>
-					res.outputs.some(ser =>
-						ItemInstance.fromRef(ser, items).isEqual(target)
-					)
-				)
-
-				if (!recipe) return
+				const rs = getRecipesProducing(target, recipes, items)
 
 				recipeWindow.style.display = ""
-				recipeDisplay.setRecipe(recipe, items)
+				removeAllChildren(recipeDisplay)
+				for (const r of rs) {
+					const card = createRecipeCard()
+					card.setRecipe(r, items)
+					recipeDisplay.append(card.element)
+				}
 			}
 		})
 		
@@ -524,7 +525,10 @@ const main = (response:{items:readonly Item[], machines:readonly Machine[], reci
 					[new ItemEntry(items[0]!, null, 1)]
 				)
 				recipeWindow.style.display = ""
-				recipeDisplay.setResolvedRecipe(recipe)
+				removeAllChildren(recipeDisplay)
+				const card = createRecipeCard()
+				card.setResolvedRecipe(recipe)
+				recipeDisplay.append(card.element)
 			}
 		})
 
