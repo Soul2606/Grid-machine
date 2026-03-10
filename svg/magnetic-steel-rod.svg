@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="100"
+   height="100"
+   viewBox="0 0 100 100"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   sodipodi:docname="magnetic-steel-rod.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <title
+     id="title1">Template Ingot</title>
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     inkscape:zoom="3.9957103"
+     inkscape:cx="33.410831"
+     inkscape:cy="57.311462"
+     inkscape:window-width="1440"
+     inkscape:window-height="828"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     showguides="true" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     style="opacity:1">
+    <path
+       style="display:inline;fill:#58595c;stroke:none;stroke-width:5;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke;fill-opacity:1"
+       d="M 7.7936624,69.379157 74.393426,16.099347 c 0,0 10.49736,-7.7757297 18.970343,0.841339 8.472981,8.617068 0.351987,18.340642 0.351987,18.340642 l -66.599763,53.27981 c 0,0 -12.771164,8.951222 -20.6025693,-0.585579 -7.8314054,-9.536808 1.2802387,-18.596402 1.2802387,-18.596402 z"
+       id="path3"
+       sodipodi:nodetypes="cczcczc"
+       inkscape:label="Outline" />
+    <path
+       d="M 27.805865,62.506311 80.701098,20.190126"
+       style="display:inline;fill:none;stroke:#919496;stroke-width:5;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       id="path1-9"
+       sodipodi:nodetypes="cc" />
+    <circle
+       style="fill:#919496;fill-opacity:1;fill-rule:evenodd;stroke:#0e0e0e;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       id="path5"
+       cx="16.535109"
+       cy="79.367317"
+       r="13.183122" />
+    <path
+       style="display:inline;fill:none;stroke:#0e0e0e;stroke-width:5;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="M 7.7936624,69.379157 74.393426,16.099347 c 0,0 10.49736,-7.7757297 18.970343,0.841339 8.472981,8.617068 0.351987,18.340642 0.351987,18.340642 l -66.599763,53.27981 c 0,0 -12.771164,8.951222 -20.6025693,-0.585579 -7.8314054,-9.536808 1.2802387,-18.596402 1.2802387,-18.596402 z"
+       id="path4"
+       sodipodi:nodetypes="cczcczc"
+       inkscape:label="Outline" />
+    <g
+       id="g2">
+      <path
+         id="path1"
+         style="baseline-shift:baseline;display:inline;overflow:visible;vector-effect:none;fill-rule:evenodd;stroke-linecap:square;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1;opacity:1;fill:#2a00ff;fill-opacity:1"
+         d="M 21.220703 14.785156 L 16.296875 8.4785156 C 12.14503 11.720763 9.219291 16.580243 8.5273438 22.205078 C 7.8353951 27.829913 9.4960346 33.254406 12.738281 37.40625 L 15.199219 40.558594 L 21.505859 35.634766 L 19.042969 32.482422 C 17.052978 29.934148 16.038791 26.660888 16.466797 23.181641 C 16.894801 19.702394 18.67243 16.775147 21.220703 14.785156 z " />
+      <path
+         id="path2"
+         style="baseline-shift:baseline;display:inline;overflow:visible;vector-effect:none;fill-rule:evenodd;stroke-linecap:square;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1;opacity:1;fill:#ff0000;fill-opacity:1"
+         d="M 29.398438 4.1171875 C 28.703253 4.1027108 28.014205 4.1231776 27.332031 4.1777344 C 23.238991 4.5050747 19.410759 6.0468291 16.296875 8.4785156 L 21.220703 14.785156 C 23.768976 12.795165 27.040284 11.779026 30.519531 12.207031 C 33.998779 12.635037 36.927978 14.412666 38.917969 16.960938 L 41.380859 20.113281 L 47.685547 15.189453 L 45.222656 12.037109 C 41.980409 7.8852661 37.122882 4.9595267 31.498047 4.2675781 C 30.794942 4.1810846 30.093622 4.1316642 29.398438 4.1171875 z " />
+    </g>
+    <g
+       id="g2-7"
+       transform="rotate(180,52.583917,50.402821)">
+      <path
+         id="path1-0"
+         style="baseline-shift:baseline;display:inline;overflow:visible;opacity:1;vector-effect:none;fill:#2a00ff;fill-opacity:1;fill-rule:evenodd;stroke-linecap:square;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+         d="M 21.220703,14.785156 16.296875,8.4785156 C 12.14503,11.720763 9.219291,16.580243 8.5273438,22.205078 7.8353951,27.829913 9.4960346,33.254406 12.738281,37.40625 l 2.460938,3.152344 6.30664,-4.923828 -2.46289,-3.152344 c -1.989991,-2.548274 -3.004178,-5.821534 -2.576172,-9.300781 0.428004,-3.479247 2.205633,-6.406494 4.753906,-8.396485 z" />
+      <path
+         id="path2-9"
+         style="baseline-shift:baseline;display:inline;overflow:visible;opacity:1;vector-effect:none;fill:#ff0000;fill-opacity:1;fill-rule:evenodd;stroke-linecap:square;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+         d="m 29.398438,4.1171875 c -0.695185,-0.014477 -1.384233,0.00599 -2.066407,0.060547 -4.09304,0.3273403 -7.921272,1.8690947 -11.035156,4.3007812 l 4.923828,6.3066403 c 2.548273,-1.989991 5.819581,-3.00613 9.298828,-2.578125 3.479248,0.428006 6.408447,2.205635 8.398438,4.753907 l 2.46289,3.152343 6.304688,-4.923828 -2.462891,-3.152344 C 41.980409,7.8852661 37.122882,4.9595267 31.498047,4.2675781 30.794942,4.1810846 30.093622,4.1316642 29.398438,4.1171875 Z" />
+    </g>
+  </g>
+  <metadata
+     id="metadata1">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>Template Ingot</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+</svg>

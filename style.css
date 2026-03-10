@@ -3,10 +3,22 @@
     --text-color:        hsl(0  , 0% , 100%);
     --border-color:      hsl(0  , 0% , 100%);
     --border-color-dark: hsl(224, 7% , 42%);
-    --background-color:  hsl(220, 4% , 16%);
-    --surface-1-color:   hsl(235, 4% , 24%);
+    --background-color:  hsl(220, 2%, 12%);
+    --surface-1-color:   hsl(235, 4% , 20%);
     --surface-2-color:   hsl(220, 4% , 30%);
     --surface-3-color:   hsl(240, 4% , 46%);
+    --primary-color:     hsl(219, 79%, 66%);
+    --accent-color:      hsl(44 , 43%, 58%);
+}
+
+:root.light{
+    --text-color:        hsl(0, 0%, 0%);
+    --border-color:      hsl(0, 0%, 0%);
+    --border-color-dark: hsl(0, 0%, 45%);
+    --background-color:  hsl(0, 0%, 100%);
+    --surface-1-color:   hsl(0, 0%, 88%);
+    --surface-2-color:   hsl(0, 0%, 73%);
+    --surface-3-color:   hsl(0, 0%, 57%);
     --primary-color:     hsl(219, 79%, 66%);
     --accent-color:      hsl(44 , 43%, 58%);
 }
@@ -40,7 +52,7 @@ main{
 
 #mouse-icon{
     position: fixed;
-    z-index: 9999;
+    z-index: 99999999999999999999999; /*This was the only solution that worked...*/
     pointer-events: none;
     will-change: transform;
 }
@@ -86,7 +98,7 @@ main{
 }
 
 .side-menu-header-button{
-    color: white;
+    color: var(--text-color);
     background-color: var(--surface-1-color);
     border: 2px;
     border-style: solid;

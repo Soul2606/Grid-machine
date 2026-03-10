@@ -21,6 +21,16 @@
 			"energy":"140kJ"
 		}
 	},
+	"coke_oven":{
+		"name":"Coke oven",
+		"capabilities":["coke_oven"],
+		"tier":0,
+		"img":"svg/coke-oven.svg",
+		"cost":[
+			{"id":"ceramic", "amount":24},
+			{"id":"brass_plate", "amount":4}
+		]
+	},
 	"iron_anvil":{
 		"name":"Iron anvil",
 		"capabilities":["anvil"],
@@ -46,6 +56,22 @@
 			"maximum":1
 		}
 	},
+	"basic_polarizer":{
+		"name":"Basic Polarizer",
+		"capabilities":["polarization"],
+		"tier":0,
+		"img":"svg/basic-polarizer.svg",
+		"cost":[
+			{"id":"wooden_circuit_board", "amount":1},
+			{"id":"basic_machine_hull", "amount":1},
+			{"id":"iron_rod", "amount":4},
+			{"id":"copper_wire", "amount":4}
+		],
+		"energyNeeds":{
+			"voltageTier":1,
+			"energy":"2kJ"
+		}
+	},
 	"basic_wiremill":{
 		"name":"Basic Wiremill",
 		"capabilities":["wire_extrusion"],
@@ -57,7 +83,7 @@
 			{"id":"iron_rod", "amount":8},
 			{"id":"basic_electric_motor", "amount":2},
 			{"id":"bronze_gear", "amount":12},
-			{"id":"crude_copper_wire", "amount":2},
+			{"id":"copper_wire", "amount":2},
 			{"id":"bronze_plate", "amount":1}
 		],
 		"energyNeeds":{
@@ -75,7 +101,7 @@
 			{"id":"basic_machine_hull", "amount":1},
 			{"id":"iron_rod", "amount":4},
 			{"id":"basic_electric_motor", "amount":6},
-			{"id":"crude_copper_wire", "amount":1},
+			{"id":"copper_wire", "amount":1},
 			{"id":"bronze_plate", "amount":2}
 		],
 		"energyNeeds":{

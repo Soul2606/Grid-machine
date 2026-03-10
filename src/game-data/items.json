@@ -10,6 +10,11 @@
 		"img":"svg/raw-coal.svg",
 		"energy":"4MJ"
 	},
+	"coke":{
+		"name":"Coke",
+		"tags":[],
+		"img":"svg/coke.svg"
+	},
 	"water":{
 		"name":"Water",
 		"tags":[],
@@ -24,6 +29,11 @@
 		"name":"Oxygen gas",
 		"tags":[],
 		"img":"svg/oxygen-gas.svg"
+	},
+	"creosote":{
+		"name":"Creosote",
+		"tags":[],
+		"img":"svg/creosote.svg"
 	},
 	"hematite":{
 		"name":"Hematite",
@@ -77,8 +87,9 @@
 	},
 	"wood":{
 		"name":"Wood",
-		"tags":[],
-		"img":"svg/wood.svg"
+		"tags":["primitive_fuel"],
+		"img":"svg/wood.svg",
+		"energy":"2MJ"
 	},
 	"sticky_resin":{
 		"name":"Sticky resin",
@@ -135,6 +146,11 @@
 		"tags":[],
 		"img":"svg/steel-rod.svg"
 	},
+	"magnetic_steel_rod":{
+		"name":"Magnetic steel rod",
+		"tags":[],
+		"img":"svg/magnetic-steel-rod.svg"
+	},
 	"copper_ingot":{
 		"name":"Copper ingot",
 		"tags":[],
@@ -145,10 +161,10 @@
 		"tags":[],
 		"img":"svg/copper-plate.svg"
 	},
-	"crude_copper_wire":{
-		"name":"Crude copper wire",
+	"copper_wire":{
+		"name":"Copper wire",
 		"tags":[],
-		"img":"svg/crude-copper-wire.svg"
+		"img":"svg/copper-wire.svg"
 	},
 	"wood_board":{
 		"name":"Wood board",
