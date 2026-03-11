@@ -1,3 +1,4 @@
+import { getData } from "./game-data.js";
 import { getItemFromId, JSONEquals, energyToNumber, maxCraftableCount, getRecipeInputs, getRecipeOutputs, relu, distributeIntEvenly, clamp, getRecipeFromId } from './functions.js';
 import type { CraftingOptions, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe, ResolvedRecipeSer, } from './types.js';
 

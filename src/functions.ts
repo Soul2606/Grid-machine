@@ -1,8 +1,11 @@
+import { getDataMapToId } from "./game-data.js";
 import { ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js';
 import { Inventory } from './classes.js';
 import type { CraftingOptions, Extractor, Input, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe } from "./types.js";
 
 
+//Global variables
+const {items, machines, recipes, extractors} = getDataMapToId()
 
 
 export function relu(x: number) {

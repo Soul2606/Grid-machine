@@ -1,6 +1,7 @@
 
+import { getData } from "./game-data.js"; // async
 import type { Item, Machine, Recipe, Extractor } from './types.js'
-import { fetchData, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, removeAllChildren, tryCraft } from './functions.js'
+import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, removeAllChildren, tryCraft } from './functions.js'
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe, Signal } from './classes.js'
 import { createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
 
@@ -123,8 +124,6 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 
 //Global Variables
 
-let dataIsCompiled = false
-
 const workers = {
 	amount: 10,
 	provenance: new Map<object,number>(),
@@ -146,15 +145,13 @@ const workers = {
  */
 var sideMenuMode: undefined | "recipes" | "inventory" | "machines"
 
-/* These will be assigned after compilation. Should be validated outside the main function*/
 
-var items: readonly Item[]
+const items = getData().items
+const machines = getData().machines
+const recipes = getData().recipes
+const extraction  = getData().extractors
 
-var machines: readonly Machine[]
-
-var recipes: readonly Recipe[]
-
-var extraction: readonly Extractor[]
+console.log({items, machines, recipes, extraction})
 
 
 // Main global inventory
@@ -392,402 +389,379 @@ document.getElementById('recipe-window-button')!.addEventListener('click',()=>{
 
 
 
+document.body.classList.remove('loading')
 
+updateWorkers()
 
-const main = (response:{items:readonly Item[], machines:readonly Machine[], recipes:readonly Recipe[], extraction:readonly Extractor[]}) => {
-	dataIsCompiled = true
+const invItemCells = items.map(item => {
+	const v = createItemCell(item)
+	v.element.style.display = "none"
 
-	items = response.items
-	machines = response.machines
-	recipes = response.recipes
+	const mouseEnter = (item:Item) => {
+		MouseOverlay.show()
+		MouseOverlay.elements.infoPanel.show()
+		MouseOverlay.elements.infoPanel.setText(item.name)
+	}
 
-	extraction  = response.extraction
-	console.log({items, machines, recipes, extraction})
+	const mouseLeave = ()=>{
+		MouseOverlay.elements.infoPanel.hide()
+		MouseOverlay.elements.infoPanel.setText('')
+	}
 
-	document.body.classList.remove('loading')
+	v.element.addEventListener("mouseenter", ()=>mouseEnter(item))
+	v.element.addEventListener('mouseleave', ()=>mouseLeave())
 
-	updateWorkers()
+	const showRecipe = (item:Item) => {
+		const target = new ItemInstance(item)
+		const rs = getRecipesProducing(target, recipes, items)
 
-	const invItemCells = items.map(item => {
-		const v = createItemCell(item)
-		v.element.style.display = "none"
-
-		const mouseEnter = (item:Item) => {
-			MouseOverlay.show()
-			MouseOverlay.elements.infoPanel.show()
-			MouseOverlay.elements.infoPanel.setText(item.name)
-		}
-
-		const mouseLeave = ()=>{
-			MouseOverlay.elements.infoPanel.hide()
-			MouseOverlay.elements.infoPanel.setText('')
-		}
-
-		v.element.addEventListener("mouseenter", ()=>mouseEnter(item))
-		v.element.addEventListener('mouseleave', ()=>mouseLeave())
-
-		const showRecipe = (item:Item) => {
-			const target = new ItemInstance(item)
-			const rs = getRecipesProducing(target, recipes, items)
-
-			recipeWindow.style.display = ""
-			removeAllChildren(recipeDisplay)
-			for (const r of rs) {
-				const card = createRecipeCard()
-				card.setRecipe(r, items)
-				recipeDisplay.append(card.element)
-				card.events.onClick = item=>{
-					if (typeof item === "string") return
-					showRecipe(item.item)
-				}
-				card.events.onMouseEnter = value=>{
-					if (typeof value === "string") {
-						MouseOverlay.show()
-						MouseOverlay.elements.infoPanel.show()
-						MouseOverlay.elements.infoPanel.setText(`Tag "${value}"`)
-						return
-					}
-					mouseEnter(value.item)
-				}
-				card.events.onMouseLeave = ()=>mouseLeave()
+		recipeWindow.style.display = ""
+		removeAllChildren(recipeDisplay)
+		for (const r of rs) {
+			const card = createRecipeCard()
+			card.setRecipe(r, items)
+			recipeDisplay.append(card.element)
+			card.events.onClick = item=>{
+				if (typeof item === "string") return
+				showRecipe(item.item)
 			}
-		}
-
-		v.element.addEventListener('mousedown', e => {
-			e.preventDefault()
-			e.stopPropagation()
-			if (sideMenuMode === "inventory") {
-				itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, ItemInstance.fromItem(v.getItem()))
-			} else if (sideMenuMode === "recipes") {
-				showRecipe(item)
-			}
-		})
-		
-		document.getElementById('inventory-grid')!.appendChild(v.element)
-		return v
-	})
-
-
-
-	mainInventory.signal.subscribe((itemInstance)=>{
-		const item = itemInstance.item
-		const amount = itemInstance.amount
-		for(const cellElement of invItemCells){
-			if (cellElement.getItem() !== item) continue
-			cellElement.amountLabel.textContent = String(amount) // Yes this is correct
-			if (sideMenuMode === 'recipes') continue
-			cellElement.element.style.display = ''
-		}
-	})
-
-
-
-	const machineCellElements: {element:HTMLDivElement, machinePointer:Machine}[] = []
-	for(const machine of machines){
-		const cell = document.createElement('div')
-		cell.className = 'inventory-grid-cell'
-		cell.textContent = machine.name
-		if (machine.img) cell.style.backgroundImage = `url(${machine.img})`
-		document.getElementById('machines-grid')!.appendChild(cell)
-
-		cell.addEventListener('mouseenter', ()=>{
-			const inputs = machine.cost
-
-			MouseOverlay.show()
-			MouseOverlay.elements.infoPanel.show()
-
-			const text = inputs.map(input=>{
-				let item = items.find(item=>item.id === input.id)
-				if (item) {
-					return `${item.name}: ${input.amount}, `
-				} else {
-					return 'unknown'
-				}
-			}).join(', ')
-
-			MouseOverlay.elements.infoPanel.setText(`Ingredients:${text}`)
-		})
-		
-		cell.addEventListener('mouseleave', ()=>{
-			MouseOverlay.elements.infoPanel.hide()
-			MouseOverlay.elements.infoPanel.setText('')
-		})
-
-		cell.addEventListener('click',()=>{
-			if (sideMenuMode === "machines") {
-				if (transferContext.kind !== "empty") {
-					transferContext.transfer(false)
+			card.events.onMouseEnter = value=>{
+				if (typeof value === "string") {
+					MouseOverlay.show()
+					MouseOverlay.elements.infoPanel.show()
+					MouseOverlay.elements.infoPanel.setText(`Tag "${value}"`)
 					return
 				}
-				console.log("Clicked machine cell");
-				const cost = machine.cost.map(ser =>
+				mouseEnter(value.item)
+			}
+			card.events.onMouseLeave = ()=>mouseLeave()
+		}
+	}
+
+	v.element.addEventListener('mousedown', e => {
+		e.preventDefault()
+		e.stopPropagation()
+		if (sideMenuMode === "inventory") {
+			itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, ItemInstance.fromItem(v.getItem()))
+		} else if (sideMenuMode === "recipes") {
+			showRecipe(item)
+		}
+	})
+	
+	document.getElementById('inventory-grid')!.appendChild(v.element)
+	return v
+})
+
+
+
+mainInventory.signal.subscribe((itemInstance)=>{
+	const item = itemInstance.item
+	const amount = itemInstance.amount
+	for(const cellElement of invItemCells){
+		if (cellElement.getItem() !== item) continue
+		cellElement.amountLabel.textContent = String(amount) // Yes this is correct
+		if (sideMenuMode === 'recipes') continue
+		cellElement.element.style.display = ''
+	}
+})
+
+
+
+const machineCellElements: {element:HTMLDivElement, machinePointer:Machine}[] = []
+for(const machine of machines){
+	const cell = document.createElement('div')
+	cell.className = 'inventory-grid-cell'
+	cell.textContent = machine.name
+	if (machine.img) cell.style.backgroundImage = `url(${machine.img})`
+	document.getElementById('machines-grid')!.appendChild(cell)
+
+	cell.addEventListener('mouseenter', ()=>{
+		const inputs = machine.cost
+
+		MouseOverlay.show()
+		MouseOverlay.elements.infoPanel.show()
+
+		const text = inputs.map(input=>{
+			let item = items.find(item=>item.id === input.id)
+			if (item) {
+				return `${item.name}: ${input.amount}, `
+			} else {
+				return 'unknown'
+			}
+		}).join(', ')
+
+		MouseOverlay.elements.infoPanel.setText(`Ingredients:${text}`)
+	})
+	
+	cell.addEventListener('mouseleave', ()=>{
+		MouseOverlay.elements.infoPanel.hide()
+		MouseOverlay.elements.infoPanel.setText('')
+	})
+
+	cell.addEventListener('click',()=>{
+		if (sideMenuMode === "machines") {
+			if (transferContext.kind !== "empty") {
+				transferContext.transfer(false)
+				return
+			}
+			console.log("Clicked machine cell");
+			const cost = machine.cost.map(ser =>
+				ItemEntry.fromRef(ser, items)
+			)
+			console.log("machine costs: ", cost);
+			if (!mainInventory.subtractItems(cost)) return
+			transferContext = {
+				kind: "machine",
+				value: machine,
+				transfer: (success)=>{
+					transferContext = {kind: "empty"}
+					cell.style.backgroundColor = ''
+					if (success) return
+					mainInventory.addItems(cost)
+				}
+			}
+			cell.style.backgroundColor = 'green'
+		} else if (sideMenuMode === "recipes") {
+			const recipe = new ResolvedRecipe(
+				machine.id,
+				machine.cost.map(ser=>
 					ItemEntry.fromRef(ser, items)
-				)
-				console.log("machine costs: ", cost);
-				if (!mainInventory.subtractItems(cost)) return
-				transferContext = {
-					kind: "machine",
-					value: machine,
-					transfer: (success)=>{
-						transferContext = {kind: "empty"}
-						cell.style.backgroundColor = ''
-						if (success) return
-						mainInventory.addItems(cost)
-					}
-				}
-				cell.style.backgroundColor = 'green'
-			} else if (sideMenuMode === "recipes") {
-				const recipe = new ResolvedRecipe(
-					machine.id,
-					machine.cost.map(ser=>
-						ItemEntry.fromRef(ser, items)
-					),
-					[new ItemEntry(items[0]!, null, 1)]
-				)
-				recipeWindow.style.display = ""
-				removeAllChildren(recipeDisplay)
-				const card = createRecipeCard()
-				card.setResolvedRecipe(recipe)
-				recipeDisplay.append(card.element)
-			}
-		})
-
-		machineCellElements.push({element:cell, machinePointer:machine})
-	}
-
-
-
-	{ // Side Menu Header Buttons functionality
-	const showGrid = (showInventory: boolean, showMachines: boolean) => {
-		document.getElementById('inventory-grid')!.style.display = showInventory ? '' : 'none';
-		document.getElementById('machines-grid')!.style.display = showMachines ? '' : 'none';
-	};
-	
-	const repairCells = () => {
-		for (const inventoryCell of invItemCells) {
-			const entry = mainInventory.getAllItemInstances().find(e => e.item === inventoryCell.getItem());
-			inventoryCell.element.style.display = entry && entry.amount > 0 ? '' : 'none';
-			inventoryCell.amountLabel.style.display = ''
-		}
-	};
-	
-	document.getElementById('side-menu-recipes-button')!
-	.addEventListener('click', () => {
-		sideMenuMode = 'recipes'
-		showGrid(true, true);
-		for (const inventoryCell of invItemCells) {
-			inventoryCell.element.style.display = '' 
-			inventoryCell.amountLabel.style.display = 'none'
-		}
-		for (const machineCell of machineCellElements) {
-			machineCell.element.style.display = ''
-		}
-	});
-	
-	document.getElementById('side-menu-inventory-button')!
-	.addEventListener('click', () => {
-		sideMenuMode = 'inventory'
-		showGrid(true, false);
-		repairCells();
-	});
-	
-	document.getElementById('side-menu-machines-button')!
-	.addEventListener('click', () => {
-		sideMenuMode = 'machines'
-		showGrid(false, true);
-		repairCells();
-	});
-	}
-
-
-
-	document.getElementById('extract-starter')!.addEventListener('click',()=>{
-		
-		const starterMine = extraction.find(item=>item.id==='starter')
-		if (!starterMine) throw new Error("Could not find the starter extractor");
-		const totalWeight = starterMine.yields.map(val=>val.weight).reduce((prev,val)=>prev+val,0)
-		for (let i = 0; i < starterMine.manualPower; i++) {
-			const randomNumber = Math.floor(Math.random()*totalWeight)
-			let resultId: string|null = null
-			let cumulative = 0
-			for (const value of starterMine.yields) {
-				cumulative += value.weight
-				if (randomNumber < cumulative) {
-					resultId = value.itemId
-					break
-				}
-			}
-			if (resultId === null) continue
-			mainInventory.changeItem(ItemInstance.fromItem(getItemFromId(resultId, items)), 1)
+				),
+				[new ItemEntry(items[0]!, null, 1)]
+			)
+			recipeWindow.style.display = ""
+			removeAllChildren(recipeDisplay)
+			const card = createRecipeCard()
+			card.setResolvedRecipe(recipe)
+			recipeDisplay.append(card.element)
 		}
 	})
 
-
-
-	const machineUI = {
-		...createMachineUI(recipes, items, pubSubTick),
-		owner: null as null | MachineInstance,
-	}
-
-	
-	machineUI.events.onAssignWorker = () => {
-		if (workers.amount < 1) return
-		const owner = machineUI?.owner
-		if (!owner) return
-		const need = owner.getWorkerNeed()
-		if (!need) return
-		const status = owner.changeWorker(1)
-		if (status === "success") {
-			workers.transfer(1, owner)
-		} else {
-			console.log(status)
-		}
-	}
-
-	machineUI.events.onLayOffWorker = () => {
-		const owner = machineUI?.owner
-		if (!owner) return
-		const need = owner.getWorkerNeed()
-		if (!need) return
-		const status = owner.changeWorker(-1)
-		if (status === "success") {
-			workers.transfer(-1, owner)
-		} else {
-			console.log(status)
-		}
-	}
-
-	machineUI.events.onStackUp = () => {
-		console.log("Clicked stack up");
-		const owner = machineUI.owner
-		if (owner === null) return
-		const cost = owner.cost
-		console.log("inv: ", mainInventory);
-		
-		const afford = mainInventory.subtractItems(cost)
-		console.log("affordable?: ", afford, "cost: ", cost)
-		if (!afford) return
-		owner.setStack(owner.getStack() + 1)
-	}
-	
-
-	machineWindow.append(machineUI.element)
-
-
-
-
-	document.getElementById('machine-line-cell-button')!.addEventListener('click',()=>{
-		if (transferContext.kind !== "machine")return
-		
-		const machineObject = transferContext.value
-		if (!machineObject) return
-		const {element:machineCell, setStack, setProgress, setWarning} = createMachine(machineObject)
-		setWarning('no_fuel')
-
-		const machineInst = MachineInstance.fromMachine(machineObject, items, recipes)
-
-		machineCell.addEventListener('click',()=>{
-			if (transferContext.kind === "empty") {
-				machineUI.owner = machineInst
-				machineUI.events.onEvent = ()=>setStack(String(machineInst.getStack()))
-				machineUI.refresh(machineInst, mainInventory, )
-				machineWindow.style.display = ""
-			} else if (transferContext.kind === "machine") {
-				if (transferContext.value.id === machineObject.id) {
-					machineInst.setStack(1 + machineInst.getStack())
-					setStack(String(machineInst.getStack()))
-					transferContext.transfer(true)
-				} else {
-					transferContext.transfer(false)
-				}
-			} else {
-				const incoming = transferContext.value 
-				console.log('incomingItem', incoming)
-				if (incoming === null) return
-				let success = false
-				if (machineInst.addFuel(incoming) === "success") {
-					success = true
-					setWarning('')
-				}
-				if (!success) {
-					console.log("incoming item:", incoming)
-					const ri = machineInst.capableRecipes.map(r=>{ // Find a recipes that has 1 input and that input has at least 1 matching item
-						return {
-							recipe:r,
-							inputs:getRecipeInputs(r, items)
-						}
-					}).filter(obj=>
-						obj.inputs.length === 1
-					).map(obj=>{
-						const slot = obj.inputs[0]!
-						const input = slot.items.find(i=>i.isEqual(incoming) && slot.amount <= incoming.amount)
-						if (input === undefined) return null
-						return{
-							recipe: obj.recipe,
-							input: ItemEntry.fromInst(input, slot.amount)
-						} as const
-					}).find(ri => ri !== null)
-					console.log("found ri: ", ri)
-					if (ri) {
-						const cost1 = ri.input.amount
-						const batches = Math.floor(incoming.amount / cost1)
-						console.log("baches: ", batches)
-						if (batches > 0) {						
-							success = true // success so the main inventory does not get it back
-							machineInst.addWorkingOn(
-								Array(batches).fill(new ResolvedRecipe(
-									ri.recipe.id,
-									[ri.input],
-									getRecipeOutputs(ri.recipe, items)
-								))
-							)
-							mainInventory.addItem(incoming, incoming.amount - cost1 * batches) // Give back leftovers
-						}
-					}
-				}
-				console.log("success: ", success)
-				transferContext.transfer(success)
-			}
-			transferContext = {kind: "empty"}
-		})
-
-
-
-		document.getElementById('machine-line')!.appendChild(machineCell)
-		transferContext.transfer(true)
-		transferContext = {kind: "empty"}
-		
-		
-		// Declare setTimeout machine logic
-		const unsubscribe = pubSubTick.subscribe(deltaMS => {
-			const status = machineInst.tick(deltaMS)
-			if (machineUI.owner === machineInst) {
-				machineUI.refreshText(machineInst)
-			}
-			if (status === "idle") return
-			if (status.lowEnergy) {
-				setWarning("no_fuel")
-			} else {
-				setWarning("")
-			}
-			if (status.progress) {
-				setProgress(status.progress * 100)
-			} else {
-				setProgress(100)
-			}
-			mainInventory.addItems(status.crafted)
-		})
-	})
-
+	machineCellElements.push({element:cell, machinePointer:machine})
 }
 
 
-fetchData().then(main)
 
-setTimeout(()=>{
-	if (dataIsCompiled) return
-	document.getElementById('loading-screen')!.innerHTML = `
-	<p>ERROR: could not get game data.</p>
-	<p>You can download them manually from <a href="YOUR_LINK_HERE" target="_blank">this page</a> and import the JSON files into the document.</p>`
-}, 10000)
+{ // Side Menu Header Buttons functionality
+const showGrid = (showInventory: boolean, showMachines: boolean) => {
+	document.getElementById('inventory-grid')!.style.display = showInventory ? '' : 'none';
+	document.getElementById('machines-grid')!.style.display = showMachines ? '' : 'none';
+};
+
+const repairCells = () => {
+	for (const inventoryCell of invItemCells) {
+		const entry = mainInventory.getAllItemInstances().find(e => e.item === inventoryCell.getItem());
+		inventoryCell.element.style.display = entry && entry.amount > 0 ? '' : 'none';
+		inventoryCell.amountLabel.style.display = ''
+	}
+};
+
+document.getElementById('side-menu-recipes-button')!
+.addEventListener('click', () => {
+	sideMenuMode = 'recipes'
+	showGrid(true, true);
+	for (const inventoryCell of invItemCells) {
+		inventoryCell.element.style.display = '' 
+		inventoryCell.amountLabel.style.display = 'none'
+	}
+	for (const machineCell of machineCellElements) {
+		machineCell.element.style.display = ''
+	}
+});
+
+document.getElementById('side-menu-inventory-button')!
+.addEventListener('click', () => {
+	sideMenuMode = 'inventory'
+	showGrid(true, false);
+	repairCells();
+});
+
+document.getElementById('side-menu-machines-button')!
+.addEventListener('click', () => {
+	sideMenuMode = 'machines'
+	showGrid(false, true);
+	repairCells();
+});
+}
+
+
+
+document.getElementById('extract-starter')!.addEventListener('click',()=>{
+	
+	const starterMine = extraction.find(item=>item.id==='starter')
+	if (!starterMine) throw new Error("Could not find the starter extractor");
+	const totalWeight = starterMine.yields.map(val=>val.weight).reduce((prev,val)=>prev+val,0)
+	for (let i = 0; i < starterMine.manualPower; i++) {
+		const randomNumber = Math.floor(Math.random()*totalWeight)
+		let resultId: string|null = null
+		let cumulative = 0
+		for (const value of starterMine.yields) {
+			cumulative += value.weight
+			if (randomNumber < cumulative) {
+				resultId = value.itemId
+				break
+			}
+		}
+		if (resultId === null) continue
+		mainInventory.changeItem(ItemInstance.fromItem(getItemFromId(resultId, items)), 1)
+	}
+})
+
+
+
+const machineUI = {
+	...createMachineUI(recipes, items, pubSubTick),
+	owner: null as null | MachineInstance,
+}
+
+
+machineUI.events.onAssignWorker = () => {
+	if (workers.amount < 1) return
+	const owner = machineUI?.owner
+	if (!owner) return
+	const need = owner.getWorkerNeed()
+	if (!need) return
+	const status = owner.changeWorker(1)
+	if (status === "success") {
+		workers.transfer(1, owner)
+	} else {
+		console.log(status)
+	}
+}
+
+machineUI.events.onLayOffWorker = () => {
+	const owner = machineUI?.owner
+	if (!owner) return
+	const need = owner.getWorkerNeed()
+	if (!need) return
+	const status = owner.changeWorker(-1)
+	if (status === "success") {
+		workers.transfer(-1, owner)
+	} else {
+		console.log(status)
+	}
+}
+
+machineUI.events.onStackUp = () => {
+	console.log("Clicked stack up");
+	const owner = machineUI.owner
+	if (owner === null) return
+	const cost = owner.cost
+	console.log("inv: ", mainInventory);
+	
+	const afford = mainInventory.subtractItems(cost)
+	console.log("affordable?: ", afford, "cost: ", cost)
+	if (!afford) return
+	owner.setStack(owner.getStack() + 1)
+}
+
+
+machineWindow.append(machineUI.element)
+
+
+
+
+document.getElementById('machine-line-cell-button')!.addEventListener('click',()=>{
+	if (transferContext.kind !== "machine")return
+	
+	const machineObject = transferContext.value
+	if (!machineObject) return
+	const {element:machineCell, setStack, setProgress, setWarning} = createMachine(machineObject)
+	setWarning('no_fuel')
+
+	const machineInst = MachineInstance.fromMachine(machineObject, items, recipes)
+
+	machineCell.addEventListener('click',()=>{
+		if (transferContext.kind === "empty") {
+			machineUI.owner = machineInst
+			machineUI.events.onEvent = ()=>setStack(String(machineInst.getStack()))
+			machineUI.refresh(machineInst, mainInventory, )
+			machineWindow.style.display = ""
+		} else if (transferContext.kind === "machine") {
+			if (transferContext.value.id === machineObject.id) {
+				machineInst.setStack(1 + machineInst.getStack())
+				setStack(String(machineInst.getStack()))
+				transferContext.transfer(true)
+			} else {
+				transferContext.transfer(false)
+			}
+		} else {
+			const incoming = transferContext.value 
+			console.log('incomingItem', incoming)
+			if (incoming === null) return
+			let success = false
+			if (machineInst.addFuel(incoming) === "success") {
+				success = true
+				setWarning('')
+			}
+			if (!success) {
+				console.log("incoming item:", incoming)
+				const ri = machineInst.capableRecipes.map(r=>{ // Find a recipes that has 1 input and that input has at least 1 matching item
+					return {
+						recipe:r,
+						inputs:getRecipeInputs(r, items)
+					}
+				}).filter(obj=>
+					obj.inputs.length === 1
+				).map(obj=>{
+					const slot = obj.inputs[0]!
+					const input = slot.items.find(i=>i.isEqual(incoming) && slot.amount <= incoming.amount)
+					if (input === undefined) return null
+					return{
+						recipe: obj.recipe,
+						input: ItemEntry.fromInst(input, slot.amount)
+					} as const
+				}).find(ri => ri !== null)
+				console.log("found ri: ", ri)
+				if (ri) {
+					const cost1 = ri.input.amount
+					const batches = Math.floor(incoming.amount / cost1)
+					console.log("baches: ", batches)
+					if (batches > 0) {						
+						success = true // success so the main inventory does not get it back
+						machineInst.addWorkingOn(
+							Array(batches).fill(new ResolvedRecipe(
+								ri.recipe.id,
+								[ri.input],
+								getRecipeOutputs(ri.recipe, items)
+							))
+						)
+						mainInventory.addItem(incoming, incoming.amount - cost1 * batches) // Give back leftovers
+					}
+				}
+			}
+			console.log("success: ", success)
+			transferContext.transfer(success)
+		}
+		transferContext = {kind: "empty"}
+	})
+
+
+
+	document.getElementById('machine-line')!.appendChild(machineCell)
+	transferContext.transfer(true)
+	transferContext = {kind: "empty"}
+	
+	
+	// Declare setTimeout machine logic
+	const unsubscribe = pubSubTick.subscribe(deltaMS => {
+		const status = machineInst.tick(deltaMS)
+		if (machineUI.owner === machineInst) {
+			machineUI.refreshText(machineInst)
+		}
+		if (status === "idle") return
+		if (status.lowEnergy) {
+			setWarning("no_fuel")
+		} else {
+			setWarning("")
+		}
+		if (status.progress) {
+			setProgress(status.progress * 100)
+		} else {
+			setProgress(100)
+		}
+		mainInventory.addItems(status.crafted)
+	})
+})
+
 
