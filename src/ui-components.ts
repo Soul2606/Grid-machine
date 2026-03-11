@@ -1,4 +1,4 @@
-import { type MachineInstance, type Inventory, type SignalInterface, ResolvedRecipe, ItemEntry } from "./classes.js"
+import { type MachineInstance, type Inventory, type SignalInterface, ResolvedRecipe, ItemEntry, ItemInstance } from "./classes.js"
 import { clamp, getItemFromId, getItemsFromTag, getRecipeInputs, getRecipeOutputs, maxCraftableCount, removeAllChildren, resolveCraftingCosts } from "./functions.js"
 import type { CraftingOptions, Item, Machine, Recipe } from "./types.js"
 
@@ -374,6 +374,11 @@ export function createProcessingLine() {
 
 
 export function createRecipeCard() {
+	const events = {
+		onMouseEnter: null as null | ((value:ItemInstance|string)=>void),
+		onMouseLeave: null as null | (()=>void),
+		onClick:      null as null | ((value:ItemInstance|string)=>void)
+	}
 	const root = document.createElement("div")
 	root.className = "recipe-card"
 
@@ -392,17 +397,25 @@ export function createRecipeCard() {
 	output.className = "recipe-card-io"
 	root.append(output)
 
+	function applyEvents(element:HTMLElement, value:ItemInstance|string) {
+		element.addEventListener("mouseenter", ()=>events.onMouseEnter?events.onMouseEnter(value):null)
+		element.addEventListener("mouseleave", ()=>events.onMouseLeave?events.onMouseLeave()     :null)
+		element.addEventListener("click",      ()=>events.onClick     ?events.onClick(value)     :null)
+	}
+
 	function setResolvedRecipe(recipe:ResolvedRecipe) {
 		removeAllChildren(input)
 		removeAllChildren(output)
 		for (const inItem of recipe.inputs) {
 			const cell = createItemCell(inItem.item)
 			cell.amountLabel.textContent = String(inItem.amount)
+			applyEvents(cell.element, inItem)
 			input.append(cell.element)
 		}
 		for (const outItem of recipe.output) {
 			const cell = createItemCell(outItem.item)
 			cell.amountLabel.textContent = String(outItem.amount)
+			applyEvents(cell.element, outItem)
 			output.append(cell.element)
 		}
 	}
@@ -418,14 +431,17 @@ export function createRecipeCard() {
 		animFunc = []
 
 		for (const rIn of recipe.inputs) {
-			if (rIn.id) {
-				const cell = createItemCell(getItemFromId(rIn.id, itemsAll))
+			if ("id" in rIn) {
+				const item = getItemFromId(rIn.id, itemsAll)
+				const cell = createItemCell(item)
 				cell.amountLabel.textContent = String(rIn.amount)
+				applyEvents(cell.element, new ItemInstance(item))
 				input.append(cell.element)
-			} else if (rIn.tag) {
+			} else {
 				const cell = createItemTagCell(rIn.tag, itemsAll)
 				if (cell === null) throw new Error(`Cannot find tag: ${rIn.tag} in items: ${itemsAll.map(v => v.id).join(", ")}`);
 				cell.amountLabel.textContent = String(rIn.amount)
+				applyEvents(cell.element, rIn.tag)
 				input.append(cell.element)
 				animFunc.push(cell.next)
 			}
@@ -434,6 +450,7 @@ export function createRecipeCard() {
 		for (const rOut of recipe.outputs) {
 			const cell = createItemCell(getItemFromId(rOut.id, itemsAll))
 			cell.amountLabel.textContent = String(rOut.amount || 1)
+			applyEvents(cell.element, ItemInstance.fromRef(rOut, itemsAll))
 			output.append(cell.element)
 		}
 	}
@@ -442,7 +459,8 @@ export function createRecipeCard() {
 		element:root,
 		setRecipe,
 		setResolvedRecipe,
-		animate:()=>animFunc.forEach(f=>f())
+		animate:()=>animFunc.forEach(f=>f()),
+		events,
 	} as const
 }
 

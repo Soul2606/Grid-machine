@@ -408,20 +408,50 @@ const main = (response:{items:readonly Item[], machines:readonly Machine[], reci
 
 	updateWorkers()
 
-	const invItemCells = items.map(r => {
-		const v = createItemCell(r)
+	const invItemCells = items.map(item => {
+		const v = createItemCell(item)
 		v.element.style.display = "none"
 
-		v.element.addEventListener("mouseenter", e => {
+		const mouseEnter = (item:Item) => {
 			MouseOverlay.show()
 			MouseOverlay.elements.infoPanel.show()
-			MouseOverlay.elements.infoPanel.setText(r.name)
-		})
+			MouseOverlay.elements.infoPanel.setText(item.name)
+		}
 
-		v.element.addEventListener('mouseleave', ()=>{
+		const mouseLeave = ()=>{
 			MouseOverlay.elements.infoPanel.hide()
 			MouseOverlay.elements.infoPanel.setText('')
-		})
+		}
+
+		v.element.addEventListener("mouseenter", ()=>mouseEnter(item))
+		v.element.addEventListener('mouseleave', ()=>mouseLeave())
+
+		const showRecipe = (item:Item) => {
+			const target = new ItemInstance(item)
+			const rs = getRecipesProducing(target, recipes, items)
+
+			recipeWindow.style.display = ""
+			removeAllChildren(recipeDisplay)
+			for (const r of rs) {
+				const card = createRecipeCard()
+				card.setRecipe(r, items)
+				recipeDisplay.append(card.element)
+				card.events.onClick = item=>{
+					if (typeof item === "string") return
+					showRecipe(item.item)
+				}
+				card.events.onMouseEnter = value=>{
+					if (typeof value === "string") {
+						MouseOverlay.show()
+						MouseOverlay.elements.infoPanel.show()
+						MouseOverlay.elements.infoPanel.setText(`Tag "${value}"`)
+						return
+					}
+					mouseEnter(value.item)
+				}
+				card.events.onMouseLeave = ()=>mouseLeave()
+			}
+		}
 
 		v.element.addEventListener('mousedown', e => {
 			e.preventDefault()
@@ -429,17 +459,7 @@ const main = (response:{items:readonly Item[], machines:readonly Machine[], reci
 			if (sideMenuMode === "inventory") {
 				itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, ItemInstance.fromItem(v.getItem()))
 			} else if (sideMenuMode === "recipes") {
-				
-				const target = new ItemInstance(r)
-				const rs = getRecipesProducing(target, recipes, items)
-
-				recipeWindow.style.display = ""
-				removeAllChildren(recipeDisplay)
-				for (const r of rs) {
-					const card = createRecipeCard()
-					card.setRecipe(r, items)
-					recipeDisplay.append(card.element)
-				}
+				showRecipe(item)
 			}
 		})
 		

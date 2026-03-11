@@ -62,8 +62,11 @@ export type Machine = {
 
 export type RecipeInput = {
 	readonly amount:number
-	readonly id?:string
-	readonly tag?:string
+	readonly id:string
+	readonly meta?:JSONValue
+} | {
+	readonly amount:number
+	readonly tag:string
 	readonly meta?:JSONValue
 }
 
