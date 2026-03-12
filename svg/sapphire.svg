@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="100"
+   height="100"
+   viewBox="0 0 100 100"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   sodipodi:docname="sapphire.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     showguides="true"
+     inkscape:zoom="3.7869322"
+     inkscape:cx="28.519127"
+     inkscape:cy="50.964736"
+     inkscape:window-width="1440"
+     inkscape:window-height="828"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     style="stroke-width:5;stroke-dasharray:none">
+    <path
+       style="fill:#99a1ff;fill-rule:evenodd;stroke:none;stroke-width:5;stroke-linejoin:round;stroke-opacity:1;paint-order:fill markers stroke;stroke-dasharray:none;fill-opacity:1"
+       d="M 69.006503,11.986993 H 30.993497 L 11.986993,30.993497 V 69.006503 L 30.993497,88.013007 H 69.006503 L 88.013007,69.006503 V 30.993497 Z"
+       id="path3"
+       sodipodi:nodetypes="ccccccccc" />
+    <path
+       style="fill:#d9dcff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:5;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="m 11.986993,30.993497 12.037221,6.01861 12.987893,-12.987893 -6.01861,-12.037221 z"
+       id="path4" />
+    <path
+       style="fill:#d9dcff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:3.4167;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="M 62.987893,24.024214 H 37.012107 L 24.024214,37.012107 V 62.987893 L 37.012107,75.975786 H 62.987893 L 75.975786,62.987893 V 37.012107 Z"
+       id="path1"
+       sodipodi:nodetypes="ccccccccc" />
+    <path
+       style="fill:#bcc1ff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:5;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="m 37.012107,24.024214 -6.01861,-12.037221 h 38.013006 l -6.01861,12.037221 z"
+       id="path6" />
+    <path
+       style="fill:#bcc1ff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:5;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="m 11.986993,30.993497 12.037221,6.01861 v 25.975786 l -12.037221,6.01861 z"
+       id="path7" />
+    <path
+       style="fill:#d9dcff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:5;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="m 75.975786,62.987893 12.037221,6.01861 -19.006504,19.006504 -6.01861,-12.037221 z"
+       id="path5" />
+    <path
+       style="fill:#bcc1ff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:5;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="m 37.012107,75.975786 h 25.975786 l 6.01861,12.037221 H 30.993497 Z"
+       id="path8" />
+    <path
+       style="fill:#bcc1ff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:5;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="M 75.975786,62.987893 V 37.012107 l 12.037221,-6.01861 v 38.013006 z"
+       id="path9" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#5b62b5;stroke-width:5;stroke-linejoin:round;stroke-opacity:1;paint-order:fill markers stroke;stroke-dasharray:none"
+       d="M 69.006503,11.986993 H 30.993497 L 11.986993,30.993497 V 69.006503 L 30.993497,88.013007 H 69.006503 L 88.013007,69.006503 V 30.993497 Z"
+       id="path2"
+       sodipodi:nodetypes="ccccccccc" />
+  </g>
+</svg>

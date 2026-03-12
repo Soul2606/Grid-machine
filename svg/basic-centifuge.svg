@@ -546,5 +546,5 @@
          inkscape:label="Outline2"
          inkscape:original-d="M 10,10 V 190 H 190 V 10 Z" /></g><path
        id="path7"
-       style="display:inline;fill:none;fill-rule:evenodd;stroke-width:10;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke;stroke:#524848;stroke-opacity:1"
+       style="display:inline;fill:none;fill-rule:evenodd;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke;stroke:#524848;stroke-opacity:1;stroke-dasharray:none"
        d="M 33.210149,47.381996 H 166.78985 c 7.55948,0 13.64526,6.085786 13.64526,13.645261 v 77.945483 c 0,7.55947 -6.08578,13.64526 -13.64526,13.64526 H 33.210149 c -7.559475,0 -13.645261,-6.08579 -13.645261,-13.64526 V 61.027257 c 0,-7.559475 6.085786,-13.645261 13.645261,-13.645261 z" /></g></svg>

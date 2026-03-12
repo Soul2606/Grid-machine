@@ -176,6 +176,11 @@
 		"tags":[],
 		"img":"svg/vacuum-tube.svg"
 	},
+	"resistor":{
+		"name":"Resistor",
+		"tags":[],
+		"img":"svg/resistor.svg"
+	},
 	"wooden_circuit_board":{
 		"name":"Wooden circuit board",
 		"tags":[],

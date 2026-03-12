@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="100"
+   height="100"
+   viewBox="0 0 100 100"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   sodipodi:docname="resistor.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#b6b6b6"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     inkscape:zoom="3.7852504"
+     inkscape:cx="37.117756"
+     inkscape:cy="48.60973"
+     inkscape:window-width="1440"
+     inkscape:window-height="828"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     showguides="false" />
+  <defs
+     id="defs1">
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect3"
+       is_visible="true"
+       lpeversion="1"
+       nodesatellites_param="F,0,0,1,0,0,0,1 @ F,0,0,1,0,2.9089749,0,1 @ F,0,1,1,0,2.9089749,0,1 @ F,0,1,1,0,2.9089749,0,1 @ F,0,1,1,0,2.9089749,0,1 @ F,0,1,1,0,2.9089749,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,0,0,1 @ F,0,0,1,0,0,0,1"
+       radius="0"
+       unit="px"
+       method="auto"
+       mode="F"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="matrix(1.1773907,0,0,1.1773907,-8.9663642,-13.87783)">
+    <path
+       d="m 20.910716,82.788249 8.138561,-8.138561 43.339932,-43.339932 8.13856,-8.138561"
+       style="fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#e48a2c;stroke-width:4.24667869;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       id="path1-6"
+       sodipodi:nodetypes="cccc" />
+    <path
+       id="rect4"
+       style="fill:#e4ce7a;fill-rule:evenodd;stroke-width:3.70344;stroke-linecap:round;paint-order:fill markers stroke;fill-opacity:1;stroke:#8f814c;stroke-opacity:1"
+       transform="rotate(45)"
+       d="M 65.739501,-29.04756 H 80.91298 c 4.978328,0 10.167853,4.150107 8.986152,8.986152 -3.423845,14.0118913 -2.975698,28.5077817 0,43.319616 0.980554,4.880806 -4.007824,8.986152 -8.986152,8.986152 H 65.739501 c -4.978328,0 -9.98311,-4.108671 -8.986152,-8.986152 2.800855,-13.702805 4.701299,-27.6425601 0,-43.319616 -1.430005,-4.768526 4.007824,-8.986152 8.986152,-8.986152 z"
+       sodipodi:nodetypes="sssssssss" />
+    <path
+       style="fill:none;fill-opacity:1;fill-rule:evenodd;stroke-width:4.24667869;stroke-linecap:round;paint-order:fill markers stroke;stroke:#008004;stroke-opacity:1;stroke-dasharray:none"
+       d="M 40.249862,43.975475 60.022266,63.747878"
+       id="path9" />
+    <path
+       style="fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#040080;stroke-width:4.24668;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="M 28.913291,53.022956 50.736536,74.8462"
+       id="path10"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#800000;stroke-width:4.24668;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="M 49.822048,33.163609 70.783436,54.124996"
+       id="path11"
+       sodipodi:nodetypes="cc" />
+  </g>
+</svg>
