@@ -1,8 +1,8 @@
+import { getData } from "./game-data.js"
 import { ItemEntry, ResolvedRecipe } from "./classes.js"
-import { fetchData } from "./functions.js"
 import { createProcessingLine, createRecipeCard } from "./ui-components.js"
 
-const data = await fetchData()
+const data = getData()
 
 const el = createRecipeCard()
 // Its a mystery what item 0 and 1 is.

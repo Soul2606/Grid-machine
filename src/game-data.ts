@@ -169,8 +169,10 @@ export const getDataMapToId = ()=>({
 	machines: new Map<string, Machine>(data.machines.map(machine=>
 		([machine.id, machine])
 	)) as ReadonlyMap<string, Machine>,
-	recipes: data.recipes,
-	extractors: data.extractors
+	recipes: new Map<string, Recipe>(data.recipes.map(recipe=>
+		([recipe.id, recipe])
+	)),
+	extractors: data.extractors // Does not have id
 })
 
 

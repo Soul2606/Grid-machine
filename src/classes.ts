@@ -1,7 +1,11 @@
-import { getData } from "./game-data.js";
+import { getData, getDataMapToId } from "./game-data.js";
 import { getItemFromId, JSONEquals, energyToNumber, maxCraftableCount, getRecipeInputs, getRecipeOutputs, relu, distributeIntEvenly, clamp, getRecipeFromId } from './functions.js';
 import type { CraftingOptions, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe, ResolvedRecipeSer, } from './types.js';
 
+
+
+//Global variables
+const {items, machines, recipes, extractors} = getDataMapToId()
 
 
 
@@ -191,8 +195,8 @@ export class ItemInstance {
 		return new ItemInstance(inst.item, inst.metadata)
 	}
 
-	static fromRef(ref: ItemInstanceSer, items:readonly Item[]){
-		const item = getItemFromId(ref.id, items)
+	static fromRef(ref: ItemInstanceSer){
+		const item = getItemFromId(ref.id)
 		const meta = ref.metadata === undefined? null : ref.metadata
 		return new ItemInstance(item, meta)
 	}
@@ -259,8 +263,8 @@ export class ItemEntry extends ItemInstance {
 		return new ItemEntry(item, null, amount)
 	}
 
-	static fromRef(ref: ItemInstanceSer, items:readonly Item[]){
-		const item = getItemFromId(ref.id, items)
+	static fromRef(ref: ItemInstanceSer){
+		const item = getItemFromId(ref.id)
 		const meta = ref.metadata === undefined? null : ref.metadata
 		const amount = ref.amount === undefined ? 0 : ref.amount
 		return new ItemEntry(item, meta, amount)
@@ -297,7 +301,7 @@ type MIModules = {
 
 export class MachineInstance {
 
-	static fromMachine(machine: Machine, items: readonly Item[], recipes: readonly Recipe[], stack = 1){
+	static fromMachine(machine: Machine, stack = 1){
 		let modules:MIModules = {} 
 		const fn = machine.fuelNeeds
 		if (fn) {
@@ -312,10 +316,8 @@ export class MachineInstance {
 			modules.powerNeed = {need:energyToNumber(pn.energy), voltageTier:pn.voltageTier, energy:0}
 		}
 		return new MachineInstance(
-			recipes.filter(recipe=>machine.capabilities.includes(recipe.requiredProcess)),
-			machine.cost.map(inst => ItemEntry.fromRef(inst, items)),
-			items,
-			recipes,
+			recipes.values().toArray().filter(recipe=>machine.capabilities.includes(recipe.requiredProcess)),
+			machine.cost.map(inst => ItemEntry.fromRef(inst)),
 			stack,
 			0,
 			[],
@@ -325,8 +327,6 @@ export class MachineInstance {
 
 	// ============== Properties ====================
 	//Public
-	readonly items: readonly Item[]
-	readonly recipes: readonly Recipe[]
 	readonly capableRecipes: readonly Recipe[]
 	readonly cost: readonly ItemEntry[]
 
@@ -344,8 +344,6 @@ export class MachineInstance {
 	constructor(
 		capableRecipes: readonly Recipe[],
 		cost: readonly ItemEntry[],
-		items: readonly Item[],
-		recipes: readonly Recipe[],
 		stack = 1,
 		work = 0,
 		workingOn: {recipe: ResolvedRecipe, amount: number}[] = [],
@@ -353,8 +351,6 @@ export class MachineInstance {
 	) {
 		this.capableRecipes = capableRecipes
 		this.cost = cost
-		this.items =   items
-		this.recipes = recipes
 		this.stack =   stack
 		this.work =    work
 		this.workingOn = workingOn
@@ -366,7 +362,7 @@ export class MachineInstance {
 	// ============== Methods ====================
 
 	private craft(multiplier: number, recipe: Recipe) {
-		const output = getRecipeOutputs(recipe, this.items)
+		const output = getRecipeOutputs(recipe)
 		return output.map(ent=>{ent.amount *= multiplier; return ent})
 	}
 
@@ -409,7 +405,7 @@ export class MachineInstance {
 	craftableFromInventory(inv: Inventory, opt?: CraftingOptions){
 		return this.capableRecipes.map(r => {
 			return {
-				amount: maxCraftableCount(getRecipeInputs(r, this.items), inv, opt),
+				amount: maxCraftableCount(getRecipeInputs(r), inv, opt),
 				recipe: r
 			}
 		}).filter(r=>r.amount>0)
@@ -462,7 +458,7 @@ export class MachineInstance {
 	tick(deltaMS: number, manually = false) {
 		const workingOn = this.workingOn.map(wo =>({
 			woQueue: wo,
-			recipe: getRecipeFromId(wo.recipe.id, this.recipes)
+			recipe: getRecipeFromId(wo.recipe.id)
 		}))
 		
 		if (workingOn.length === 0) {

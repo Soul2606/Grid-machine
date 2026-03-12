@@ -1,8 +1,12 @@
+import { getData } from "./game-data.js"
 import { type MachineInstance, type Inventory, type SignalInterface, ResolvedRecipe, ItemEntry, ItemInstance } from "./classes.js"
 import { clamp, getItemFromId, getItemsFromTag, getRecipeInputs, getRecipeOutputs, maxCraftableCount, removeAllChildren, resolveCraftingCosts } from "./functions.js"
 import type { CraftingOptions, Item, Machine, Recipe } from "./types.js"
 
 
+
+//Global variables
+const {items, machines, recipes, extractors} = getData()
 
 
 export function createQuantitySlider() {
@@ -114,9 +118,9 @@ export function createItemCell(item: Item) {
 
 
 
-export function createItemTagCell(tag:string, itemsAll:readonly Item[]) {
+export function createItemTagCell(tag:string) {
 
-	const items = getItemsFromTag(tag, itemsAll)
+	const items = getItemsFromTag(tag)
 	if (items.length === 0) return null
 
 	let index = 0
@@ -196,8 +200,6 @@ export function createMachine(machine: Machine) {
 
 
 export function createMachineUI(
-	recipes: readonly Recipe[],
-	items: readonly Item[],
 	pubSubTick?: SignalInterface<number, void>
 ) {
 
@@ -266,7 +268,7 @@ export function createMachineUI(
 		machine.capableRecipes.forEach(cr => {
 			const options: CraftingOptions = { maximize: true }
 
-			const out = getRecipeOutputs(cr, machine.items)
+			const out = getRecipeOutputs(cr)
 			console.log(cr)
 			console.log("out: ", out)
 
@@ -276,14 +278,14 @@ export function createMachineUI(
 			const cell = createItemCell(outFirst.item)
 
 			const getCount = () => {
-				const count = maxCraftableCount(getRecipeInputs(cr, machine.items), availableResources, options)
+				const count = maxCraftableCount(getRecipeInputs(cr), availableResources, options)
 				cell.amountLabel.textContent = String(count)
 				return count
 			}
 			getCount()
 
 			cell.element.addEventListener("click", e => {
-				const resolve = resolveCraftingCosts(cr, availableResources, items, options)
+				const resolve = resolveCraftingCosts(cr, availableResources, options)
 				if (!resolve) return
 				if (!availableResources.subtractItems(resolve.flatMap(res => res.inputs))) throw new Error("Invariant broke")
 				machine.addWorkingOn(resolve)
@@ -423,8 +425,7 @@ export function createRecipeCard() {
 	let animFunc:(()=>void)[] = []
 
 	function setRecipe(
-		recipe:Recipe,
-		itemsAll:readonly Item[]
+		recipe:Recipe
 	) {
 		removeAllChildren(input)
 		removeAllChildren(output)
@@ -432,14 +433,14 @@ export function createRecipeCard() {
 
 		for (const rIn of recipe.inputs) {
 			if ("id" in rIn) {
-				const item = getItemFromId(rIn.id, itemsAll)
+				const item = getItemFromId(rIn.id)
 				const cell = createItemCell(item)
 				cell.amountLabel.textContent = String(rIn.amount)
 				applyEvents(cell.element, new ItemInstance(item))
 				input.append(cell.element)
 			} else {
-				const cell = createItemTagCell(rIn.tag, itemsAll)
-				if (cell === null) throw new Error(`Cannot find tag: ${rIn.tag} in items: ${itemsAll.map(v => v.id).join(", ")}`);
+				const cell = createItemTagCell(rIn.tag)
+				if (cell === null) throw new Error(`Cannot find tag: ${rIn.tag} in items: ${items.map(v => v.id).join(", ")}`);
 				cell.amountLabel.textContent = String(rIn.amount)
 				applyEvents(cell.element, rIn.tag)
 				input.append(cell.element)
@@ -448,9 +449,9 @@ export function createRecipeCard() {
 		}
 
 		for (const rOut of recipe.outputs) {
-			const cell = createItemCell(getItemFromId(rOut.id, itemsAll))
+			const cell = createItemCell(getItemFromId(rOut.id))
 			cell.amountLabel.textContent = String(rOut.amount || 1)
-			applyEvents(cell.element, ItemInstance.fromRef(rOut, itemsAll))
+			applyEvents(cell.element, ItemInstance.fromRef(rOut))
 			output.append(cell.element)
 		}
 	}

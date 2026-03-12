@@ -196,9 +196,9 @@ export function clamp(val: number, min: number = 0, max: number = 1) {
 /**
  * Get all recipes that crafts the provided item
  */
-export function getRecipesProducing(craftable: ItemInstance, recipesAll: readonly Recipe[], itemsAll: readonly Item[]) {
-	return recipesAll.filter(recipe =>
-		getRecipeOutputs(recipe, itemsAll).some(output => craftable.isEqual(output))
+export function getRecipesProducing(craftable: ItemInstance) {
+	return recipes.values().toArray().filter(recipe =>
+		getRecipeOutputs(recipe).some(output => craftable.isEqual(output))
 	)
 }
 
@@ -211,10 +211,10 @@ export function getRecipesProducing(craftable: ItemInstance, recipesAll: readonl
  * @param recipes recipes checked
  * @param items all items
  */
-export function getRecipesConsuming(consumed: ItemInstance|(readonly ItemInstance[]), recipes: readonly Recipe[], items: readonly Item[]) {
+export function getRecipesConsuming(consumed: ItemInstance|(readonly ItemInstance[])) {
 	const CONSUMED = Array.isArray(consumed) ? consumed : [consumed]
-	return recipes.filter(recipe => 
-		getRecipeInputs(recipe, items).every(input =>
+	return recipes.values().toArray().filter(recipe => 
+		getRecipeInputs(recipe).every(input =>
 			input.items.some(i =>
 				CONSUMED.some(j => j.isEqual(i))
 			)
@@ -228,11 +228,11 @@ export function getRecipesConsuming(consumed: ItemInstance|(readonly ItemInstanc
 /**
  * Returns every input with each item that is valid for that input of the recipe. think of it like this (item||item...)&&(item||item...)...
  */
-export function getRecipeInputs(recipe: Recipe, items: readonly Item[]): Input[] {
+export function getRecipeInputs(recipe: Recipe): Input[] {
 	if (!Array.isArray(recipe.inputs)) return []
 	return recipe.inputs.map(input => {
 		const inputItems = new Set<Item>()
-		for (const item of items) {
+		for (const [id, item] of items) {
 			if (item.id === input.id || (input.tag && item.tags.includes(input.tag))) {
 				inputItems.add(item)
 			}
@@ -249,8 +249,8 @@ export function getRecipeInputs(recipe: Recipe, items: readonly Item[]): Input[]
 
 
 
-export function getItemFromId(id: string, items: readonly Item[]): Item {
-	const item = items.find(item => item.id === id)
+export function getItemFromId(id: string): Item {
+	const item = items.get(id)
 	if (!item) throw new Error("Could not find item from id:" + id)
 	return item
 }
@@ -258,15 +258,15 @@ export function getItemFromId(id: string, items: readonly Item[]): Item {
 
 
 
-export function getItemsFromTag(tag: string, items: readonly Item[]): Item[] {
-	return items.filter(item => item.tags.includes(tag))
+export function getItemsFromTag(tag: string): Item[] {
+	return items.values().toArray().filter(item => item.tags.includes(tag))
 }
 
 
 
 
-export function getRecipeFromId(id: string, recipes: readonly Recipe[]): Recipe {
-	const item = recipes.find(item => item.id === id)
+export function getRecipeFromId(id: string): Recipe {
+	const item = recipes.get(id)
 	if (!item) throw new Error("Could not find recipe from id: " + id)
 	return item
 }
@@ -274,36 +274,11 @@ export function getRecipeFromId(id: string, recipes: readonly Recipe[]): Recipe 
 
 
 
-export function getRecipeOutputs(recipe: Recipe, items: readonly Item[]): readonly ItemEntry[] {
+export function getRecipeOutputs(recipe: Recipe): readonly ItemEntry[] {
 	return recipe.outputs.map(output => 
-		new ItemEntry(getItemFromId(output.id, items), null, output.amount === undefined ? 0 : output.amount)
+		new ItemEntry(getItemFromId(output.id), null, output.amount === undefined ? 0 : output.amount)
 	)
 }
-
-
-
-
-/*
-export function getAffordableRecipes(craftable: Craftable, inventory: Inventory, items: readonly Item[], recipes: readonly Recipe[]): Recipe[] {
-	if (!(inventory instanceof Inventory)) throw new Error("inventory is not an Inventory")
-	const allEntries = inventory.getAllItemInstances()
-	const recipesProd = getRecipesProducing(craftable, recipes)
-	if (recipesProd.length === 0) return []
-
-	return recipesProd.filter(recipe => {
-		return recipe.inputs.every(input => {
-			let ingredientItems: Item[] = []
-			if (input.tag) ingredientItems = getItemsFromTag(input.tag, items)
-			if (input.id) ingredientItems.push(getItemFromId(input.id, items))
-			if (ingredientItems.length === 0) throw new Error(`recipe:${recipe.id} has unknown inputs, could not find items for input: ${JSON.stringify(input)}`)
-			return ingredientItems.some(item => {
-				const matchingEntries = allEntries.filter(itemEntry => itemEntry.item === item)
-				return matchingEntries.some(matchingEntry => matchingEntry.amount >= input.amount)
-			})
-		})
-	})
-}
-*/
 
 
 
@@ -323,8 +298,8 @@ export function energyToNumber(energyString: string): number {
 
 
 
-export function capableRecipes(recipes: readonly Recipe[], machine: Machine) {
-	return recipes.filter(recipe=>machine.capabilities.includes(recipe.requiredProcess))
+export function capableRecipes(machine: Machine) {
+	return recipes.values().toArray().filter(recipe=>machine.capabilities.includes(recipe.requiredProcess))
 }
 
 
@@ -352,18 +327,17 @@ export function capableRecipes(recipes: readonly Recipe[], machine: Machine) {
  */
 export function runProcessingLine(
 	line: readonly Machine[],
-	input: readonly ItemEntry[],
-	recipes: readonly Recipe[], 
-	items: readonly Item[]
+	input: readonly ItemEntry[]
 ) {
 	let current: readonly ItemEntry[] = input
 	const output: ItemEntry[] = []
 	for (let i=0; i<line.length; i++) {
 		const machine = line[i]!
+		const capable = capableRecipes(machine)
 		let recipe: Recipe|undefined
 		for (let j=0; j<current.length; j++) {
 			const c = current[j]!
-			const rec = getRecipesConsuming(c, capableRecipes(recipes, machine), items)
+			const rec = getRecipesConsuming(c).filter(r => capable.some(c => c.id === r.id))
 			if (rec.length === 1) {
 				recipe = rec[0]
 				output.push(...current.toSpliced(j, 1))
@@ -377,7 +351,7 @@ export function runProcessingLine(
 				step:i
 			} as const
 		}
-		const out = getRecipeOutputs(recipe, items)
+		const out = getRecipeOutputs(recipe)
 		if (out.length === 0) {
 			return {
 				status:"no_output",
@@ -405,19 +379,17 @@ export function runProcessingLine(
  * @returns 
  */
 export function parseProcessingLine(
-	line: readonly Machine[],
-	recipes: readonly Recipe[], 
-	items: readonly Item[]
+	line: readonly Machine[]
 ) {
 	const problems = []
 	const superRecipes = []
 	const firstM = line[0]
 	if (!firstM) return {status: "empty_line"} as const
-	const capable = capableRecipes(recipes, firstM)
+	const capable = capableRecipes(firstM)
 	for (const recipe of capable) {
-		const inputs = getRecipeInputs(recipe, items)
-		const outputs = getRecipeOutputs(recipe, items)
-		const result = runProcessingLine(line.toSpliced(0,1), outputs, recipes, items)
+		const inputs = getRecipeInputs(recipe)
+		const outputs = getRecipeOutputs(recipe)
+		const result = runProcessingLine(line.toSpliced(0,1), outputs)
 		if (result.status !== "ok") {
 			problems.push(result)
 			continue
@@ -508,11 +480,10 @@ export function maxCraftableCount(inputs: readonly Input[], inventory: Inventory
 export function resolveCraftingCosts(
 	recipe: Recipe,
 	inventory: Inventory,
-	items: readonly Item[],
 	options: CraftingOptions = { multiply: 1 }
 	): ResolvedRecipe[] | false {
 	if (!(inventory instanceof Inventory)) return false
-	const inputs = applyCraftingOptions(options, getRecipeInputs(recipe, items))
+	const inputs = applyCraftingOptions(options, getRecipeInputs(recipe))
 
 	const maxCraftable = maxCraftableCount(inputs, inventory)
 
@@ -525,7 +496,7 @@ export function resolveCraftingCosts(
 		multiplier = Math.max(0, Math.floor(options.multiply ?? 1))
 	}
 
-	const output = getRecipeOutputs(recipe, items)
+	const output = getRecipeOutputs(recipe)
 
 	// Simulated inventory
 	const simInv = inventory.clone()
@@ -568,10 +539,9 @@ export function resolveCraftingCosts(
 export function tryCraft(
 	recipe: Recipe,
 	inventory: Inventory,
-	items: readonly Item[],
 	options?: CraftingOptions
 	): ResolvedRecipe[] | false {
-	const resolve = resolveCraftingCosts(recipe, inventory, items, options)
+	const resolve = resolveCraftingCosts(recipe, inventory, options)
 	if (!resolve) return resolve
 	if (!inventory.subtractItems(resolve.flatMap(res => res.inputs))) throw new Error("Invariant broke");
 	return resolve
@@ -586,14 +556,13 @@ export function tryCraft(
 export function trySingleCraft(
 	recipe: Recipe,
 	inventory: Inventory,
-	items: readonly Item[],
 	options: CraftingOptions = {multiply: 1}
 	): ResolvedRecipe | false {
 	if (options.multiply !== 1 || options.maximize) {
 		console.warn("Invalid options", JSON.stringify(options))
 		return false
 	}
-	const resolve = resolveCraftingCosts(recipe, inventory, items, options)
+	const resolve = resolveCraftingCosts(recipe, inventory, options)
 	if (!resolve) return false
 	const res = resolve[0]
 	if (res === undefined) return false
@@ -639,156 +608,4 @@ export function load(): { items: readonly ItemInstanceSer[]; machines: readonly 
 	}
 }
 
-
-
-
-export async function fetchData() {
-	async function fetchJSON(url: string) {
-		return fetch(url).then(response => {
-			if (!response.ok) {
-				throw new Error("Network response was not ok" + response.statusText)
-
-			}
-			return response.json()
-		})
-	}
-
-	function compile(items: Record<string, unknown>, machines: Record<string, unknown>, recipes: unknown, extraction: unknown) {
-
-		if (typeof items !== "object" || items === null) throw new Error("error")
-		if (typeof machines !== "object" || machines === null) throw new Error("error")
-		if (!Array.isArray(recipes)) throw new Error("error")
-		if (!Array.isArray(extraction)) throw new Error("error")
-
-
-		const limitKeysTo = (obj: any, keys: string[]) => {
-			if (Object.keys(obj).some(key => !keys.includes(key))) throw new Error(`${obj.id} has invalid keys, object can only have these keys:${keys}`)
-		}
-
-		const includeKeys = (obj: any, keys: string[]) => {
-			if (keys.some(key => !Object.keys(obj).includes(key))) throw new Error(`${obj.id} has invalid keys, object must include these keys:${keys}`)
-		}
-
-		Object.values(items).forEach(item => {
-			includeKeys(item, ['name', 'tags'])
-		})
-
-		Object.values(machines).forEach(item => {
-			includeKeys(item, ['name', 'capabilities', 'tier', "cost"])
-		})
-		Object.values(machines).forEach(item => {
-			limitKeysTo(item, ['name', 'capabilities', 'tier', "cost", "img", 'energyNeeds', 'fuelNeeds', "workerNeeds"])
-		})
-
-		recipes.forEach(item => {
-			limitKeysTo(item, ['id', 'inputs', 'outputs', 'requiredProcess', 'requiredTier', 'processTimeSeconds'])
-		})
-
-		type Types = "string" | "number" | "boolean" | "array" | "object"
-		const ct = (obj: any, type: Types|Types[], optional?: true) => {
-			if (optional && obj === undefined) return
-			const TYPE = [type].flat()
-			const valid = TYPE.some(type => {
-				if (type === 'array') {
-					return Array.isArray(obj)
-				}
-				return typeof obj === type
-			})
-			if (!valid) throw new Error(`${obj} is not of type ${JSON.stringify(TYPE)}`)
-		}
-
-		for (const key in items) {
-			const item: any = items[key]
-			ct(item.name, 'string')
-			ct(item.tags, 'array')
-			ct(item.img, "string", true)
-			item.tags.forEach((tag: any) => ct(tag, 'string'))
-		}
-
-		for (const key in machines) {
-			const machine:any = machines[key]
-			ct(machine.name, 'string')
-			ct(machine.tier, 'number')
-			ct(machine.cost, "array")
-			for (const cost of machine.cost) {
-				ct(cost.id, "string")
-				ct(cost.amount, "number")
-			}
-			ct(machine.capabilities, 'array')
-			machine.capabilities.forEach((item: any) => ct(item, 'string'))
-			ct(machine.img, "string", true)
-			if (machine.fuelNeeds) {
-				ct(machine.fuelNeeds.tags, 'array')
-				machine.fuelNeeds.tags.forEach((v: any) => ct(v, 'string'))
-				ct(machine.fuelNeeds.energy, 'string')
-			}
-			if (machine.energyNeeds) {
-				ct(machine.energyNeeds.voltageTier, 'number')
-				ct(machine.energyNeeds.energy, 'string')
-			}
-		}
-
-		for (const recipe of recipes) {
-			ct(recipe.id, 'string')
-			ct(recipe.requiredProcess, 'string')
-			ct(recipe.requiredTier, 'number')
-			ct(recipe.processTimeSeconds, 'number')
-			ct(recipe.inputs, 'array')
-			for(const input of recipe.inputs){
-				limitKeysTo(input, ['id', 'tag', 'amount'])
-				ct(input.id, 'string', true)
-				ct(input.tag, 'string', true)
-				ct(input.amount, 'number')
-			}
-			ct(recipe.outputs, "array")
-			for (const output of recipe.outputs){
-				limitKeysTo(output, ['id', 'tag', 'amount'])
-				ct(output.id, 'string', true)
-				ct(output.tag, 'string', true)
-				ct(output.amount, 'number')
-			}
-		}
-
-
-		const hasDuplicateIds = (array: string[]) => {
-			const previousIds = new Set<string>()
-			const duplicates = new Set<string>()
-			for (const str of array) {
-				if (previousIds.has(str)) duplicates.add(str)
-				previousIds.add(str)
-			}
-			return duplicates.size === 0 ? false : duplicates
-		}
-		{
-			const result = hasDuplicateIds(Object.keys(items).concat(Object.keys(machines).map(id => id)))
-			if (result) throw new Error(`Machines and Items has duplicate IDs, ${result}`)
-		}
-		{
-			const result = hasDuplicateIds(recipes)
-			if (result) throw new Error(`Recipes has duplicate IDs, ${result}`)
-		}
-		return { 
-			items: Object.keys(items).map(key =>
-				//@ts-ignore
-				({...items[key], id:key})
-			),
-			machines: Object.keys(machines).map(key =>
-				//@ts-ignore
-				({...machines[key], id:key})
-			),
-			recipes,
-			extraction
-		} as Readonly<{
-			items:readonly Item[],
-			machines:readonly Machine[],
-			recipes:readonly Recipe[],
-			extraction:readonly Extractor[]
-		}>
-	}
-	const items = await fetchJSON('src/game-data/items.json')
-	const machines = await fetchJSON('src/game-data/machines.json')
-	const recipes = await fetchJSON('src/game-data/recipes.json')
-	const extraction = await fetchJSON('src/game-data/extraction.json')
-	return compile(items, machines, recipes, extraction)
-}
 

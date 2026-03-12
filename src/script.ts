@@ -413,13 +413,13 @@ const invItemCells = items.map(item => {
 
 	const showRecipe = (item:Item) => {
 		const target = new ItemInstance(item)
-		const rs = getRecipesProducing(target, recipes, items)
+		const rs = getRecipesProducing(target)
 
 		recipeWindow.style.display = ""
 		removeAllChildren(recipeDisplay)
 		for (const r of rs) {
 			const card = createRecipeCard()
-			card.setRecipe(r, items)
+			card.setRecipe(r)
 			recipeDisplay.append(card.element)
 			card.events.onClick = item=>{
 				if (typeof item === "string") return
@@ -506,7 +506,7 @@ for(const machine of machines){
 			}
 			console.log("Clicked machine cell");
 			const cost = machine.cost.map(ser =>
-				ItemEntry.fromRef(ser, items)
+				ItemEntry.fromRef(ser)
 			)
 			console.log("machine costs: ", cost);
 			if (!mainInventory.subtractItems(cost)) return
@@ -525,7 +525,7 @@ for(const machine of machines){
 			const recipe = new ResolvedRecipe(
 				machine.id,
 				machine.cost.map(ser=>
-					ItemEntry.fromRef(ser, items)
+					ItemEntry.fromRef(ser)
 				),
 				[new ItemEntry(items[0]!, null, 1)]
 			)
@@ -603,14 +603,14 @@ document.getElementById('extract-starter')!.addEventListener('click',()=>{
 			}
 		}
 		if (resultId === null) continue
-		mainInventory.changeItem(ItemInstance.fromItem(getItemFromId(resultId, items)), 1)
+		mainInventory.changeItem(ItemInstance.fromItem(getItemFromId(resultId)), 1)
 	}
 })
 
 
 
 const machineUI = {
-	...createMachineUI(recipes, items, pubSubTick),
+	...createMachineUI(pubSubTick),
 	owner: null as null | MachineInstance,
 }
 
@@ -669,7 +669,7 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 	const {element:machineCell, setStack, setProgress, setWarning} = createMachine(machineObject)
 	setWarning('no_fuel')
 
-	const machineInst = MachineInstance.fromMachine(machineObject, items, recipes)
+	const machineInst = MachineInstance.fromMachine(machineObject)
 
 	machineCell.addEventListener('click',()=>{
 		if (transferContext.kind === "empty") {
@@ -699,7 +699,7 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 				const ri = machineInst.capableRecipes.map(r=>{ // Find a recipes that has 1 input and that input has at least 1 matching item
 					return {
 						recipe:r,
-						inputs:getRecipeInputs(r, items)
+						inputs:getRecipeInputs(r)
 					}
 				}).filter(obj=>
 					obj.inputs.length === 1
@@ -723,7 +723,7 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 							Array(batches).fill(new ResolvedRecipe(
 								ri.recipe.id,
 								[ri.input],
-								getRecipeOutputs(ri.recipe, items)
+								getRecipeOutputs(ri.recipe)
 							))
 						)
 						mainInventory.addItem(incoming, incoming.amount - cost1 * batches) // Give back leftovers
