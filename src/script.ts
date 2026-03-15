@@ -488,21 +488,9 @@ for(const machine of machines){
 	document.getElementById('machines-grid')!.appendChild(cell)
 
 	cell.addEventListener('mouseenter', ()=>{
-		const inputs = machine.cost
-
 		MouseOverlay.show()
 		MouseOverlay.elements.infoPanel.show()
-
-		const text = inputs.map(input=>{
-			let item = items.find(item=>item.id === input.id)
-			if (item) {
-				return `${item.name}: ${input.amount}, `
-			} else {
-				return 'unknown'
-			}
-		}).join(', ')
-
-		MouseOverlay.elements.infoPanel.setText(`Ingredients:${text}`)
+		MouseOverlay.elements.infoPanel.setText(`${machine.name}`)
 	})
 	
 	cell.addEventListener('mouseleave', ()=>{
