@@ -4,19 +4,8 @@ import type { Item, Machine, Recipe, Extractor } from './types.js'
 import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, removeAllChildren, stepExponential, tryCraft } from './functions.js'
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe, Signal } from './classes.js'
 import { createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
+import { isPressed } from "./keyboard-events.js";
 
-type InfoPanelMethods = {
-	show: () => void
-	hide: () => void
-	setText: (text: string) => void
-}
-
-type HeldItemIconMethods = {
-	show: () => void
-	hide: () => void
-	setText: (text: string) => void
-	setImage: (src: string) => void
-}
 
 
 
@@ -40,33 +29,11 @@ function updateWorkers() {
  * @returns void
  */
 function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, item:ItemInstance): void {
-	console.log("doing item transfer. Context;", transferContext)
-	if (transferContext.kind !== "empty") return
+	console.log("doing item transfer. Context;", transferContext.kind)
+	if (transferContext.kind !== "empty" && transferContext.kind !== "item") return
+	if (transferContext.kind === "item" && !transferContext.value.isEqual(item)) return
 
-	const currentQty = Math.max(0, inventory.getAmount(item) || 0)
-	if (currentQty < 1) return
-
-	const candidates = stepExponential(currentQty)
-
-	const steps = candidates.length
-	if (steps === 0) return
-
-	const formatLabel = (idx: number) => `${candidates[idx]}/${currentQty}`
-
-	quantitySlider.show(position.x, position.y, formatLabel(0), steps)
-
-	const onInput = (step: number) => {
-		const index = Math.max(0, Math.min(steps - 1, step - 1))
-		quantitySlider.setText(formatLabel(index))
-	}
-
-	const onEnd = (step: number) => {
-		quantitySlider.setInputCallback(null)
-		quantitySlider.setEndCallback(null)
-
-		const index = Math.max(0, Math.min(steps - 1, step - 1))
-		const amount = candidates[index] ?? 0
-
+	const transfer = (amount:number) => {
 		// try to subtract; if subtraction fails, restore UI and exit
 		const removed = inventory.subtractItem(item, amount)
 		if (!removed) {
@@ -102,8 +69,46 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 		}
 	}
 
-	quantitySlider.setInputCallback(onInput)
-	quantitySlider.setEndCallback(onEnd)
+	if (isPressed("ShiftLeft") && transferContext.kind === "empty") {
+		const currentQty = Math.max(0, inventory.getAmount(item) || 0)
+		if (currentQty < 1) return
+	
+		const candidates = stepExponential(currentQty)
+	
+		const steps = candidates.length
+		if (steps === 0) return
+	
+		const formatLabel = (idx: number) => `${candidates[idx]}/${currentQty}`
+	
+		quantitySlider.show(position.x, position.y, formatLabel(0), steps)
+	
+		const onInput = (step: number) => {
+			const index = Math.max(0, Math.min(steps - 1, step - 1))
+			quantitySlider.setText(formatLabel(index))
+		}
+	
+		const onEnd = (step: number) => {
+			quantitySlider.setInputCallback(null)
+			quantitySlider.setEndCallback(null)
+	
+			const index = Math.max(0, Math.min(steps - 1, step - 1))
+			const amount = candidates[index] ?? 0
+	
+			transfer(amount)
+		}
+		quantitySlider.setInputCallback(onInput)
+		quantitySlider.setEndCallback(onEnd)
+	} else {
+		if (transferContext.kind === "empty") {
+			transfer(1)
+		} else {
+			const received = transferContext.value
+			if (!received.isEqual(item)) return
+			// Cancel the ongoing transfer and create a new transfer with both added together
+			transferContext.transfer(false)
+			transfer(received.amount + 1)
+		}
+	}
 }
 
 
@@ -147,7 +152,6 @@ const machines = getData().machines
 const recipes = getData().recipes
 const extraction  = getData().extractors
 
-console.log({items, machines, recipes, extraction})
 
 
 // Main global inventory
@@ -493,7 +497,7 @@ for(const machine of machines){
 			const cost = machine.cost.map(ser =>
 				ItemEntry.fromRef(ser)
 			)
-			console.log("machine costs: ", cost);
+			console.log("machine costs: ", cost.map(i=>i.amount).join(","));
 			if (!mainInventory.subtractItems(cost)) return
 			transferContext = {
 				kind: "machine",
@@ -649,10 +653,9 @@ machineUI.events.onStackUp = () => {
 	const owner = machineUI.owner
 	if (owner === null) return
 	const cost = owner.cost
-	console.log("inv: ", mainInventory);
 	
 	const afford = mainInventory.subtractItems(cost)
-	console.log("affordable?: ", afford, "cost: ", cost)
+	console.log("affordable?: ", afford)
 	if (!afford) return
 	owner.setStack(owner.getStack() + 1)
 }
@@ -689,7 +692,7 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 			}
 		} else {
 			const incoming = transferContext.value 
-			console.log('incomingItem', incoming)
+			console.log('incomingItem', incoming.item.id)
 			if (incoming === null) return
 			let success = false
 			if (machineInst.addFuel(incoming) === "success") {
@@ -697,7 +700,6 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 				setWarning('')
 			}
 			if (!success) {
-				console.log("incoming item:", incoming)
 				const ri = machineInst.capableRecipes.map(r=>{ // Find a recipes that has 1 input and that input has at least 1 matching item
 					return {
 						recipe:r,
@@ -714,7 +716,6 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 						input: ItemEntry.fromInst(input, slot.amount)
 					} as const
 				}).find(ri => ri !== null)
-				console.log("found ri: ", ri)
 				if (ri) {
 					const cost1 = ri.input.amount
 					const batches = Math.floor(incoming.amount / cost1)
