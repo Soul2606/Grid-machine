@@ -93,6 +93,7 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 		const value = ItemEntry.fromInst(item, amount)
 
 		MouseOverlay.elements.heldItemIcon.setText(`${value.item.name}:${value.amount}`)
+		if (value.item.img) MouseOverlay.elements.heldItemIcon.setImage(value.item.img)
 		MouseOverlay.elements.heldItemIcon.show(true)
 		MouseOverlay.show()
 
@@ -143,7 +144,7 @@ const workers = {
 /**
  * What state the side menu is in.
  */
-var sideMenuMode: undefined | "recipes" | "inventory" | "machines"
+var sideMenuMode:"recipes" | "inventory" | "machines" = "inventory"
 
 
 const items = getData().items

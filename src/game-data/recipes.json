@@ -153,11 +153,36 @@
 		"processTimeSeconds":10
 	},
 	{
+		"id":"craft_paper",
+		"inputs":[
+			{"id":"plants", "amount":1}
+		],
+		"outputs":[
+			{"id":"paper", "amount":1}
+		],
+		"requiredProcess":"workshop",
+		"requiredTier":0,
+		"processTimeSeconds":10
+	},
+	{
+		"id":"craft_coal_powder",
+		"inputs":[
+			{"id":"raw_coal", "amount":1}
+		],
+		"outputs":[
+			{"id":"coal_powder", "amount":1}
+		],
+		"requiredProcess":"workshop",
+		"requiredTier":0,
+		"processTimeSeconds":5
+	},
+	{
 		"id":"craft_resistor",
 		"inputs":[
-			{"id":"raw_coal", "amount":1},
-			{"id":"wood", "amount":1},
-			{"id":"copper_wire", "amount":1}
+			{"id":"coal_powder", "amount":1},
+			{"id":"paper", "amount":2},
+			{"id":"copper_wire", "amount":1},
+			{"id":"sticky_resin", "amount":1}
 		],
 		"outputs":[{"id":"resistor", "amount":4}],
 		"requiredProcess":"workshop",
@@ -205,6 +230,19 @@
 			{"id":"magnetic_steel_rod", "amount":1}
 		],
 		"outputs":[{"id":"basic_electric_motor", "amount":1}],
+		"requiredProcess":"workshop",
+		"requiredTier":0,
+		"processTimeSeconds":10
+	},
+	{
+		"id":"craft_basic_piston",
+		"inputs":[
+			{"id":"basic_electric_motor", "amount":1},
+			{"id":"iron_plate", "amount":1},
+			{"id":"iron_rod", "amount":2},
+			{"id":"bronze_gear", "amount":1}
+		],
+		"outputs":[{"id":"basic_piston", "amount":1}],
 		"requiredProcess":"workshop",
 		"requiredTier":0,
 		"processTimeSeconds":10

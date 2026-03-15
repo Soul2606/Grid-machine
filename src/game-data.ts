@@ -9,6 +9,19 @@ type Data = Readonly<{
 }>
 
 
+
+function isPlainObject(value:unknown): value is Record<string, unknown> {
+	const proto = Object.getPrototypeOf(value)
+	return (
+		typeof value === "object"
+		&& value !== null
+		&& !Array.isArray(value)
+		&& proto === Object.prototype
+	)
+}
+
+
+
 async function fetchData(){
 	
 	async function fetchJSON(url: string) {
@@ -21,10 +34,10 @@ async function fetchData(){
 		})
 	}
 
-	function compile(items: Record<string, unknown>, machines: Record<string, unknown>, recipes: unknown, extraction: unknown) {
+	function compile(items: unknown, machines: unknown, recipes: unknown, extraction: unknown) {
 
-		if (typeof items !== "object" || items === null) throw new Error("error")
-		if (typeof machines !== "object" || machines === null) throw new Error("error")
+		if (!isPlainObject(items)) throw new Error("error")
+		if (!isPlainObject(machines)) throw new Error("error")
 		if (!Array.isArray(recipes)) throw new Error("error")
 		if (!Array.isArray(extraction)) throw new Error("error")
 
@@ -59,6 +72,9 @@ async function fetchData(){
 			const valid = TYPE.some(type => {
 				if (type === 'array') {
 					return Array.isArray(obj)
+				}
+				if (type === "object") {
+					return isPlainObject(obj)
 				}
 				return typeof obj === type
 			})
@@ -128,7 +144,7 @@ async function fetchData(){
 			return duplicates.size === 0 ? false : duplicates
 		}
 		{
-			const result = hasDuplicateIds(Object.keys(items).concat(Object.keys(machines).map(id => id)))
+			const result = hasDuplicateIds(Object.keys(items).concat(Object.keys(machines)))
 			if (result) throw new Error(`Machines and Items has duplicate IDs, ${result}`)
 		}
 		{

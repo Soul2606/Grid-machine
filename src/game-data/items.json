@@ -15,6 +15,12 @@
 		"tags":[],
 		"img":"svg/coke.svg"
 	},
+	"coal_powder":{
+		"name":"Coal powder",
+		"tags":["primitive_fuel"],
+		"img":"svg/coal-powder.svg",
+		"energy":"1MJ"
+	},
 	"water":{
 		"name":"Water",
 		"tags":[],
@@ -90,6 +96,16 @@
 		"tags":["primitive_fuel"],
 		"img":"svg/wood.svg",
 		"energy":"2MJ"
+	},
+	"plants":{
+		"name":"Plants",
+		"tags":[],
+		"img":"svg/plants.svg"
+	},
+	"paper":{
+		"name":"Paper",
+		"tags":[],
+		"img":"svg/paper.svg"
 	},
 	"sticky_resin":{
 		"name":"Sticky resin",
@@ -190,6 +206,11 @@
 		"name":"Basic electric motor",
 		"tags":[],
 		"img":"svg/basic-electric-motor.svg"
+	},
+	"basic_piston":{
+		"name":"Basic piston",
+		"tags":[],
+		"img":"svg/basic-piston.svg"
 	},
 	"basic_machine_hull":{
 		"name":"Basic machine hull",
