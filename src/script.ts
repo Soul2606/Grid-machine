@@ -92,7 +92,7 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 		// register the pending instance and transfer handler
 		const value = ItemEntry.fromInst(item, amount)
 
-		MouseOverlay.elements.heldItemIcon.setText(`${value.item.name}:${value.amount}`)
+		MouseOverlay.elements.heldItemIcon.setText(String(value.amount))
 		if (value.item.img) MouseOverlay.elements.heldItemIcon.setImage(value.item.img)
 		MouseOverlay.elements.heldItemIcon.show(true)
 		MouseOverlay.show()
@@ -235,8 +235,8 @@ const MouseOverlay = (()=>{
 				root.className = 'held-item-icon'
 				root.style.display = 'none'
 
-				const p = document.createElement('p')
-				root.appendChild(p)
+				const textEl = document.createElement('span')
+				root.appendChild(textEl)
 
 				const img = document.createElement('img')
 				root.appendChild(img)
@@ -245,7 +245,7 @@ const MouseOverlay = (()=>{
 				return {
 					...common(root),
 					setText:(text: string)=>{
-						p.textContent = text
+						textEl.textContent = text
 					},
 					setImage:(src: string)=>{
 						img.src = src
