@@ -15,8 +15,8 @@ export type JSONValue =
 // A json friendly way to reference an ItemInstance (class)
 export type ItemInstanceSer = {
 	readonly id: string
-	readonly amount?: number
-	readonly metadata?: JSONValue
+	readonly amount: number
+	readonly metadata: JSONValue
 }
 
 // Serialized snapshot of a Machine instance
@@ -35,7 +35,7 @@ export type Item = {
 	readonly id: string
 	readonly name: string
 	readonly tags: readonly string[]
-	readonly img?: string
+	readonly img: string
 	readonly energy?: string
 }
 
@@ -45,7 +45,7 @@ export type Machine = {
 	readonly tier: number
 	readonly capabilities: readonly string[]
 	readonly cost: readonly ItemInstanceSer[]
-	readonly img?: string
+	readonly img: string
 	readonly fuelNeeds?: {
 		readonly tags: readonly string[],
 		readonly energy: string
@@ -63,11 +63,11 @@ export type Machine = {
 export type RecipeInput = {
 	readonly amount:number
 	readonly id:string
-	readonly meta?:JSONValue
+	readonly meta:JSONValue
 } | {
 	readonly amount:number
 	readonly tag:string
-	readonly meta?:JSONValue
+	readonly meta:JSONValue
 }
 
 export type Recipe = {

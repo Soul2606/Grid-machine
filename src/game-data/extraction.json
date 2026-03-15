@@ -1,6 +1,5 @@
-[
-	{
-		"id":"starter",
+{
+	"starter":{
 		"name":"Starter",
 		"manualPower":12,
 		"requiredPower":1,
@@ -14,4 +13,4 @@
 			{"itemId":"hematite", "weight":1}
 		]
 	}
-]
+}

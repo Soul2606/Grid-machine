@@ -233,7 +233,7 @@ export class ItemInstance {
 	}
 
 	serialize():ItemInstanceSer{
-		return {id: this.item.id, metadata: this.metadata}
+		return {id: this.item.id, metadata: this.metadata, amount:1}
 	}
 
 	isEqual(itemInstance: ItemInstance) {
