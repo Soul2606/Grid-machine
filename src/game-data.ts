@@ -254,7 +254,7 @@ async function fetchData(){
 					name: item.name,
 					tags: item.tags ?? [],
 					img: item.img ?? "",
-					...(item.energy ? {energy: item.energy} : {})
+					energy:item.energy 
 				}
 			}),
 			machines: Object.entries(machines as MachineSchema).map(([key, value]) => {
@@ -273,9 +273,9 @@ async function fetchData(){
 						amount:item.amount,
 						metadata: item.meta??null
 					})),
-					...(machine.fuelNeeds   ? {fuelNeeds:   machine.fuelNeeds}   : {}),
-					...(machine.energyNeeds ? {energyNeeds: machine.energyNeeds} : {}),
-					...(machine.workerNeeds ? {workerNeeds: machine.workerNeeds} : {})
+					fuelNeeds:  machine.fuelNeeds,
+					energyNeeds:machine.energyNeeds,
+					workerNeeds:machine.workerNeeds,
 				}
 			}
 			),

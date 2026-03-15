@@ -36,7 +36,7 @@ export type Item = {
 	readonly name: string
 	readonly tags: readonly string[]
 	readonly img: string
-	readonly energy?: string
+	readonly energy: string | undefined
 }
 
 export type Machine = {
@@ -46,18 +46,18 @@ export type Machine = {
 	readonly capabilities: readonly string[]
 	readonly cost: readonly ItemInstanceSer[]
 	readonly img: string
-	readonly fuelNeeds?: {
+	readonly fuelNeeds: {
 		readonly tags: readonly string[],
 		readonly energy: string
-	}
-	readonly energyNeeds?: {
+	} | undefined
+	readonly energyNeeds: {
 		readonly voltageTier: number,
 		readonly energy: string
-	}
-	readonly workerNeeds?: {
+	} | undefined
+	readonly workerNeeds: {
 		readonly minimum: number,
 		readonly maximum: number
-	}
+	} | undefined
 }
 
 export type RecipeInput = {
