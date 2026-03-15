@@ -119,7 +119,7 @@ async function fetchData(){
 		}
 
 		Object.values(items).forEach(item => {
-			includeKeys(item, ['name', 'tags'])
+			includeKeys(item, ['name'])
 		})
 
 		Object.values(machines).forEach(item => {

@@ -24,7 +24,7 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
      inkscape:zoom="1.2083455"
-     inkscape:cx="175.03271"
+     inkscape:cx="175.03272"
      inkscape:cy="139.86066"
      inkscape:window-width="1440"
      inkscape:window-height="828"
@@ -169,7 +169,7 @@
        inkscape:label="Outline"
        sodipodi:nodetypes="cccccccccc" /><path
        id="rect3"
-       style="fill:#dfbc49;fill-rule:evenodd;stroke:#85702c;stroke-width:5.39668;stroke-linecap:square;paint-order:fill markers stroke"
+       style="fill:#cd7f32;fill-rule:evenodd;stroke:#573615;stroke-width:5.39668;stroke-linecap:square;paint-order:fill markers stroke;fill-opacity:1;stroke-opacity:1"
        d="m 152.93059,47.856407 c 23.32241,0 42.0982,18.775798 42.0982,42.098202 V 191.48443 c -26.06321,5.82474 -54.047,6.06236 -84.1964,0 V 89.954609 c 0,-23.322404 18.7758,-42.098202 42.0982,-42.098202 z"
        sodipodi:nodetypes="ssccss"
        inkscape:label="rect3" /><path

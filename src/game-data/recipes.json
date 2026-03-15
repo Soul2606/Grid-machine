@@ -67,14 +67,6 @@
 		"processTimeSeconds":5
 	},
 	{
-		"id":"alloy_brass",
-		"inputs":[{"id":"copper_ingot", "amount":1}, {"id":"zinc_ingot", "amount":1}],
-		"outputs":[{"id":"brass_ingot", "amount":1}],
-		"requiredProcess":"alloy",
-		"requiredTier":0,
-		"processTimeSeconds":5
-	},
-	{
 		"id":"alloy_steel",
 		"inputs":[
 			{"id":"iron_ingot", "amount":3},
@@ -102,9 +94,9 @@
 		"processTimeSeconds":5
 	},
 	{
-		"id":"craft_brass_plate",
-		"inputs":[{"id":"brass_ingot", "amount":1}],
-		"outputs":[{"id":"brass_plate", "amount":2}],
+		"id":"craft_bronze_plate",
+		"inputs":[{"id":"bronze_ingot", "amount":1}],
+		"outputs":[{"id":"bronze_plate", "amount":2}],
 		"requiredProcess":"anvil",
 		"requiredTier":0,
 		"processTimeSeconds":5
@@ -155,7 +147,7 @@
 	{
 		"id":"craft_paper",
 		"inputs":[
-			{"id":"plants", "amount":1}
+			{"id":"foliage", "amount":1}
 		],
 		"outputs":[
 			{"id":"paper", "amount":1}
@@ -192,7 +184,7 @@
 	{
 		"id":"craft_vacuum_tube",
 		"inputs":[
-			{"id":"brass_plate", "amount":1},
+			{"id":"bronze_plate", "amount":1},
 			{"id":"glass_tube", "amount":4},
 			{"id":"copper_wire", "amount":1}
 		],

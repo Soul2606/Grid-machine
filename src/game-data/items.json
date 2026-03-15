@@ -12,7 +12,6 @@
 	},
 	"coke":{
 		"name":"Coke",
-		"tags":[],
 		"img":"svg/coke.svg"
 	},
 	"coal_powder":{
@@ -23,42 +22,34 @@
 	},
 	"water":{
 		"name":"Water",
-		"tags":[],
 		"img":"svg/water.svg"
 	},
 	"hydrogen":{
 		"name":"Hydrogen gas",
-		"tags":[],
 		"img":"svg/hydrogen-gas.svg"
 	},
 	"oxygen":{
 		"name":"Oxygen gas",
-		"tags":[],
 		"img":"svg/oxygen-gas.svg"
 	},
 	"creosote":{
 		"name":"Creosote",
-		"tags":[],
 		"img":"svg/creosote.svg"
 	},
 	"hematite":{
 		"name":"Hematite",
-		"tags":[],
 		"img":"svg/hematite.svg"
 	},
 	"malachite":{
 		"name":"Malachite",
-		"tags":[],
 		"img":"svg/malachite.svg"
 	},
 	"cassiterite":{
 		"name":"Cassiterite",
-		"tags":[],
 		"img":"svg/Cassiterite.svg"
 	},
 	"sphalerite":{
 		"name":"Sphalerite",
-		"tags":[],
 		"img":"svg/sphalerite.svg"
 	},
 	"iron_ingot":{
@@ -78,17 +69,14 @@
 	},
 	"clay":{
 		"name":"Clay",
-		"tags":[],
 		"img":"svg/clay.svg"
 	},
 	"ceramic":{
 		"name":"Ceramic",
-		"tags":[],
 		"img":"svg/ceramic.svg"
 	},
 	"sand":{
 		"name":"Sand",
-		"tags":[],
 		"img":"svg/sand.svg"
 	},
 	"wood":{
@@ -97,24 +85,20 @@
 		"img":"svg/wood.svg",
 		"energy":"2MJ"
 	},
-	"plants":{
-		"name":"Plants",
-		"tags":[],
+	"foliage":{
+		"name":"Foliage",
 		"img":"svg/plants.svg"
 	},
 	"paper":{
 		"name":"Paper",
-		"tags":[],
 		"img":"svg/paper.svg"
 	},
 	"sticky_resin":{
 		"name":"Sticky resin",
-		"tags":[],
 		"img":"svg/sticky-resin.svg"
 	},
 	"glass_tube":{
 		"name":"Glass tube",
-		"tags":[],
 		"img":"svg/glass-tube.svg"
 	},
 	"iron_plate":{
@@ -129,92 +113,66 @@
 	},
 	"bronze_ingot":{
 		"name":"Bronze ingot",
-		"tags":[],
 		"img":"svg/bronze-ingot.svg"
 	},
 	"bronze_plate":{
 		"name":"Bronze plate",
-		"tags":[],
 		"img":"svg/bronze-plate.svg"
 	},
 	"bronze_gear":{
 		"name":"Bronze gear",
-		"tags":[],
 		"img":"svg/bronze-gear.svg"
-	},
-	"brass_ingot":{
-		"name":"Brass ingot",
-		"tags":[],
-		"img":"svg/brass-ingot.svg"
-	},
-	"brass_plate":{
-		"name":"Brass plate",
-		"tags":[],
-		"img":"svg/brass-plate.svg"
 	},
 	"steel_ingot":{
 		"name":"Steel ingot",
-		"tags":[],
 		"img":"svg/steel-ingot.svg"
 	},
 	"steel_rod":{
 		"name":"Steel rod",
-		"tags":[],
 		"img":"svg/steel-rod.svg"
 	},
 	"magnetic_steel_rod":{
 		"name":"Magnetic steel rod",
-		"tags":[],
 		"img":"svg/magnetic-steel-rod.svg"
 	},
 	"copper_ingot":{
 		"name":"Copper ingot",
-		"tags":[],
 		"img":"svg/copper-ingot.svg"
 	},
 	"copper_plate":{
 		"name":"Copper plate",
-		"tags":[],
 		"img":"svg/copper-plate.svg"
 	},
 	"copper_wire":{
 		"name":"Copper wire",
-		"tags":[],
 		"img":"svg/copper-wire.svg"
 	},
 	"wood_board":{
 		"name":"Wood board",
-		"tags":[],
 		"img":"svg/wood-board.svg"
 	},
 	"vacuum_tube":{
 		"name":"Vacuum tube",
-		"tags":[],
 		"img":"svg/vacuum-tube.svg"
 	},
 	"resistor":{
 		"name":"Resistor",
-		"tags":[],
 		"img":"svg/resistor.svg"
 	},
 	"wooden_circuit_board":{
 		"name":"Wooden circuit board",
-		"tags":[],
 		"img":"svg/logic-circuit-board.svg"
 	},
 	"basic_electric_motor":{
 		"name":"Basic electric motor",
-		"tags":[],
 		"img":"svg/basic-electric-motor.svg"
 	},
 	"basic_piston":{
 		"name":"Basic piston",
-		"tags":[],
 		"img":"svg/basic-piston.svg"
 	},
 	"basic_machine_hull":{
 		"name":"Basic machine hull",
-		"tags":[],
 		"img":"svg/basic-machine-hull.svg"
 	}
 }

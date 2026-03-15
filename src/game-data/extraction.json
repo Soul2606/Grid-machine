@@ -4,13 +4,16 @@
 		"manualPower":12,
 		"requiredPower":1,
 		"yields":[
-			{"itemId":"stone", "weight":6},
-			{"itemId":"wood", "weight":6},
-			{"itemId":"raw_coal", "weight":2},
+			{"itemId":"stone", "weight":3},
+			{"itemId":"wood", "weight":3},
+			{"itemId":"raw_coal", "weight":3},
+			{"itemId":"hematite", "weight":3},
 			{"itemId":"clay", "weight":2},
 			{"itemId":"sand", "weight":2},
-			{"itemId":"sticky_resin", "weight":1},
-			{"itemId":"hematite", "weight":1}
+			{"itemId":"malachite", "weight":2},
+			{"itemId":"cassiterite", "weight":2},
+			{"itemId":"foliage", "weight":1},
+			{"itemId":"sticky_resin", "weight":1}
 		]
 	}
 }
