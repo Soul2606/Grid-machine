@@ -609,3 +609,37 @@ export function load(): { items: readonly ItemInstanceSer[]; machines: readonly 
 }
 
 
+
+
+/**
+ * returns an exponentially bigger number based on how big n is.
+ * @param n which step.
+ * @returns the value of the step
+ */
+export function stepExponential(n: number) {
+	const preset = n > 100
+	? [1, 5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90]
+	: n >= 50
+	? [1, 2, 3, 4, 5, 10, 15, 25, 30, 35, 40, 45, 50]
+	: n >= 10
+	? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+	: Array(n).fill(0).map((n,i)=>i+1)
+	const compute = (n: number) => {
+		const e = (n: number) => 10 ** Math.floor(n/9);
+		return e(n) * (n%9) + e(n)
+	};
+	const candidates = preset.filter(v => v < n);
+	const last = candidates.at(-1)!
+	let i = Math.ceil(Math.log10(last)) * 9
+	while (candidates.at(-1)! < n) {
+		candidates.push(compute(i))
+		i++
+	}
+	while (candidates.at(-1) && candidates.at(-1)! > n) {
+		candidates.splice(-1, 1)
+	}
+	if (candidates.at(-1) !== n) candidates.push(n);
+	return candidates
+}
+
+

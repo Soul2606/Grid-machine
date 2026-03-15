@@ -1,7 +1,7 @@
 
 import { getData } from "./game-data.js"; // async
 import type { Item, Machine, Recipe, Extractor } from './types.js'
-import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, removeAllChildren, tryCraft } from './functions.js'
+import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, removeAllChildren, stepExponential, tryCraft } from './functions.js'
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe, Signal } from './classes.js'
 import { createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
 
@@ -31,21 +31,6 @@ function updateWorkers() {
 
 
 
-function stepExponential(n: number){
-	const preset = [
-		1,5,10,20,30,40,50,100,200,300,400,500,600,700,800,900,1000,
-		2000,3000,4000,5000,6000,7000,8000,9000,10000,20000,30000,40000,
-		50000,60000,70000,80000,90000,100000,200000,300000,400000,500000,1000000
-	]
-	const candidates = preset.filter(v => v < n)
-	if (candidates[candidates.length - 1] !== n) candidates.push(n)
-	return {candidates, preset}
-}
-
-
-
-
-
 /**
  * When this function is called it will show the slider and set up events for items transfer of a specified item from the provided inventory into the transfer context
  * from there you can resolve the transfer from anywhere in the script since transfer context is a global variable. 
@@ -61,7 +46,7 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 	const currentQty = Math.max(0, inventory.getAmount(item) || 0)
 	if (currentQty < 1) return
 
-	const {candidates, preset} = stepExponential(currentQty)
+	const candidates = stepExponential(currentQty)
 
 	const steps = candidates.length
 	if (steps === 0) return
@@ -80,7 +65,7 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 		quantitySlider.setEndCallback(null)
 
 		const index = Math.max(0, Math.min(steps - 1, step - 1))
-		const amount = candidates[index] ? candidates[index] : preset[preset.length-1] as number
+		const amount = candidates[index] ?? 0
 
 		// try to subtract; if subtraction fails, restore UI and exit
 		const removed = inventory.subtractItem(item, amount)
