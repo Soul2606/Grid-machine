@@ -266,7 +266,7 @@ export function createMachineUI(
 		console.log(machine.capableRecipes)
 		subscribers = []
 		machine.capableRecipes.forEach(cr => {
-			const options: CraftingOptions = { maximize: true }
+			const options: CraftingOptions = {}
 
 			const out = getRecipeOutputs(cr)
 			console.log(cr)
