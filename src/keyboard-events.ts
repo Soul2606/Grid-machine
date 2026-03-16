@@ -15,10 +15,20 @@ window.addEventListener("keyup", (e) => {
 	keyup.send(e.code)
 })
 
+/**
+ * Returns true if the given code is currently pressed.
+ * @param code Keyboard event code
+ * @returns the key is pressed
+ */
 export function isPressed(code: string): boolean {
 	return pressed.has(code)
 }
 
+/**
+ * Returns two interfaces for a pubsub that is called with a key code when a key is pressed or released.
+ * 
+ * Warning! This can cause a memory leak if unused events are not unsubscribed.
+ */
 export function getSignals() {
 	return {
 		keydown: keydown.createInterface(false),

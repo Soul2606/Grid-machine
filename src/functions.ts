@@ -616,30 +616,54 @@ export function load(): { items: readonly ItemInstanceSer[]; machines: readonly 
  * @param n which step.
  * @returns the value of the step
  */
-export function stepExponential(n: number) {
-	const preset = n > 100
-	? [1, 5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90]
-	: n >= 50
-	? [1, 2, 3, 4, 5, 10, 15, 25, 30, 35, 40, 45, 50]
-	: n >= 10
-	? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-	: Array(n).fill(0).map((n,i)=>i+1)
-	const compute = (n: number) => {
-		const e = (n: number) => 10 ** Math.floor(n/9);
-		return e(n) * (n%9) + e(n)
-	};
-	const candidates = preset.filter(v => v < n);
-	const last = candidates.at(-1)!
-	let i = Math.ceil(Math.log10(last)) * 9
-	while (candidates.at(-1)! < n) {
-		candidates.push(compute(i))
-		i++
+export function stepExponential(max: number):number[] {
+	
+	//1 2 3 4 5 6 7 8 9 10 20 30...
+	function expo1234(max: number) {
+		const result: number[] = []
+		let power = 0
+		while (power < 1000) {
+			const scale = 10 ** power
+			for (let i = 1; i <= 9; i++) {
+				const value = i * scale
+				if (value >= max) {
+					result.push(max)
+					return result
+				}
+				result.push(value)
+			}
+			power++
+		}
+		throw new Error("Failed to resolve exponential")
 	}
-	while (candidates.at(-1) && candidates.at(-1)! > n) {
-		candidates.splice(-1, 1)
+
+	//1 2 5 10 20 50 100...
+	function expo125(max: number) {
+		const result: number[] = []
+		const bases = [1, 2, 5]
+		let power = 0
+		while (power < 1000) {
+			const scale = 10 ** power
+			for (const b of bases) {
+				const value = b * scale
+				if (value > max) {
+					if (result[result.length - 1] !== max) {
+						result.push(max)
+					}
+					return result
+				}
+				result.push(value)
+			}
+			power++
+		}
+		throw new Error("Failed to resolve exponential");
 	}
-	if (candidates.at(-1) !== n) candidates.push(n);
-	return candidates
+
+	if (max <= 500) {
+		return expo1234(max)
+	} else {
+		return expo125(max)
+	}
 }
 
 

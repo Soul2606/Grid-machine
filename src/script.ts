@@ -72,32 +72,11 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 	if (isPressed("ShiftLeft") && transferContext.kind === "empty") {
 		const currentQty = Math.max(0, inventory.getAmount(item) || 0)
 		if (currentQty < 1) return
-	
-		const candidates = stepExponential(currentQty)
-	
-		const steps = candidates.length
-		if (steps === 0) return
-	
-		const formatLabel = (idx: number) => `${candidates[idx]}/${currentQty}`
-	
-		quantitySlider.show(position.x, position.y, formatLabel(0), steps)
-	
-		const onInput = (step: number) => {
-			const index = Math.max(0, Math.min(steps - 1, step - 1))
-			quantitySlider.setText(formatLabel(index))
-		}
-	
-		const onEnd = (step: number) => {
-			quantitySlider.setInputCallback(null)
-			quantitySlider.setEndCallback(null)
-	
-			const index = Math.max(0, Math.min(steps - 1, step - 1))
-			const amount = candidates[index] ?? 0
-	
-			transfer(amount)
-		}
-		quantitySlider.setInputCallback(onInput)
-		quantitySlider.setEndCallback(onEnd)
+		quantitySlider.setup(
+			position.x, 
+			position.y,
+			currentQty, amount=>transfer(amount)
+		)
 	} else {
 		if (transferContext.kind === "empty") {
 			transfer(1)

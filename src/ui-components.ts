@@ -1,6 +1,6 @@
 import { getData } from "./game-data.js"
 import { type MachineInstance, type Inventory, type SignalInterface, ResolvedRecipe, ItemEntry, ItemInstance } from "./classes.js"
-import { clamp, getItemFromId, getItemsFromTag, getRecipeInputs, getRecipeOutputs, maxCraftableCount, removeAllChildren, resolveCraftingCosts } from "./functions.js"
+import { clamp, getItemFromId, getItemsFromTag, getRecipeInputs, getRecipeOutputs, maxCraftableCount, removeAllChildren, resolveCraftingCosts, stepExponential } from "./functions.js"
 import type { CraftingOptions, Item, Machine, Recipe } from "./types.js"
 
 
@@ -50,36 +50,88 @@ export function createQuantitySlider() {
 		if (endCallbackFunction) endCallbackFunction(Number(slider.value))
 	})
 
+	const show = (x: number, y: number, text: string, length = 15) => {
+		// position is relative to the window, not the page
+		if (typeof length !== 'number' || Number.isNaN(length) || (!Number.isFinite(length))) throw new Error("length is not a valid number")
+		slider.max = String(length)
+		setText(text)
+		sliderDisabled = false
+		root.style.display = ''
+		// Position near mouse 
+		root.style.left = `${x}px`
+		root.style.top = `${y}px`
+
+		// Prevent clipping off screen
+		const rect = root.getBoundingClientRect()
+		if (rect.right > window.innerWidth) {
+			root.style.left = `${window.innerWidth - rect.width}px`
+		}
+		if (rect.bottom > window.innerHeight) {
+			root.style.top = `${window.innerHeight - rect.height}px`
+		}
+	}
+
 	const setText = (text: string) => { p.textContent = text }
 
-	const methods = {
-		show: (x: number, y: number, text: string, length = 15) => {
-			// position is relative to the window, not the page
-			if (typeof length !== 'number' || Number.isNaN(length) || (!Number.isFinite(length))) throw new Error("length is not a valid number")
-			slider.max = String(length)
-			setText(text)
-			sliderDisabled = false
-			root.style.display = ''
-			// Position near mouse 
-			root.style.left = `${x}px`
-			root.style.top = `${y}px`
+	const setEndCallback = (func: QuantitySliderCallback) => {
+		endCallbackFunction = func
+	}
 
-			// Prevent clipping off screen
-			const rect = root.getBoundingClientRect()
-			if (rect.right > window.innerWidth) {
-				root.style.left = `${window.innerWidth - rect.width}px`
-			}
-			if (rect.bottom > window.innerHeight) {
-				root.style.top = `${window.innerHeight - rect.height}px`
-			}
-		},
-		setEndCallback: (func: QuantitySliderCallback) => {
-			endCallbackFunction = func
-		},
-		setInputCallback: (func: QuantitySliderCallback) => {
-			inputCallbackFunction = func
-		},
-		setText
+	const setInputCallback = (func: QuantitySliderCallback) => {
+		inputCallbackFunction = func
+	}
+
+	/**
+	 * Preset for an exponential number selector. The event "onEnd" is called when the event "mouseUp" is called, so this functions should be called when you expect mouseLeft to be down.
+	 * 
+	 * Example: maxAmount = 10_000.
+	 * Then slider range is: [1,5,10,50,100,200,500,1000,2000,5000,10_000]
+	 * @param x X-position relative to the window
+	 * @param y Y-position relative to the window
+	 * @param maxAmount The hights value the slider can select.
+	 * @param onEnd called when the slider is finished and the value is selected.
+	 * @param onInput called when the slider changes with the current selected value.
+	 */
+	const setupExp = (
+		x:number,
+		y:number,
+		maxAmount:number,
+		onEnd:(amount:number)=>void = ()=>{},
+		onInput:(amount:number)=>void = ()=>{}
+	)=>{
+		const candidates = stepExponential(maxAmount)
+			
+		const steps = candidates.length
+		if (steps === 0) return
+	
+		const formatLabel = (idx: number) => `${candidates[idx]}/${maxAmount}`
+	
+		show(x, y, formatLabel(0), steps)
+	
+		const _onInput = (step: number) => {
+			const index = Math.max(0, Math.min(steps - 1, step - 1))
+			setText(formatLabel(index))
+			const amount = candidates[index] ?? 0
+			onInput(amount)
+		}
+	
+		const _onEnd = (step: number) => {
+			setInputCallback(null)
+			setEndCallback(null)
+			const index = Math.max(0, Math.min(steps - 1, step - 1))
+			const amount = candidates[index] ?? 0
+			onEnd(amount)
+		}
+		setInputCallback(_onInput)
+		setEndCallback(_onEnd)
+	}
+
+	const methods = {
+		show,
+		setEndCallback,
+		setInputCallback,
+		setText,
+		setup: setupExp,
 	} as const
 	return { element: root, methods } as const
 }
