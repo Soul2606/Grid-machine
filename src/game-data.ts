@@ -31,7 +31,7 @@ type RecipeSchemaInput = {
 }
 
 type RecipeSchema = {
-	id:string
+	id?:string
 	inputs:RecipeSchemaInput[]
 	outputs:{id:string, amount:number, meta?:JSONValue}[]
 	requiredProcess:string
@@ -187,9 +187,9 @@ async function fetchData(){
 
 		for (const recipe of recipes) {
 			if (!isPlainObject(recipe)) throw new Error("recipe is not a plain object");
-			pt(recipe.id, 'string')
+			pt(recipe.id, 'string', true)
 			pt(recipe.requiredProcess, 'string')
-			pt(recipe.requiredTier, 'number')
+			pt(recipe.requiredTier, 'number', true)
 			pt(recipe.processTimeSeconds, 'number')
 			if (!isArray(recipe.inputs)) throw new Error("inputs is not an array");
 			for(const input of recipe.inputs){
@@ -240,7 +240,7 @@ async function fetchData(){
 			if (result) throw new Error(`Machines and Items has duplicate IDs, ${result}`)
 		}
 		{
-			const result = hasDuplicateIds(recipes.map((r:any) => r.id))
+			const result = hasDuplicateIds(recipes.map((r:any, i) => r.id??"v-"+i))
 			if (result) throw new Error(`Recipes has duplicate IDs, ${result}`)
 		}
 		return { 
@@ -279,8 +279,8 @@ async function fetchData(){
 				}
 			}
 			),
-			recipes: (recipes as RecipeSchema[]).map(r => ({
-				id:r.id,
+			recipes: (recipes as RecipeSchema[]).map((r,i) => ({
+				id:r.id??"v-"+i,
 				inputs:r.inputs.map(i=>("id" in i ? {id:i.id, amount:i.amount, meta:i.meta??null} : {tag:i.tag, amount:i.amount, meta:i.meta??null})),
 				outputs:r.outputs.map(i=>({id:i.id, amount:i.amount, metadata:i.meta??null})),
 				requiredProcess: r.requiredProcess,
