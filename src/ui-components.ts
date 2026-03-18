@@ -503,7 +503,7 @@ export function createRecipeCard() {
 		for (const rOut of recipe.outputs) {
 			const cell = createItemCell(getItemFromId(rOut.id))
 			cell.amountLabel.textContent = String(rOut.amount || 1)
-			applyEvents(cell.element, ItemInstance.fromRef(rOut))
+			applyEvents(cell.element, ItemInstance.fromSer(rOut))
 			output.append(cell.element)
 		}
 	}

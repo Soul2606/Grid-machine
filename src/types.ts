@@ -12,7 +12,7 @@ export type JSONValue =
  | { [key: string]: JSONValue }
 //
 
-// A json friendly way to reference an ItemInstance (class)
+// A json friendly way to reference an ItemInstance or ItemEntry
 export type ItemInstanceSer = {
 	readonly id: string
 	readonly amount: number
@@ -20,17 +20,34 @@ export type ItemInstanceSer = {
 }
 
 // Serialized snapshot of a Machine instance
-export type MachineInstanceSer = {
-	readonly machineId: string
-	readonly stack: number
-	readonly energy: number
-	readonly workers: number
-	readonly work: number
-	readonly workingOn: readonly {amount: number, recipe: ResolvedRecipeSer}[]
-}
+export type MachineInstanceSer = Readonly<{
+	capableRecipes: readonly Recipe[];
+	work: number;
+	stack: number;
+	cost: ItemInstanceSer[];
+	workingOn: {
+		readonly amount: number;
+		readonly recipe: ResolvedRecipeSer;
+	}[];
+	workerNeed: {
+		readonly minimum: number;
+		readonly maximum: number;
+		workers: number;
+	} | undefined;
+	fuelNeed: {
+		readonly need: number;
+		readonly tags: readonly string[];
+		energy: number;
+	} | undefined;
+	powerNeed: {
+		readonly need: number;
+		readonly voltageTier: number;
+		energy: number;
+	} | undefined;
+}>
 
 
-// Game data schema
+// Game data 
 export type Item = {
 	readonly id: string
 	readonly name: string
@@ -89,7 +106,7 @@ export type Extractor = {
 		readonly weight: number
 	}>
 }
-// Game data schema end
+// Game data end
 
 
 // type represents a Recipe input slot, because multiple different items can are valid in a single input, then items is an array of Items

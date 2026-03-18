@@ -195,7 +195,7 @@ export class ItemInstance {
 		return new ItemInstance(inst.item, inst.metadata)
 	}
 
-	static fromRef(ref: ItemInstanceSer){
+	static fromSer(ref: ItemInstanceSer){
 		const item = getItemFromId(ref.id)
 		const meta = ref.metadata === undefined? null : ref.metadata
 		return new ItemInstance(item, meta)
@@ -263,7 +263,7 @@ export class ItemEntry extends ItemInstance {
 		return new ItemEntry(item, null, amount)
 	}
 
-	static fromRef(ref: ItemInstanceSer){
+	static fromSer(ref: ItemInstanceSer){
 		const item = getItemFromId(ref.id)
 		const meta = ref.metadata === undefined? null : ref.metadata
 		const amount = ref.amount === undefined ? 0 : ref.amount
@@ -293,9 +293,9 @@ export class ItemEntry extends ItemInstance {
 
 
 type MIModules = {
-	fuelNeed?:  {readonly need:   number, readonly tags:       readonly string[], energy:number}
-	powerNeed?: {readonly need:   number, readonly voltageTier:number,            energy:number},
-	workerNeed?:{readonly minimum:number, readonly maximum:    number,            workers:number},
+	fuelNeed?:  {readonly need:   number, readonly tags:       readonly string[], energy: number}|undefined
+	powerNeed?: {readonly need:   number, readonly voltageTier:number,            energy: number}|undefined,
+	workerNeed?:{readonly minimum:number, readonly maximum:    number,            workers:number}|undefined,
 }
 
 
@@ -317,11 +317,29 @@ export class MachineInstance {
 		}
 		return new MachineInstance(
 			recipes.values().toArray().filter(recipe=>machine.capabilities.includes(recipe.requiredProcess)),
-			machine.cost.map(inst => ItemEntry.fromRef(inst)),
+			machine.cost.map(inst => ItemEntry.fromSer(inst)),
 			stack,
 			0,
 			[],
 			modules
+		)
+	}
+
+	static fromSer(ser:MachineInstanceSer){
+		return new MachineInstance(
+			ser.capableRecipes,
+			ser.cost.map(ItemEntry.fromSer),
+			ser.stack,
+			ser.work,
+			ser.workingOn.map(wo => ({
+				amount:wo.amount,
+				recipe:ResolvedRecipe.fromSer(wo.recipe)
+			})),
+			{
+				fuelNeed:  structuredClone(ser.fuelNeed),
+				powerNeed: structuredClone(ser.powerNeed),
+				workerNeed:structuredClone(ser.workerNeed)
+			}
 		)
 	}
 
@@ -367,7 +385,7 @@ export class MachineInstance {
 	}
 
 	/**Returns a serialized snapshot of the state of a machine instance. */
-	serialize(){
+	serialize():MachineInstanceSer{
 		const workerNeed = structuredClone(this.workerNeed)
 		const fuelNeed = structuredClone(this.fuelNeed)
 		const powerNeed = structuredClone(this.powerNeed)
@@ -380,9 +398,9 @@ export class MachineInstance {
 				amount: wo.amount,
 				recipe: wo.recipe.serialize()
 			})),
-			...(workerNeed && {workerNeed}),
-			...(fuelNeed && {fuelNeed}),
-			...(powerNeed && {powerNeed}),
+			workerNeed:workerNeed,
+			fuelNeed:fuelNeed,
+			powerNeed:powerNeed,
 		}
 	}
 
@@ -605,6 +623,15 @@ export class Signal<P = unknown, R = void> {
  * This is the authoritative result produced by recipe resolution.
  */
 export class ResolvedRecipe {
+
+	static fromSer(ser:ResolvedRecipeSer){
+		return new ResolvedRecipe(
+			ser.id,
+			ser.inputs.map(ItemEntry.fromSer),
+			ser.output.map(ItemEntry.fromSer)
+		)
+	}
+
 	readonly id: string
 	readonly inputs: readonly ItemEntry[]
 	readonly output: readonly ItemEntry[]

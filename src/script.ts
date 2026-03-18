@@ -4,7 +4,7 @@ import type { Item, Machine, Recipe, Extractor } from './types.js'
 import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, removeAllChildren, stepExponential, tryCraft } from './functions.js'
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe, Signal } from './classes.js'
 import { createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
-import { isPressed } from "./keyboard-events.js";
+import { getSignals, isPressed } from "./keyboard-events.js";
 
 
 
@@ -103,6 +103,8 @@ function setItemPopup(item:Item) {
 
 
 //Global Variables
+
+const keyboardEvents = getSignals()
 
 const workers = {
 	amount: 10,
@@ -282,9 +284,9 @@ let transferContext: TransferContext = {
 	kind: "empty"
 }
 
-window.addEventListener("keydown", e => {
-	console.log("keydown: ", e.key)
-	if (e.key !== "Escape") return
+keyboardEvents.keydown.subscribe(code => {
+	console.log("keydown: ", code)
+	if (code !== "Escape") return
 	if (transferContext.kind === "empty") return
 	transferContext.transfer(false)
 	transferContext = {kind: "empty"}
@@ -474,7 +476,7 @@ for(const machine of machines){
 			}
 			console.log("Clicked machine cell");
 			const cost = machine.cost.map(ser =>
-				ItemEntry.fromRef(ser)
+				ItemEntry.fromSer(ser)
 			)
 			console.log("machine costs: ", cost.map(i=>i.amount).join(","));
 			if (!mainInventory.subtractItems(cost)) return
@@ -493,7 +495,7 @@ for(const machine of machines){
 			const recipe = new ResolvedRecipe(
 				machine.id,
 				machine.cost.map(ser=>
-					ItemEntry.fromRef(ser)
+					ItemEntry.fromSer(ser)
 				),
 				[new ItemEntry(items[0]!, null, 1)]
 			)
