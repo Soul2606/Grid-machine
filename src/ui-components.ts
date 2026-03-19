@@ -315,14 +315,13 @@ export function createMachineUI(
 		refreshText(machine)
 
 		grid.innerHTML = ""
-		console.log(machine.capableRecipes)
 		subscribers = []
 		machine.capableRecipes.forEach(cr => {
 			const options: CraftingOptions = {}
 
 			const out = getRecipeOutputs(cr)
-			console.log(cr)
-			console.log("out: ", out)
+			console.log(cr.id)
+			console.log("out: ", out.map(o=>o.item.id).join(","))
 
 			const outFirst = out[0]
 			if (outFirst === undefined) throw new Error("Recipe produces nothing. id: " + cr.id)

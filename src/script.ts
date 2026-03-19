@@ -681,7 +681,7 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 				setWarning('')
 			}
 			if (!success) {
-				const ri = machineInst.capableRecipes.map(r=>{ // Find a recipes that has 1 input and that input has at least 1 matching item
+				const ri = machineInst.capableRecipes.values().toArray().map(r=>{ // Find a recipes that has 1 input and that input has at least 1 matching item
 					return {
 						recipe:r,
 						inputs:getRecipeInputs(r)

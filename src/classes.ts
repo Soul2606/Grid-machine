@@ -299,6 +299,9 @@ type MIModules = {
 }
 
 
+type CustomRecipe = Omit<Recipe, "id">
+
+
 export class MachineInstance {
 
 	static fromMachine(machine: Machine, stack = 1){
@@ -345,7 +348,7 @@ export class MachineInstance {
 
 	// ============== Properties ====================
 	//Public
-	readonly capableRecipes: readonly Recipe[]
+	readonly capableRecipes = new Map<string, Recipe>()
 	readonly cost: readonly ItemEntry[]
 
 	//Private
@@ -353,21 +356,30 @@ export class MachineInstance {
 	private work: number    // 1 work equals 1 second of processing
 	private workingOn: {recipe: ResolvedRecipe, amount: number}[] // Queue system, first item is the one thats actually being worked on
 	//Modules
-	//It would be nice if the immutable part of the module was public but the mutable was private
 	private readonly fuelNeed?:   {readonly need:number, readonly tags:readonly string[], energy:number}
 	private readonly powerNeed?:  {readonly need:number, readonly voltageTier:number, energy:number}
 	private readonly workerNeed?: {readonly minimum:number, readonly maximum:number, workers:number}
 
 	// ============== Constructor ====================
 	constructor(
-		capableRecipes: readonly Recipe[],
+		recipes: readonly CustomRecipe[],
 		cost: readonly ItemEntry[],
 		stack = 1,
 		work = 0,
 		workingOn: {recipe: ResolvedRecipe, amount: number}[] = [],
 		modules:MIModules = {}
 	) {
-		this.capableRecipes = capableRecipes
+		recipes.forEach(rec =>{
+			const uid = this.generateUID()
+			this.capableRecipes.set(uid, {
+				id: uid,
+				inputs: rec.inputs,
+				outputs: rec.outputs,
+				requiredProcess: rec.requiredProcess,
+				requiredTier: rec.requiredTier,
+				processTimeSeconds: rec.processTimeSeconds
+			})
+		})
 		this.cost = cost
 		this.stack =   stack
 		this.work =    work
@@ -378,6 +390,10 @@ export class MachineInstance {
 	}
 
 	// ============== Methods ====================
+
+	private generateUID() {
+		return `uid-${this.capableRecipes.size}`
+	}
 
 	private craft(multiplier: number, recipe: Recipe) {
 		const output = getRecipeOutputs(recipe)
@@ -390,7 +406,7 @@ export class MachineInstance {
 		const fuelNeed = structuredClone(this.fuelNeed)
 		const powerNeed = structuredClone(this.powerNeed)
 		return {
-			capableRecipes: this.capableRecipes,
+			capableRecipes: this.capableRecipes.values().toArray(),
 			work: this.work,
 			stack: this.stack,
 			cost: this.cost.map(ent => ent.serialize()),
@@ -420,17 +436,9 @@ export class MachineInstance {
 		return structuredClone(this.workerNeed)
 	}
 
-	craftableFromInventory(inv: Inventory, opt?: CraftingOptions){
-		return this.capableRecipes.map(r => {
-			return {
-				amount: maxCraftableCount(getRecipeInputs(r), inv, opt),
-				recipe: r
-			}
-		}).filter(r=>r.amount>0)
-	}
-
 	addWorkingOn(recipes: ResolvedRecipe[]){
 		for (const recipe of recipes) {
+			if (!this.capableRecipes.has(recipe.id)) throw new Error("Id not recognized");
 			const existing = this.workingOn.find(wo => wo.recipe.equals(recipe))
 			if (existing) {
 				existing.amount ++
@@ -476,7 +484,11 @@ export class MachineInstance {
 	tick(deltaMS: number, manually = false) {
 		const workingOn = this.workingOn.map(wo =>({
 			woQueue: wo,
-			recipe: getRecipeFromId(wo.recipe.id)
+			recipe: (()=>{
+				const v = this.capableRecipes.get(wo.recipe.id)
+				if (v === undefined) throw new Error("Invariant broke!");
+				return v
+			})()
 		}))
 		
 		if (workingOn.length === 0) {
@@ -617,7 +629,6 @@ export class Signal<P = unknown, R = void> {
  * A fully resolved, irreversible execution of a single recipe.
  *
  * - Inputs and outputs are fixed and exact.
- * - Cannot be reversed back into its source recipe.
  * - id: is the id from the recipe that was resolved 
  *
  * This is the authoritative result produced by recipe resolution.
@@ -632,6 +643,7 @@ export class ResolvedRecipe {
 		)
 	}
 
+	/**This is not an identifier of this class. Its the id of the recipe that this resolved from. Use the `equals` method instead. */
 	readonly id: string
 	readonly inputs: readonly ItemEntry[]
 	readonly output: readonly ItemEntry[]
