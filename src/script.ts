@@ -1,7 +1,7 @@
 
 import { getData } from "./game-data.js"; // async
 import type { Item, Machine, Recipe, Extractor } from './types.js'
-import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, removeAllChildren, stepExponential, tryCraft } from './functions.js'
+import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, relu, removeAllChildren, stepExponential, tryCraft } from './functions.js'
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe, Signal } from './classes.js'
 import { createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
 import { getSignals, isPressed } from "./keyboard-events.js";
@@ -16,6 +16,12 @@ import { getSignals, isPressed } from "./keyboard-events.js";
 
 function updateWorkers() {
 	document.getElementById("resources-workers")!.textContent = String(workers.amount)
+}
+
+
+
+function updatePower() {
+	document.getElementById("resources-power")!.textContent = String(power)
 }
 
 
@@ -102,24 +108,36 @@ function setItemPopup(item:Item) {
 
 
 
+function provenance(initial = 0, onTransfer?:(amount:number, recipientId:object)=>void) {
+	const obj = {
+		amount: initial,
+		provenance: new Map<object,number>(),
+		transfer: (amount:number, recipientId:object) => {
+			let n = obj.provenance.get(recipientId) ?? 0
+			const delta = Math.max(Math.min(amount, obj.amount), -n)
+			n += delta
+			obj.amount -= delta
+			n === 0 ? obj.provenance.delete(recipientId)
+			: obj.provenance.set(recipientId, n)
+			if (onTransfer) onTransfer(amount, recipientId)
+			return delta
+		},
+	}
+	return obj
+}
+
+
+
+
 //Global Variables
 
 const keyboardEvents = getSignals()
 
-const workers = {
-	amount: 10,
-	provenance: new Map<object,number>(),
-	transfer: (amount:number, recipientId:object) => {
-		let n = workers.provenance.get(recipientId) ?? 0
-		const delta = Math.max(Math.min(amount, workers.amount), -n)
-		n += delta
-		workers.amount -= delta
-		n === 0 ? workers.provenance.delete(recipientId)
-		: workers.provenance.set(recipientId, n)
-		updateWorkers()
-		return delta
-	},
-}
+const workers = provenance(10, updateWorkers)
+
+let power = 0
+let steamTurbines = 0
+const maxPower = ()=>steamTurbines*20
 
 
 /**
@@ -333,6 +351,11 @@ pubSubTick.subscribe(delta=>{
 })
 }
 */
+
+
+
+
+pubSubTick.subscribe(updatePower)
 
 
 
@@ -729,22 +752,38 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 	
 	// Declare setTimeout machine logic
 	const unsubscribe = pubSubTick.subscribe(deltaMS => {
-		const status = machineInst.tick(deltaMS)
-		if (machineUI.owner === machineInst) {
-			machineUI.refreshText(machineInst)
-		}
-		if (status === "idle") return
-		if (status.lowEnergy) {
-			setWarning("no_fuel")
-		} else {
-			setWarning("")
-		}
-		if (status.progress) {
-			setProgress(status.progress * 100)
-		} else {
-			setProgress(100)
-		}
-		mainInventory.addItems(status.crafted)
+		// Get power
+		;(()=>{
+			const need = machineInst.getPowerNeed()
+			if (need === undefined) return
+			const delta = Math.min(relu(need.need * machineInst.getStack() - need.energy), power / need.voltageTier)
+			const status = machineInst.addPower(
+				delta,
+				need.voltageTier
+			)
+			if (status === "success") {
+				power -= (delta * need.voltageTier)
+			}
+		})();
+		// Run simulation
+		;(()=>{
+			const status = machineInst.tick(deltaMS)
+			if (machineUI.owner === machineInst) {
+				machineUI.refreshText(machineInst)
+			}
+			if (status === "idle") return
+			if (status.lowEnergy) {
+				setWarning("no_fuel")
+			} else {
+				setWarning("")
+			}
+			if (status.progress) {
+				setProgress(status.progress * 100)
+			} else {
+				setProgress(100)
+			}
+			mainInventory.addItems(status.crafted)
+		})();
 	})
 })
 

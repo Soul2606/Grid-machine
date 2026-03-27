@@ -436,6 +436,10 @@ export class MachineInstance {
 		return structuredClone(this.workerNeed)
 	}
 
+	getPowerNeed(){
+		return structuredClone(this.powerNeed)
+	}
+
 	addWorkingOn(recipes: ResolvedRecipe[]){
 		for (const recipe of recipes) {
 			if (!this.capableRecipes.has(recipe.id)) throw new Error("Id not recognized");
