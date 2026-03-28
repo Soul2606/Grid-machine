@@ -302,6 +302,13 @@ type MIModules = {
 type CustomRecipe = Omit<Recipe, "id">
 
 
+export type MachineInstanceStatus = "idle" | {
+	lowEnergy: boolean;
+	progress: number;
+	crafted: ItemEntry[];
+}
+
+
 export class MachineInstance {
 
 	static fromMachine(machine: Machine, stack = 1){
@@ -485,7 +492,7 @@ export class MachineInstance {
 	 * @param manually if true: overwrites needs for workers(if needed)
 	 * @returns status about this simulation tick
 	 */
-	tick(deltaMS: number, manually = false) {
+	tick(deltaMS: number, manually = false):MachineInstanceStatus {
 		const workingOn = this.workingOn.map(wo =>({
 			woQueue: wo,
 			recipe: (()=>{

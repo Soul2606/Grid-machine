@@ -1,10 +1,11 @@
 
 import { getData } from "./game-data.js"; // async
-import type { Item, Machine, Recipe, Extractor } from './types.js'
-import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, relu, removeAllChildren, stepExponential, tryCraft } from './functions.js'
-import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe, Signal } from './classes.js'
+import type { Item, Machine } from './types.js'
+import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, relu, removeAllChildren } from './functions.js'
+import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js'
 import { createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
 import { getSignals, isPressed } from "./keyboard-events.js";
+import { addToSimulation, mainInventory, power, tick as pubSubTick, workers } from "./engine.js";
 
 
 
@@ -108,37 +109,9 @@ function setItemPopup(item:Item) {
 
 
 
-function provenance(initial = 0, onTransfer?:(amount:number, recipientId:object)=>void) {
-	const obj = {
-		amount: initial,
-		provenance: new Map<object,number>(),
-		transfer: (amount:number, recipientId:object) => {
-			let n = obj.provenance.get(recipientId) ?? 0
-			const delta = Math.max(Math.min(amount, obj.amount), -n)
-			n += delta
-			obj.amount -= delta
-			n === 0 ? obj.provenance.delete(recipientId)
-			: obj.provenance.set(recipientId, n)
-			if (onTransfer) onTransfer(amount, recipientId)
-			return delta
-		},
-	}
-	return obj
-}
-
-
-
-
 //Global Variables
 
 const keyboardEvents = getSignals()
-
-const workers = provenance(10, updateWorkers)
-
-let power = 0
-let steamTurbines = 0
-const maxPower = ()=>steamTurbines*20
-
 
 /**
  * What state the side menu is in.
@@ -151,10 +124,6 @@ const machines = getData().machines
 const recipes = getData().recipes
 const extraction  = getData().extractors
 
-
-
-// Main global inventory
-const mainInventory = new Inventory()
 
 
 const machineWindow = document.getElementById("machine-window")
@@ -323,24 +292,6 @@ const quantitySlider = (()=>{
 
 
 
-const pubSubTick = (()=>{
-	const signal = new Signal<number>()
-	let now = 0
-	const loop = ()=>{
-		const t = Date.now()
-		const deltaMS = t - now
-		now = t
-		signal.send(deltaMS)
-		setTimeout(loop, 100) // Reduced lag
-	}
-	now = Date.now()
-	loop()
-	return signal.createInterface(false)
-})()
-
-
-
-
 /*
 {
 let time = 0
@@ -396,6 +347,7 @@ document.getElementById('recipe-window-button')!.addEventListener('click',()=>{
 document.body.classList.remove('loading')
 
 updateWorkers()
+workers.event.subscribe(updateWorkers)
 
 
 
@@ -751,39 +703,21 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 	
 	
 	// Declare setTimeout machine logic
-	const unsubscribe = pubSubTick.subscribe(deltaMS => {
-		// Get power
-		;(()=>{
-			const need = machineInst.getPowerNeed()
-			if (need === undefined) return
-			const delta = Math.min(relu(need.need * machineInst.getStack() - need.energy), power / need.voltageTier)
-			const status = machineInst.addPower(
-				delta,
-				need.voltageTier
-			)
-			if (status === "success") {
-				power -= (delta * need.voltageTier)
-			}
-		})();
-		// Run simulation
-		;(()=>{
-			const status = machineInst.tick(deltaMS)
-			if (machineUI.owner === machineInst) {
-				machineUI.refreshText(machineInst)
-			}
-			if (status === "idle") return
-			if (status.lowEnergy) {
-				setWarning("no_fuel")
-			} else {
-				setWarning("")
-			}
-			if (status.progress) {
-				setProgress(status.progress * 100)
-			} else {
-				setProgress(100)
-			}
-			mainInventory.addItems(status.crafted)
-		})();
+	const unsubscribe = addToSimulation(machineInst, status => {
+		if (machineUI.owner === machineInst) {
+			machineUI.refreshText(machineInst)
+		}
+		if (status === "idle") return
+		if (status.lowEnergy) {
+			setWarning("no_fuel")
+		} else {
+			setWarning("")
+		}
+		if (status.progress) {
+			setProgress(status.progress * 100)
+		} else {
+			setProgress(100)
+		}
 	})
 })
 
