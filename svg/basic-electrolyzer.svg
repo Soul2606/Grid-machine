@@ -8,7 +8,7 @@
    version="1.1"
    id="svg1"
    inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
-   sodipodi:docname="basic-machine-hull.svg"
+   sodipodi:docname="basic-electrolyzer.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -24,9 +24,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
-     inkscape:zoom="1.9772005"
-     inkscape:cx="136.8096"
-     inkscape:cy="106.71654"
+     inkscape:zoom="1.3814324"
+     inkscape:cx="32.212942"
+     inkscape:cy="118.71736"
      inkscape:window-width="1440"
      inkscape:window-height="828"
      inkscape:window-x="0"
@@ -35,6 +35,15 @@
      inkscape:current-layer="layer1" />
   <defs
      id="defs1">
+    <inkscape:path-effect
+       effect="powerclip"
+       message=""
+       id="path-effect13"
+       is_visible="true"
+       lpeversion="1"
+       inverse="true"
+       flatten="false"
+       hide_clip="false" />
     <linearGradient
        id="linearGradient8"
        inkscape:collect="always">
@@ -141,46 +150,109 @@
        x2="12"
        y2="12"
        gradientUnits="userSpaceOnUse" />
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath12">
+      <path
+         id="path13"
+         style="display:none;fill:#cdcdcd;fill-opacity:1;fill-rule:evenodd;stroke:#616161;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1;paint-order:fill markers stroke"
+         d="M 39.177183,40.479431 H 160.97113 c 3.63908,0 6.56875,2.929663 6.56875,6.56875 v 63.323649 c 0,3.63909 -2.92967,6.56875 -6.56875,6.56875 H 39.177183 c -3.639088,0 -6.56875,-2.92966 -6.56875,-6.56875 V 47.048181 c 0,-3.639087 2.929662,-6.56875 6.56875,-6.56875 z" />
+      <path
+         id="lpe_path-effect13"
+         style="fill:#cdcdcd;fill-opacity:1;fill-rule:evenodd;stroke:#616161;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1;paint-order:fill markers stroke"
+         class="powerclip"
+         d="M -5,-5 H 205 V 205 H -5 Z m 44.177183,45.479431 c -3.639088,0 -6.56875,2.929663 -6.56875,6.56875 v 63.323649 c 0,3.63909 2.929662,6.56875 6.56875,6.56875 H 160.97113 c 3.63908,0 6.56875,-2.92966 6.56875,-6.56875 V 47.048181 c 0,-3.639087 -2.92967,-6.56875 -6.56875,-6.56875 z" />
+    </clipPath>
   </defs>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
     <path
-       style="baseline-shift:baseline;display:inline;overflow:visible;opacity:1;vector-effect:none;fill:#9c8989;stroke-linecap:round;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1;fill-opacity:1"
-       d="M 0,0 V 200 H 200 V 0 Z"
-       id="rect4"
-       sodipodi:nodetypes="ccccc"
-       inkscape:label="Body" />
+       style="fill:#161616;fill-rule:evenodd;stroke:none;stroke-width:12;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke;fill-opacity:1"
+       d="M 0,0 H 200 V 200 H 0 Z"
+       id="path7" />
     <path
-       style="baseline-shift:baseline;display:inline;overflow:visible;opacity:1;vector-effect:none;fill:#ceb5b5;fill-opacity:1;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
-       d="M 99.07031,199.42604 200,98.49641 V 72.35578 L 72.92968,199.42604 Z"
-       id="path9"
-       sodipodi:nodetypes="ccccc"
-       inkscape:label="Shine1" />
+       style="fill:none;fill-rule:evenodd;stroke:#edc025;stroke-width:12;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="M 50.070794,55.449717 V 143.13006"
+       id="path3"
+       sodipodi:nodetypes="cc" />
     <path
-       style="baseline-shift:baseline;display:inline;overflow:visible;opacity:1;vector-effect:none;fill:#ceb5b5;fill-opacity:1;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
-       d="M 100.92969,0 0,100.92969 v 26.14063 L 127.07032,0 Z"
-       id="path1"
-       sodipodi:nodetypes="ccccc"
-       inkscape:label="Shine1" />
+       style="fill:none;fill-rule:evenodd;stroke:#edc025;stroke-width:12;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="M 100.07079,55.449717 V 143.13006"
+       id="path4"
+       sodipodi:nodetypes="cc" />
     <path
-       style="baseline-shift:baseline;display:inline;overflow:visible;opacity:1;vector-effect:none;fill:#ceb5b5;fill-opacity:1;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
-       d="M 170,0 0,170 v 30 H 30 L 200,30 V 0 Z"
-       id="path2"
-       sodipodi:nodetypes="ccccccc"
-       inkscape:label="Shine1" />
+       style="fill:none;fill-rule:evenodd;stroke:#edc025;stroke-width:12;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+       d="M 150.07079,55.449717 V 143.13006"
+       id="path6"
+       sodipodi:nodetypes="cc" />
+    <g
+       id="g11"
+       style="stroke-width:12;stroke-dasharray:none">
+      <path
+         style="fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#ed7525;stroke-width:12;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke;stroke-linejoin:round"
+         d="m 50.070794,55.449717 24.999999,16 24.999997,-16 25,16 25,-16"
+         id="path10"
+         sodipodi:nodetypes="ccccc" />
+      <path
+         style="fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#ed7525;stroke-width:12;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke;stroke-linejoin:round"
+         d="m 50.070794,71.449717 24.999999,-16 24.999997,16 25,-16 25,16"
+         id="path11"
+         sodipodi:nodetypes="ccccc" />
+    </g>
+    <g
+       id="g1"
+       inkscape:label="hull"
+       style="display:inline"
+       clip-path="url(#clipPath12)"
+       inkscape:path-effect="#path-effect13">
+      <path
+         style="baseline-shift:baseline;display:inline;overflow:visible;opacity:1;vector-effect:none;fill:#9c8989;fill-opacity:1;stroke-linecap:round;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+         d="M 0,0 V 200 H 200 V 0 Z"
+         id="rect4"
+         sodipodi:nodetypes="ccccc"
+         inkscape:label="Body"
+         inkscape:original-d="M 0,0 V 200 H 200 V 0 Z" />
+      <path
+         style="baseline-shift:baseline;display:inline;overflow:visible;opacity:1;vector-effect:none;fill:#ceb5b5;fill-opacity:1;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+         d="M 99.07031,199.42604 200,98.49641 V 72.35578 L 72.92968,199.42604 Z"
+         id="path9"
+         sodipodi:nodetypes="ccccc"
+         inkscape:label="Shine1"
+         inkscape:original-d="M 99.07031,199.42604 200,98.49641 V 72.35578 L 72.92968,199.42604 Z" />
+      <path
+         style="baseline-shift:baseline;display:inline;overflow:visible;opacity:1;vector-effect:none;fill:#ceb5b5;fill-opacity:1;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+         d="M 100.92969,0 0,100.92969 v 26.14063 L 127.07032,0 Z"
+         id="path1"
+         sodipodi:nodetypes="ccccc"
+         inkscape:label="Shine1"
+         inkscape:original-d="M 100.92969,0 0,100.92969 v 26.14063 L 127.07032,0 Z" />
+      <path
+         style="baseline-shift:baseline;display:inline;overflow:visible;opacity:1;vector-effect:none;fill:#ceb5b5;fill-opacity:1;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+         d="M 170,0 0,170 v 30 H 30 L 200,30 V 0 Z"
+         id="path2"
+         sodipodi:nodetypes="ccccccc"
+         inkscape:label="Shine1"
+         inkscape:original-d="M 170,0 0,170 v 30 H 30 L 200,30 V 0 Z" />
+      <path
+         style="baseline-shift:baseline;display:inline;overflow:visible;opacity:1;vector-effect:none;fill:#524848;fill-opacity:1;stroke-linecap:round;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+         d="M 0,0 V 200 H 200 V 0 Z M 10,10 H 190 V 190 H 10 Z"
+         id="path8"
+         sodipodi:nodetypes="cccccccccc"
+         inkscape:label="Outline1"
+         inkscape:original-d="M 0,0 V 200 H 200 V 0 Z M 10,10 H 190 V 190 H 10 Z" />
+      <path
+         style="baseline-shift:baseline;display:inline;overflow:visible;opacity:1;fill:none;stroke:url(#linearGradient9);stroke-width:9;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
+         d="M 10,10 V 190 H 190 V 10 Z"
+         id="path5"
+         sodipodi:nodetypes="ccccc"
+         inkscape:label="Outline2"
+         inkscape:original-d="M 10,10 V 190 H 190 V 10 Z" />
+    </g>
     <path
-       style="baseline-shift:baseline;display:inline;overflow:visible;opacity:1;vector-effect:none;fill:#524848;stroke-linecap:round;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1;fill-opacity:1"
-       d="M 0,0 V 200 H 200 V 0 Z M 10,10 H 190 V 190 H 10 Z"
-       id="path8"
-       sodipodi:nodetypes="cccccccccc"
-       inkscape:label="Outline1" />
-    <path
-       style="baseline-shift:baseline;display:inline;overflow:visible;opacity:1;fill:none;stroke:url(#linearGradient9);stroke-width:9;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke;enable-background:accumulate;stop-color:#000000;stop-opacity:1"
-       d="M 10,10 V 190 H 190 V 10 Z"
-       id="path5"
-       sodipodi:nodetypes="ccccc"
-       inkscape:label="Outline2" />
+       id="path12"
+       style="display:inline;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#524848;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1;paint-order:fill markers stroke"
+       d="M 39.177183,40.479431 H 160.97113 c 3.63908,0 6.56875,2.929663 6.56875,6.56875 v 63.323649 c 0,3.63909 -2.92967,6.56875 -6.56875,6.56875 H 39.177183 c -3.639088,0 -6.56875,-2.92966 -6.56875,-6.56875 V 47.048181 c 0,-3.639087 2.929662,-6.56875 6.56875,-6.56875 z" />
   </g>
 </svg>

@@ -23,7 +23,7 @@ Processing lines allow recipes to be compressed into 1 and allow for basic autom
 
 Factories ar much simpler but much more powerful. Here everything is defined and every route is built by the user, this allows a factory to contain super complex chains of machines that can preform any recipe chain. The most powerful thing about Factories is that they can be compiled into a single process making them super performant. 
 
-Because factories act so similar to machines, they can used inside factories, creating a potentially infinite recursions of factories within factories that has not performance impact because pf the compilation. This has a limit: compiling a factory is not reversible, so the factory has to remember its internal graph of machines and recipes. This is the limiting factor becaus you will eventually run out of memory.
+Because factories act so similar to machines, they can used inside factories, creating a potentially infinite recursions of factories within factories that has not performance impact because pf the compilation. This has a limit: compiling a factory is not reversible, so the factory has to remember its internal graph of machines and recipes. This is the limiting factor because you will eventually run out of memory.
 
 ## Code Structure
 Below is an overview of classes, types, modules and the higher level architecture of the codebase.

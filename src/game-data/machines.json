@@ -128,5 +128,18 @@
 			"voltageTier":1,
 			"energy":"2kJ"
 		}
+	},
+	"basic_electrolyzer":{
+		"name":"Basic Electrolyzer",
+		"capabilities":["electrolysis"],
+		"tier":0,
+		"img":"svg/basic-electrolyzer.svg",
+		"cost":[
+			{"id":"wooden_circuit_board", "amount":1},
+			{"id":"basic_machine_hull", "amount":1},
+			{"id":"copper_wire", "amount":2},
+			{"id":"tin_wire", "amount":1},
+			{"id":"bronze_plate", "amount":1}
+		]
 	}
 }

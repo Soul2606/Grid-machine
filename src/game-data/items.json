@@ -174,5 +174,13 @@
 	"basic_machine_hull":{
 		"name":"Basic machine hull",
 		"img":"svg/basic-machine-hull.svg"
+	},
+	"tin_plate":{
+		"name":"Tin plate",
+		"img":"svg/tin-plate.svg"
+	},
+	"tin_wire":{
+		"name":"Tin wire",
+		"img":"svg/tin-wire.svg"
 	}
 }

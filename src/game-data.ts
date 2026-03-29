@@ -144,8 +144,11 @@ async function fetchData(){
 			if (!valid) throw new Error(`${obj} is not of type ${JSON.stringify(TYPE)}`)
 		}
 
+		const itemIds = new Set<string>()
+
 		for (const key in items) {
 			const item = items[key]
+			itemIds.add(key)
 			if (!isPlainObject(item)) throw new Error("Item must be a plain object");
 			if(isArray(item.tags)){
 				item.tags.forEach((tag: any) => pt(tag, 'string'))
@@ -163,6 +166,7 @@ async function fetchData(){
 				for (const cost of machine.cost) {
 					if (!isPlainObject(cost)) throw new Error("Machine cost is not an array of objects");
 					pt(cost.id, "string")
+					if (!itemIds.has(cost.id as string)) throw new Error("Unknown item id: " + cost.id);
 					pt(cost.amount, "number")
 				}
 			}
@@ -197,6 +201,7 @@ async function fetchData(){
 				pt(input.amount, 'number')
 				if ("id" in input) {
 					pt(input.id, 'string')
+					if (!itemIds.has(input.id as string)) throw new Error("Unknown item id: " + input.id);
 				} else {
 					pt(input.tag, 'string')
 				}
@@ -205,6 +210,7 @@ async function fetchData(){
 			for (const output of recipe.outputs){
 				if (!isPlainObject(output)) throw new Error("output is not an object");
 				pt(output.id, 'string')
+				if (!itemIds.has(output.id as string)) throw new Error("Unknown item id: " + output.id);
 				pt(output.amount, 'number')
 			}
 		}

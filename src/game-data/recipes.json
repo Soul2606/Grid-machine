@@ -130,7 +130,17 @@
 	"requiredProcess":"anvil",
 	"processTimeSeconds":5
 },
-	{
+{
+	"inputs":[
+		{"id":"tin_ingot", "amount":1}
+	],
+	"outputs":[
+		{"id":"tin_plate", "amount":2}
+	],
+	"requiredProcess":"anvil",
+	"processTimeSeconds":5
+},
+{
 	"inputs":[
 		{"id":"iron_ingot", "amount":1}
 	],
@@ -156,6 +166,16 @@
 	],
 	"outputs":[
 		{"id":"copper_wire", "amount":2}
+	],
+	"requiredProcess":"wire_extrusion",
+	"processTimeSeconds":8
+},
+{
+	"inputs":[
+		{"id":"tin_plate", "amount":1}
+	],
+	"outputs":[
+		{"id":"tin_wire", "amount":1}
 	],
 	"requiredProcess":"wire_extrusion",
 	"processTimeSeconds":8
