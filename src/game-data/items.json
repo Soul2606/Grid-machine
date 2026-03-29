@@ -28,7 +28,7 @@
 		"name":"Hydrogen gas",
 		"img":"svg/hydrogen-gas.svg"
 	},
-	"oxygen":{
+	"oxygen_gas":{
 		"name":"Oxygen gas",
 		"img":"svg/oxygen-gas.svg"
 	},
@@ -182,5 +182,25 @@
 	"tin_wire":{
 		"name":"Tin wire",
 		"img":"svg/tin-wire.svg"
+	},
+	"sapphire":{
+		"name":"Sapphire",
+		"img":"svg/sapphire.svg"
+	},
+	"sapphire_powder":{
+		"name":"Sapphire powder",
+		"img":"svg/sapphire-powder.svg"
+	},
+	"aluminum_powder":{
+		"name":"Aluminum powder",
+		"img":"svg/aluminum-powder.svg"
+	},
+	"sodium":{
+		"name":"Sodium",
+		"img":"svg/sodium.svg"
+	},
+	"silicon_powder":{
+		"name":"Silicon powder",
+		"img":"svg/silicon-powder.svg"
 	}
 }

@@ -298,4 +298,38 @@
 	],
 	"requiredProcess":"polarization",
 	"processTimeSeconds":2
+},
+{
+	"inputs":[
+		{"id":"sapphire", "amount":1}
+	],
+	"outputs":[
+		{"id":"sapphire_powder", "amount":1}
+	],
+	"requiredProcess":"crushing",
+	"processTimeSeconds":2
+},
+{
+	"inputs":[
+		{"id":"sapphire_powder", "amount":5}
+	],
+	"outputs":[
+		{"id":"oxygen_gas", "amount":3},
+		{"id":"aluminum_powder", "amount":2}
+	],
+	"requiredProcess":"electrolysis",
+	"processTimeSeconds":20
+},
+{
+	"inputs":[
+		{"id":"clay", "amount":5}
+	],
+	"outputs":[
+		{"id":"aluminum_powder", "amount":2},
+		{"id":"silicon_powder", "amount":2},
+		{"id":"sodium", "amount":1},
+		{"id":"water", "amount":1}
+	],
+	"requiredProcess":"electrolysis",
+	"processTimeSeconds":15
 }]
