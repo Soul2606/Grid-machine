@@ -1,6 +1,16 @@
 import { getDataMapToId } from "./game-data.js";
-import { Inventory, MachineInstance, Signal, type MachineInstanceStatus } from "./classes.js";
+import { Inventory, ItemEntry, MachineInstance, Signal, type MachineInstanceStatus } from "./classes.js";
 import { relu } from "./functions.js";
+import type { ItemInstanceSer, JSONValue, MachineInstanceSer } from "./types.js";
+
+
+
+
+const machinesSimulated = new Map<MachineInstance, 
+{
+	readonly unsubscribe:()=>boolean
+	readonly setTickEvent:(event:(status:MachineInstanceStatus)=>void)=>void
+}>()
 
 
 
@@ -14,6 +24,22 @@ export const maxPower = ()=>steamTurbines.value*20;
 
 export const workers = provenance(10);
 
+export function removeMachine(mac:MachineInstance) {
+	const existing = machinesSimulated.get(mac)
+	if (existing === undefined) return false
+	machinesSimulated.delete(mac)
+	existing.unsubscribe()
+	return true
+}
+
+export function getMachines() {
+	return machinesSimulated
+	.entries()
+	.map(([key, val]) => ({
+		machine:key,
+		setTickEvent:val.setTickEvent
+	}))
+}
 
 
 
@@ -40,8 +66,13 @@ export const tick = (() => {
  * @param tickCall This is called last, after all internal logic is run, so global values might be mutated.
  * @returns An unsubscribe function that removes this machine when called.
  */
-export function addToSimulation(machine:MachineInstance, tickCall:(status:MachineInstanceStatus)=>void):()=>boolean {
-	return tick.subscribe((delta)=>{
+export function addToSimulation(machine:MachineInstance, tickCall?:(status:MachineInstanceStatus)=>void):()=>boolean {
+	const existing = machinesSimulated.get(machine)
+	let tickEvent = tickCall
+	/**DO NOT LOSE THIS! */
+	const unsubscribe = existing !== undefined
+	? existing.unsubscribe
+	: tick.subscribe((delta)=>{
 		// Get power
 		;(()=>{
 			const need = machine.getPowerNeed()
@@ -58,8 +89,52 @@ export function addToSimulation(machine:MachineInstance, tickCall:(status:Machin
 		const status = machine.tick(delta)
 		if (status === "idle") return
 		mainInventory.addItems(status.crafted)
-		tickCall(status)
+		if (tickEvent) tickEvent(status)
 	})
+	machinesSimulated.set(machine, {
+		unsubscribe,
+		setTickEvent: event=>{
+			tickEvent = event
+		}
+	})
+	return ()=>{
+		machinesSimulated.delete(machine)
+		return unsubscribe()
+	}
+}
+
+
+
+
+type SaveFormat = {
+	version:number
+	items:ItemInstanceSer[]
+	machines:MachineInstanceSer[]
+}
+
+
+
+
+export function save() {
+	localStorage.setItem('save', JSON.stringify({
+		version: 0.1,
+		items:    mainInventory.getAllItemInstances().map(i => i.serialize()),
+		machines: machinesSimulated.keys().toArray().map(v => v.serialize())
+	} satisfies SaveFormat))
+}
+
+
+
+
+export function load()  {
+	const save: SaveFormat = JSON.parse(localStorage.getItem('save')??"null")
+	console.log(save);
+	if (save.version !== 0.1) console.warn(`Wrong save version, current: 0.1, save: ${save.version}`)
+	mainInventory.clear()
+	mainInventory.addItems(save.items.map(ItemEntry.fromSer))
+	for (const mac of save.machines) {
+		addToSimulation(MachineInstance.fromSer(mac)) // This is a problem. When a page loads the save, it needs to hook its ui reactivity to this event
+	}
 }
 
 
@@ -84,6 +159,9 @@ function provenance(initial = 0) {
 	};
 	return obj;
 }
+
+
+
 
 
 

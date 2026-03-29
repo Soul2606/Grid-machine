@@ -577,40 +577,6 @@ export function trySingleCraft(
 
 
 
-/**Saves the state of the main page to local storage */
-export function save(items: ItemInstanceSer[], machines: MachineInstanceSer[]): void {
-	localStorage.setItem('mainInventory', JSON.stringify(items))
-	localStorage.setItem('machines', JSON.stringify(machines))
-}
-
-
-
-
-/**Loads the state of the main page from local storage */
-export function load(): { items: readonly ItemInstanceSer[]; machines: readonly MachineInstanceSer[]}  {
-	let items: JSONValue = localStorage.getItem('mainInventory')
-	if (items) {
-		items = JSON.parse(items)
-	} else {
-		items = []
-	}
-	let machines: JSONValue = localStorage.getItem('machines')
-	if (machines) {
-		machines = JSON.parse(machines)
-	} else {
-		machines = []
-	}
-	return {
-		// @ts-ignore
-		items,
-		// @ts-ignore
-		machines
-	}
-}
-
-
-
-
 /**
  * returns an exponentially bigger number based on how big n is.
  * @param n which step.

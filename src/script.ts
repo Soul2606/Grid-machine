@@ -703,7 +703,7 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 	
 	
 	// Declare setTimeout machine logic
-	const unsubscribe = addToSimulation(machineInst, status => {
+	addToSimulation(machineInst, status => {
 		if (machineUI.owner === machineInst) {
 			machineUI.refreshText(machineInst)
 		}
