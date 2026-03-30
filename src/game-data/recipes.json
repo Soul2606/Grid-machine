@@ -372,14 +372,14 @@
 },
 {
 	"inputs":[
-		{"id":"ethanol", "amount":1},
+		{"id":"ethanol", "amount":4},
 		{"id":"sulfuric_acid", "amount":1}
 	],
 	"outputs":[
-		{"id":"ethylene_gas", "amount":1}
+		{"id":"ethylene_gas", "amount":4}
 	],
 	"requiredProcess":"chemical",
-	"processTimeSeconds":5,
+	"processTimeSeconds":15,
 	"requiredTier":1
 },
 {

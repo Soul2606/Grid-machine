@@ -3,7 +3,7 @@ import { getData } from "./game-data.js"; // async
 import type { Item, Machine } from './types.js'
 import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, relu, removeAllChildren } from './functions.js'
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js'
-import { createInfoPanel, createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
+import { createChemicalFormula, createInfoPanel, createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
 import { getSignals, isPressed } from "./keyboard-events.js";
 import { addToSimulation, mainInventory, power, tick as pubSubTick, workers } from "./engine.js";
 
@@ -103,7 +103,15 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 function setItemPopup(item:Item) {
 	MouseOverlay.show()
 	MouseOverlay.elements.infoPanel.show()
-	MouseOverlay.elements.infoPanel.setText(item.name)
+	MouseOverlay.elements.infoPanel.setTitle(item.name)
+	const desc = MouseOverlay.elements.infoPanel.description
+	removeAllChildren(desc)
+	desc.append(createChemicalFormula(item.header))
+	desc.append((()=>{
+		const el = document.createElement("span")
+		el.textContent = item.description
+		return el
+	})())
 }
 
 
@@ -212,11 +220,12 @@ const MouseOverlay = (()=>{
 
 			// =============================== Info panel
 			infoPanel:(()=>{
-				const {root, setTitle: setText} = createInfoPanel()
+				const {root, setTitle, description} = createInfoPanel()
 				element.appendChild(root)
 				return {
 					...common(root),
-					setText,
+					setTitle,
+					description
 				} as const
 			})(),
 
@@ -363,7 +372,7 @@ const showRecipe = (item:Item, mouseEnter:(item:Item)=>void, mouseLeave:()=>void
 			if (typeof value === "string") {
 				MouseOverlay.show()
 				MouseOverlay.elements.infoPanel.show()
-				MouseOverlay.elements.infoPanel.setText(`Tag "${value}"`)
+				MouseOverlay.elements.infoPanel.setTitle(`Tag "${value}"`)
 				return
 			}
 			mouseEnter(value.item)
@@ -382,7 +391,7 @@ const invItemCells = items.map(item => {
 
 	const mouseLeave = ()=>{
 		MouseOverlay.elements.infoPanel.hide()
-		MouseOverlay.elements.infoPanel.setText('')
+		MouseOverlay.elements.infoPanel.setTitle('')
 	}
 
 	v.element.addEventListener("mouseenter", ()=>setItemPopup(item))
@@ -428,12 +437,12 @@ for(const machine of machines){
 	cell.addEventListener('mouseenter', ()=>{
 		MouseOverlay.show()
 		MouseOverlay.elements.infoPanel.show()
-		MouseOverlay.elements.infoPanel.setText(`${machine.name}`)
+		MouseOverlay.elements.infoPanel.setTitle(`${machine.name}`)
 	})
 	
 	cell.addEventListener('mouseleave', ()=>{
 		MouseOverlay.elements.infoPanel.hide()
-		MouseOverlay.elements.infoPanel.setText('')
+		MouseOverlay.elements.infoPanel.setTitle('')
 	})
 
 	cell.addEventListener('click',()=>{
@@ -475,7 +484,7 @@ for(const machine of machines){
 
 			const mouseLeave = ()=>{
 				MouseOverlay.elements.infoPanel.hide()
-				MouseOverlay.elements.infoPanel.setText('')
+				MouseOverlay.elements.infoPanel.setTitle('')
 			}
 
 			card.events.onMouseEnter = value => {

@@ -536,10 +536,6 @@ export function createInfoPanel() {
 	hr.className = "background-gradient"
 	body.append(hr);
 
-	const header = document.createElement("span");
-	header.className = "mouse-info-panel-header"
-	body.append(header);
-
 	const description = document.createElement("span")
 	description.className = "mouse-info-panel-description"
 	body.append(description)
@@ -553,13 +549,44 @@ export function createInfoPanel() {
 		setTitle: (text: string) => {
 			title.textContent = text;
 		},
-		setHeader: (text:string) => {
-			header.textContent = text
-		},
-		setDescription: (text:string) => {
-			description.textContent = text
-		}
+		description
 	} as const;
+}
+
+
+
+
+export function createChemicalFormula(formula: string): HTMLElement {
+  const container = document.createElement("span");
+
+  const isNum = (x:any) => Number.isFinite(Number(x))
+
+  let i = 0;
+  while (i < formula.length) {
+    const char = formula[i]??"";
+
+    // If number → collect full number and wrap in <sub>
+    if (isNum(char)) {
+      let num = char;
+      i++;
+
+      while (i < formula.length && isNum(formula[i])) {
+        num += formula[i];
+        i++;
+      }
+
+      const sub = document.createElement("sub");
+      sub.textContent = num;
+      container.appendChild(sub);
+      continue;
+    }
+
+    // Otherwise just append text
+    container.appendChild(document.createTextNode(char));
+    i++;
+  }
+
+  return container;
 }
 
 

@@ -13,6 +13,8 @@ type ItemSchema = Record<
 	string,
 	{
 		name: string
+		header?: string
+		description?: string
 		tags?: string[]
 		img?: string
 		energy?: string
@@ -155,6 +157,8 @@ async function fetchData(){
 			}
 			pt(item.name, 'string')
 			pt(item.img, "string", true)
+			pt(item.header, "string", true)
+			pt(item.description, "string", true)
 		}
 
 		for (const key in machines) {
@@ -258,6 +262,8 @@ async function fetchData(){
 				return {
 					id: item.id,
 					name: item.name,
+					header: item.header ?? "",
+					description: item.description ?? "",
 					tags: item.tags ?? [],
 					img: item.img ?? "",
 					energy:item.energy 
