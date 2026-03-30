@@ -24,7 +24,7 @@
 		"name":"Water",
 		"img":"svg/water.svg"
 	},
-	"hydrogen":{
+	"hydrogen_gas":{
 		"name":"Hydrogen gas",
 		"img":"svg/hydrogen-gas.svg"
 	},
@@ -202,5 +202,49 @@
 	"silicon_powder":{
 		"name":"Silicon powder",
 		"img":"svg/silicon-powder.svg"
+	},
+	"gallium":{
+		"name":"Gallium",
+		"img":"svg/gallium.svg"
+	},
+	"diode":{
+		"name":"Diode",
+		"img":"svg/diode.svg"
+	},
+	"methane_gas":{
+		"name":"Methane gas",
+		"img":"svg/methane-gas.svg"
+	},
+	"carbon":{
+		"name":"Carbon",
+		"img":"svg/carbon.svg"
+	},
+	"ethylene_gas":{
+		"name":"Ethylene gas",
+		"img":"svg/ethylene-gas.svg"
+	},
+	"polyethylene":{
+		"name":"Polyethylene (PE)",
+		"img":"svg/polyethylene.svg"
+	},
+	"smd_diode":{
+		"name":"SMD Diode",
+		"img":"svg/smd-diode.svg"
+	},
+	"smd_transistor":{
+		"name":"SMD Transistor",
+		"img":"svg/smd-transistor.svg"
+	},
+	"smd_capacitor":{
+		"name":"SMD Capacitor",
+		"img":"svg/smd-capacitor.svg"
+	},
+	"smd_resistor":{
+		"name":"SMD Resistor",
+		"img":"svg/smd-resistor.svg"
+	},
+	"smd_inductor":{
+		"name":"SMD Inductor",
+		"img":"svg/smd-inductor.svg"
 	}
 }

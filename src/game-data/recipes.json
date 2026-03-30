@@ -331,5 +331,92 @@
 		{"id":"water", "amount":1}
 	],
 	"requiredProcess":"electrolysis",
-	"processTimeSeconds":15
+	"processTimeSeconds":15,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"tin_wire", "amount":1},
+		{"id":"gallium", "amount":1},
+		{"id":"paper", "amount":4}
+	],
+	"outputs":[
+		{"id":"diode", "amount":4}
+	],
+	"requiredProcess":"workshop",
+	"processTimeSeconds":10
+},
+{
+	"inputs":[
+		{"id":"hydrogen_gas", "amount":4},
+		{"id":"carbon", "amount":1}
+	],
+	"outputs":[
+		{"id":"methane_gas", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":30,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"methane_gas", "amount":1},
+		{"id":"carbon", "amount":1}
+	],
+	"outputs":[
+		{"id":"ethylene_gas", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":60,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"water", "amount":2}
+	],
+	"outputs":[
+		{"id":"oxygen_gas", "amount":1},
+		{"id":"hydrogen_gas", "amount":2}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":120,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"ethylene_gas", "amount":1},
+		{"id":"oxygen_gas", "amount":1}
+	],
+	"outputs":[
+		{"id":"polyethylene", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"polyethylene", "amount":1},
+		{"id":"tin_wire", "amount":1},
+		{"id":"gallium", "amount":1}
+	],
+	"outputs":[
+		{"id":"smd_diode", "amount":32}
+	],
+	"requiredProcess":"assembly",
+	"processTimeSeconds":10,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"polyethylene", "amount":1},
+		{"id":"copper_wire", "amount":1},
+		{"id":"carbon", "amount":1}
+	],
+	"outputs":[
+		{"id":"smd_resistor", "amount":16}
+	],
+	"requiredProcess":"assembly",
+	"processTimeSeconds":10,
+	"requiredTier":1
 }]
