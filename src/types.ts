@@ -51,7 +51,7 @@ export type MachineInstanceSer = Readonly<{
 export type Item = {
 	readonly id: string
 	readonly name: string
-	readonly header: string
+	readonly formula: string
 	readonly description: string
 	readonly tags: readonly string[]
 	readonly img: string

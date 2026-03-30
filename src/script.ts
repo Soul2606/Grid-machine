@@ -106,7 +106,7 @@ function setItemPopup(item:Item) {
 	MouseOverlay.elements.infoPanel.setTitle(item.name)
 	const desc = MouseOverlay.elements.infoPanel.description
 	removeAllChildren(desc)
-	desc.append(createChemicalFormula(item.header))
+	desc.append(createChemicalFormula(item.formula))
 	desc.append((()=>{
 		const el = document.createElement("span")
 		el.textContent = item.description

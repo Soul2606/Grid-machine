@@ -23,17 +23,22 @@
 	"water":{
 		"name":"Water",
 		"img":"svg/water.svg",
-		"header":"H2O"
+		"formula":"H2O"
 	},
 	"hydrogen_gas":{
 		"name":"Hydrogen gas",
 		"img":"svg/hydrogen-gas.svg",
-		"header":"H2"
+		"formula":"H2"
 	},
 	"oxygen_gas":{
 		"name":"Oxygen gas",
 		"img":"svg/oxygen-gas.svg",
-		"header":"O2"
+		"formula":"O2"
+	},
+	"stone_powder":{
+		"name":"Stone powder",
+		"img":"svg/stone-powder.svg",
+		"formula":"SiO2"
 	},
 	"creosote":{
 		"name":"Creosote",
@@ -188,11 +193,13 @@
 	},
 	"sapphire":{
 		"name":"Sapphire",
-		"img":"svg/sapphire.svg"
+		"img":"svg/sapphire.svg",
+		"formula":"O3Al2"
 	},
 	"sapphire_powder":{
 		"name":"Sapphire powder",
-		"img":"svg/sapphire-powder.svg"
+		"img":"svg/sapphire-powder.svg",
+		"formula":"O3Al2"
 	},
 	"aluminum_powder":{
 		"name":"Aluminum powder",
@@ -221,22 +228,22 @@
 	"methane_gas":{
 		"name":"Methane gas",
 		"img":"svg/methane-gas.svg",
-		"header":"H4C"
+		"formula":"H4C"
 	},
 	"carbon":{
 		"name":"Carbon",
 		"img":"svg/carbon.svg",
-		"header":"C"
+		"formula":"C"
 	},
 	"carbon_dioxide":{
 		"name":"Carbon dioxide",
 		"img":"svg/carbondeoxide.svg",
-		"header":"CO2"
+		"formula":"CO2"
 	},
 	"ethylene_gas":{
 		"name":"Ethylene gas",
 		"img":"svg/ethylene-gas.svg",
-		"header":"H4C2"
+		"formula":"H4C2"
 	},
 	"polyethylene":{
 		"name":"Polyethylene (PE)",
@@ -268,16 +275,16 @@
 	"ethanol":{
 		"name":"Ethanol",
 		"img":"svg/ethanol.svg",
-		"header":"C2H5OH"
+		"formula":"C2H5OH"
 	},
 	"sulfur":{
 		"name":"Sulfur",
 		"img":"svg/sulfur.svg",
-		"header":"S"
+		"formula":"S"
 	},
 	"sulfuric_acid":{
 		"name":"Sulfuric acid",
 		"img":"svg/sulfuric-acid.svg",
-		"header":"H2SO4"
+		"formula":"H2SO4"
 	}
 }

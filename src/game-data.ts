@@ -13,7 +13,7 @@ type ItemSchema = Record<
 	string,
 	{
 		name: string
-		header?: string
+		formula?: string
 		description?: string
 		tags?: string[]
 		img?: string
@@ -157,7 +157,7 @@ async function fetchData(){
 			}
 			pt(item.name, 'string')
 			pt(item.img, "string", true)
-			pt(item.header, "string", true)
+			pt(item.formula, "string", true)
 			pt(item.description, "string", true)
 		}
 
@@ -262,7 +262,7 @@ async function fetchData(){
 				return {
 					id: item.id,
 					name: item.name,
-					header: item.header ?? "",
+					formula: item.formula ?? "",
 					description: item.description ?? "",
 					tags: item.tags ?? [],
 					img: item.img ?? "",

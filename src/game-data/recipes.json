@@ -505,4 +505,27 @@
 	"requiredProcess":"chemical",
 	"processTimeSeconds":10,
 	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"stone", "amount":1}
+	],
+	"outputs":[
+		{"id":"stone_powder", "amount":1}
+	],
+	"requiredProcess":"crushing",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"stone_powder", "amount":1}
+	],
+	"outputs":[
+		{"id":"oxygen_gas", "amount":1},
+		{"id":"silicon_powder", "amount":1}
+	],
+	"requiredProcess":"electrolysis",
+	"processTimeSeconds":5,
+	"requiredTier":1
 }]
