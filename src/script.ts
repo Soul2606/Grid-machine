@@ -3,7 +3,7 @@ import { getData } from "./game-data.js"; // async
 import type { Item, Machine } from './types.js'
 import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, relu, removeAllChildren } from './functions.js'
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js'
-import { createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
+import { createInfoPanel, createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
 import { getSignals, isPressed } from "./keyboard-events.js";
 import { addToSimulation, mainInventory, power, tick as pubSubTick, workers } from "./engine.js";
 
@@ -212,24 +212,17 @@ const MouseOverlay = (()=>{
 
 			// =============================== Info panel
 			infoPanel:(()=>{
-				const root = document.createElement('div')
-				root.className = 'mouse-info-panel'
-				root.style.display = 'none'
+				const {root, setTitle: setText} = createInfoPanel()
 				element.appendChild(root)
 				return {
 					...common(root),
-					setText:(text:string)=>{
-						root.textContent = text
-					}
+					setText,
 				} as const
 			})(),
 
 		}
 	} as const
 })()
-
-
-
 
 type TransferContext = {
 	kind: "empty"

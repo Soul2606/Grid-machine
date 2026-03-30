@@ -518,3 +518,49 @@ export function createRecipeCard() {
 
 
 
+
+export function createInfoPanel() {
+	const root = document.createElement('div');
+	root.className = 'mouse-info-panel background-gradient';
+	root.style.display = 'none';
+
+	const body = document.createElement('div');
+	body.className = "mouse-info-panel-body"
+	root.append(body)
+
+	const title = document.createElement("span");
+	title.className = "mouse-info-panel-title"
+	body.append(title);
+
+	const hr = document.createElement("hr");
+	hr.className = "background-gradient"
+	body.append(hr);
+
+	const header = document.createElement("span");
+	header.className = "mouse-info-panel-header"
+	body.append(header);
+
+	const description = document.createElement("span")
+	description.className = "mouse-info-panel-description"
+	body.append(description)
+
+	const footer = document.createElement("span")
+	footer.className = "mouse-info-panel-footer"
+	body.append(footer)
+
+	return {
+		root,
+		setTitle: (text: string) => {
+			title.textContent = text;
+		},
+		setHeader: (text:string) => {
+			header.textContent = text
+		},
+		setDescription: (text:string) => {
+			description.textContent = text
+		}
+	} as const;
+}
+
+
+

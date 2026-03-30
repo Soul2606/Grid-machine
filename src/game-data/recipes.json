@@ -314,7 +314,7 @@
 		{"id":"sapphire_powder", "amount":5}
 	],
 	"outputs":[
-		{"id":"oxygen_gas", "amount":3},
+		{"id":"oxygen_gas", "amount":1},
 		{"id":"aluminum_powder", "amount":2}
 	],
 	"requiredProcess":"electrolysis",
@@ -348,7 +348,7 @@
 },
 {
 	"inputs":[
-		{"id":"hydrogen_gas", "amount":4},
+		{"id":"hydrogen_gas", "amount":2},
 		{"id":"carbon", "amount":1}
 	],
 	"outputs":[
@@ -368,6 +368,18 @@
 	],
 	"requiredProcess":"chemical",
 	"processTimeSeconds":60,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"ethanol", "amount":1},
+		{"id":"sulfuric_acid", "amount":1}
+	],
+	"outputs":[
+		{"id":"ethylene_gas", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5,
 	"requiredTier":1
 },
 {
@@ -414,9 +426,83 @@
 		{"id":"carbon", "amount":1}
 	],
 	"outputs":[
-		{"id":"smd_resistor", "amount":16}
+		{"id":"smd_resistor", "amount":32}
 	],
 	"requiredProcess":"assembly",
+	"processTimeSeconds":10,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"polyethylene", "amount":1},
+		{"id":"aluminum_ingot", "amount":1}
+	],
+	"outputs":[
+		{"id":"smd_capacitor", "amount":32}
+	],
+	"requiredProcess":"assembly",
+	"processTimeSeconds":10,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"polyethylene", "amount":1},
+		{"id":"silicon_powder", "amount":1}
+	],
+	"outputs":[
+		{"id":"smd_transistor", "amount":32}
+	],
+	"requiredProcess":"assembly",
+	"processTimeSeconds":10,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"polyethylene", "amount":1},
+		{"id":"copper_wire", "amount":1},
+		{"id":"nickel_zinc_ferrite_ingot", "amount":1}
+	],
+	"outputs":[
+		{"id":"smd_inductor", "amount":32}
+	],
+	"requiredProcess":"assembly",
+	"processTimeSeconds":10,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"water", "amount":1},
+		{"id":"oxygen_gas", "amount":1},
+		{"id":"sulfur", "amount":1}
+	],
+	"outputs":[
+		{"id":"sulfuric_acid", "amount":1}
+	],
+	"requiredProcess":"assembly",
+	"processTimeSeconds":10,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"wood", "amount":1}
+	],
+	"outputs":[
+		{"id":"ethanol", "amount":1}
+	],
+	"requiredProcess":"distillation",
+	"processTimeSeconds":20,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"methane_gas", "amount":1},
+		{"id":"water", "amount":2}
+	],
+	"outputs":[
+		{"id":"hydrogen_gas", "amount":4},
+		{"id":"carbon_dioxide", "amount":1}
+	],
+	"requiredProcess":"chemical",
 	"processTimeSeconds":10,
 	"requiredTier":1
 }]

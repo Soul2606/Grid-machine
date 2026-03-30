@@ -195,6 +195,10 @@
 		"name":"Aluminum powder",
 		"img":"svg/aluminum-powder.svg"
 	},
+	"aluminum_ingot":{
+		"name":"Aluminum ingot",
+		"img":"svg/aluminum-ingot.svg"
+	},
 	"sodium":{
 		"name":"Sodium",
 		"img":"svg/sodium.svg"
@@ -218,6 +222,10 @@
 	"carbon":{
 		"name":"Carbon",
 		"img":"svg/carbon.svg"
+	},
+	"carbon_dioxide":{
+		"name":"Carbon dioxide",
+		"img":"svg/carbondeoxide.svg"
 	},
 	"ethylene_gas":{
 		"name":"Ethylene gas",
@@ -246,5 +254,20 @@
 	"smd_inductor":{
 		"name":"SMD Inductor",
 		"img":"svg/smd-inductor.svg"
+	},
+	"nickel_zinc_ferrite_ingot":{
+		"name":"Nickel zinc ferrite ingot"
+	},
+	"ethanol":{
+		"name":"Ethanol",
+		"img":"svg/ethanol.svg"
+	},
+	"sulfur":{
+		"name":"Sulfur",
+		"img":"svg/sulfur.svg"
+	},
+	"sulfuric_acid":{
+		"name":"Sulfuric acid",
+		"img":"svg/sulfuric-acid.svg"
 	}
 }

@@ -57,11 +57,43 @@ main{
     will-change: transform;
 }
 
+.background-gradient{
+    background: linear-gradient(
+        90deg,
+        #0099ff,
+        #ffffff,
+        #0099ff,
+        #ffffff
+    );
+    background-size: 300% 100%;
+    animation: movingGradient 3s linear infinite;
+}
+
+@keyframes movingGradient {
+    0% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
 .mouse-info-panel{
-    background-color: hsla(240, 50%, 20%, 90%);
-    border: solid hsl(207, 36%, 65%) 2px;
+    border: solid hsla(240, 30%, 14%, 0.9) 2px;
+    border-radius: 5px;
+    padding: 4px;
+    opacity: 90%;
+}
+
+.mouse-info-panel-body{
+    background-color: hsla(240, 30%, 14%, 1);
     border-radius: 5px;
     padding: 5px;
+}
+
+.mouse-info-panel-body hr{
+    border: none;
+    height: 5px;
 }
 
 .stack{
