@@ -316,13 +316,18 @@ main{
 }
 
 .recipe-card{
-    display: flex;
+    display: grid;
+    grid-template-columns: auto auto auto;
     align-items: center;
     background-color: var(--surface-2-color);
-    border: solid 2px var(--border-color);
+    border: solid 2px var(--border-color-dark);
     border-radius: 5px;
     width: fit-content;
     padding: 3px;
+}
+
+.recipe-card-info{
+    grid-area: 1/1/2/-1;
 }
 
 .recipe-card-io{
@@ -337,4 +342,20 @@ main{
     span{
         position: absolute;
     }
+}
+
+.capability-box{
+    display: grid;
+    grid-template-columns: 80px auto;
+    gap: 5px;
+    border-top: solid 2px var(--border-color);
+}
+
+.capability-box img{
+    width: 100%;
+}
+
+.capability-box-header{
+    text-align: center;
+    grid-area: 1/1/2/3;
 }

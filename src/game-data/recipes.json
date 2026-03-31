@@ -400,7 +400,7 @@
 		{"id":"oxygen_gas", "amount":1},
 		{"id":"hydrogen_gas", "amount":2}
 	],
-	"requiredProcess":"chemical",
+	"requiredProcess":"electrolysis",
 	"processTimeSeconds":120,
 	"requiredTier":1
 },
@@ -530,6 +530,18 @@
 {
 	"inputs":[
 		{"id":"stone_powder", "amount":1}
+	],
+	"outputs":[
+		{"id":"oxygen_gas", "amount":1},
+		{"id":"silicon_powder", "amount":1}
+	],
+	"requiredProcess":"electrolysis",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"sand", "amount":1}
 	],
 	"outputs":[
 		{"id":"oxygen_gas", "amount":1},

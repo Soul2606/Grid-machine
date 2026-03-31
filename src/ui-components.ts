@@ -435,6 +435,10 @@ export function createRecipeCard() {
 	const root = document.createElement("div")
 	root.className = "recipe-card"
 
+	const info = document.createElement("span")
+	info.className = "recipe-card-info"
+	root.append(info)
+
 	const input = document.createElement("div")
 	input.className = "recipe-card-io"
 	root.append(input)
@@ -457,8 +461,6 @@ export function createRecipeCard() {
 	}
 
 	function setResolvedRecipe(recipe:ResolvedRecipe) {
-		removeAllChildren(input)
-		removeAllChildren(output)
 		for (const inItem of recipe.inputs) {
 			const cell = createItemCell(inItem.item)
 			cell.amountLabel.textContent = String(inItem.amount)
@@ -476,26 +478,33 @@ export function createRecipeCard() {
 	let animFunc:(()=>void)[] = []
 
 	function setRecipe(
-		recipe:Recipe
+		recipe:Recipe,
+		resolve?:ResolvedRecipe
 	) {
 		removeAllChildren(input)
 		removeAllChildren(output)
-		animFunc = []
+		info.textContent = `Time: ${recipe.processTimeSeconds} | Tier:${recipe.requiredTier}`
+		if (resolve) {
+			if (recipe.id !== resolve.id) console.warn(`Ids do not match: ${recipe.id}, ${resolve.id}`)
+			setResolvedRecipe(resolve)
+		} else {			
+			animFunc = []
 
-		for (const rIn of recipe.inputs) {
-			if ("id" in rIn) {
-				const item = getItemFromId(rIn.id)
-				const cell = createItemCell(item)
-				cell.amountLabel.textContent = String(rIn.amount)
-				applyEvents(cell.element, new ItemInstance(item))
-				input.append(cell.element)
-			} else {
-				const cell = createItemTagCell(rIn.tag)
-				if (cell === null) throw new Error(`Cannot find tag: ${rIn.tag} in items: ${items.map(v => v.id).join(", ")}`);
-				cell.amountLabel.textContent = String(rIn.amount)
-				applyEvents(cell.element, rIn.tag)
-				input.append(cell.element)
-				animFunc.push(cell.next)
+			for (const rIn of recipe.inputs) {
+				if ("id" in rIn) {
+					const item = getItemFromId(rIn.id)
+					const cell = createItemCell(item)
+					cell.amountLabel.textContent = String(rIn.amount)
+					applyEvents(cell.element, new ItemInstance(item))
+					input.append(cell.element)
+				} else {
+					const cell = createItemTagCell(rIn.tag)
+					if (cell === null) throw new Error(`Cannot find tag: ${rIn.tag} in items: ${items.map(v => v.id).join(", ")}`);
+					cell.amountLabel.textContent = String(rIn.amount)
+					applyEvents(cell.element, rIn.tag)
+					input.append(cell.element)
+					animFunc.push(cell.next)
+				}
 			}
 		}
 
@@ -510,7 +519,12 @@ export function createRecipeCard() {
 	return {
 		element:root,
 		setRecipe,
-		setResolvedRecipe,
+		setMachineRecipe:(res:ResolvedRecipe)=>{
+			removeAllChildren(input)
+			removeAllChildren(output)
+			info.textContent = "Machine recipe"
+			setResolvedRecipe(res)
+		},
 		animate:()=>animFunc.forEach(f=>f()),
 		events,
 	} as const

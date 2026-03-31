@@ -117,6 +117,37 @@ function setItemPopup(item:Item) {
 
 
 
+function createProcessBox(capability:string) {
+	const root = document.createElement("div")
+	root.className = "capability-box"
+
+	const header = document.createElement("span")
+	header.className = "capability-box-header"
+	header.textContent = capability
+	root.append(header)
+
+	const machinesList = document.createElement("div")
+	machinesList.className = "capability-box-machines"
+	for (const machine of machines.filter(m => m.capabilities.includes(capability))) {
+		const img = document.createElement("img")
+		img.src = machine.img
+		machinesList.append(img)
+	}
+	root.append(machinesList)
+
+	const recipeWindow = document.createElement("div")
+	recipeWindow.className = "capability-box-recipe-box"
+	root.append(recipeWindow)
+
+	return {
+		root,
+		recipeWindow,
+	}
+}
+
+
+
+
 //Global Variables
 
 const keyboardEvents = getSignals()
@@ -358,16 +389,29 @@ const showRecipe = (item:Item, mouseEnter:(item:Item)=>void, mouseLeave:()=>void
 	const target = new ItemInstance(item)
 	const rs = getRecipesProducing(target)
 
+	const existingPro = new Map<string, HTMLElement>()
+
 	recipeWindow.style.display = ""
 	removeAllChildren(recipeDisplay)
 	for (const r of rs) {
 		const card = createRecipeCard()
 		card.setRecipe(r)
-		recipeDisplay.append(card.element)
+
+		const exist = existingPro.get(r.requiredProcess)
+		if (exist) {
+			exist.append(card.element)
+		} else {
+			const proBox = createProcessBox(r.requiredProcess)
+			recipeDisplay.append(proBox.root)
+			proBox.recipeWindow.append(card.element)
+			existingPro.set(r.requiredProcess, proBox.recipeWindow)
+		}
+
 		card.events.onClick = item=>{
 			if (typeof item === "string") return
 			showRecipe(item.item, mouseEnter, mouseLeave)
 		}
+
 		card.events.onMouseEnter = value=>{
 			if (typeof value === "string") {
 				MouseOverlay.show()
@@ -377,6 +421,7 @@ const showRecipe = (item:Item, mouseEnter:(item:Item)=>void, mouseLeave:()=>void
 			}
 			mouseEnter(value.item)
 		}
+
 		card.events.onMouseLeave = ()=>mouseLeave()
 	}
 }
@@ -479,7 +524,7 @@ for(const machine of machines){
 			recipeWindow.style.display = ""
 			removeAllChildren(recipeDisplay)
 			const card = createRecipeCard()
-			card.setResolvedRecipe(recipe)
+			card.setMachineRecipe(recipe)
 			recipeDisplay.append(card.element)
 
 			const mouseLeave = ()=>{
