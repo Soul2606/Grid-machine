@@ -203,6 +203,16 @@
 },
 {
 	"inputs":[
+		{"id":"plant_pulp", "amount":1}
+	],
+	"outputs":[
+		{"id":"paper", "amount":1}
+	],
+	"requiredProcess":"workshop",
+	"processTimeSeconds":10
+},
+{
+	"inputs":[
 		{"id":"raw_coal", "amount":1}
 	],
 	"outputs":[
@@ -527,5 +537,105 @@
 	],
 	"requiredProcess":"electrolysis",
 	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"sulfuric_acid", "amount":1},
+		{"id":"salt", "amount":1}
+	],
+	"outputs":[
+		{"id":"sodium_bisulfate", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":10,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"sodium_bisulfate", "amount":2}
+	],
+	"outputs":[
+		{"id":"sodium_persulfate", "amount":1},
+		{"id":"hydrogen_gas", "amount":1}
+	],
+	"requiredProcess":"electrolysis",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"salt", "amount":2}
+	],
+	"outputs":[
+		{"id":"chlorine_gas", "amount":1},
+		{"id":"sodium", "amount":2}
+	],
+	"requiredProcess":"electrolysis",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"hydrogen_gas", "amount":1},
+		{"id":"chlorine_gas", "amount":1}
+	],
+	"outputs":[
+		{"id":"hydrochloric_acid", "amount":2}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":10,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"hydrochloric_acid", "amount":3},
+		{"id":"iron_ingot", "amount":1}
+	],
+	"outputs":[
+		{"id":"iron_three_chloride", "amount":1},
+		{"id":"hydrogen_gas", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":1,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"polyethylene", "amount":1},
+		{"id":"iron_three_chloride", "amount":1},
+		{"id":"copper_plate", "amount":1}
+	],
+	"outputs":[
+		{"id":"plastic_circuit_board", "amount":4}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":6,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"polyethylene", "amount":1},
+		{"id":"sodium_persulfate", "amount":2},
+		{"id":"copper_plate", "amount":1}
+	],
+	"outputs":[
+		{"id":"plastic_circuit_board", "amount":4}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":10,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"wood", "amount":20}
+	],
+	"outputs":[
+		{"id":"plant_pulp", "amount":20},
+		{"id":"sticky_resin", "amount":5},
+		{"id":"methane_gas", "amount":1}
+	],
+	"requiredProcess":"centrifuge",
+	"processTimeSeconds":30,
 	"requiredTier":1
 }]

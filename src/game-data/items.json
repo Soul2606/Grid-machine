@@ -97,6 +97,10 @@
 		"name":"Foliage",
 		"img":"svg/plants.svg"
 	},
+	"plant_pulp":{
+		"name":"Plant pulp",
+		"img":"svg/plant-pulp.svg"
+	},
 	"paper":{
 		"name":"Paper",
 		"img":"svg/paper.svg"
@@ -211,7 +215,8 @@
 	},
 	"sodium":{
 		"name":"Sodium",
-		"img":"svg/sodium.svg"
+		"img":"svg/sodium.svg",
+		"formula":"Na"
 	},
 	"silicon_powder":{
 		"name":"Silicon powder",
@@ -286,5 +291,39 @@
 		"name":"Sulfuric acid",
 		"img":"svg/sulfuric-acid.svg",
 		"formula":"H2SO4"
+	},
+	"salt":{
+		"name":"Salt",
+		"img":"svg/salt.svg",
+		"formula":"NaCl"
+	},
+	"chlorine_gas":{
+		"name":"Chlorine gas",
+		"img":"svg/chlorine-gas.svg",
+		"formula":"Cl2"
+	},
+	"sodium_bisulfate":{
+		"name":"Sodium bisulfate",
+		"img":"svg/sodium-bisulfate.svg",
+		"formula":"NaHSO4"
+	},
+	"sodium_persulfate":{
+		"name":"Sodium persulfate",
+		"img":"svg/sodium-persulfate.svg",
+		"formula":"Na2S2O8"
+	},
+	"hydrochloric_acid":{
+		"name":"Hydrochloric acid",
+		"img":"svg/hydrocloric-acid.svg",
+		"formula":"HCl"
+	},
+	"iron_three_chloride":{
+		"name":"Iron III chloride",
+		"img":"svg/iron-three-chloride.svg",
+		"formula":"FeCl3"
+	},
+	"plastic_circuit_board":{
+		"name":"Plastic circuit board",
+		"img":"svg/plastic-circuit-board.svg"
 	}
 }

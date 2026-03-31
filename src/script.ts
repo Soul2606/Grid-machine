@@ -22,7 +22,7 @@ function updateWorkers() {
 
 
 function updatePower() {
-	document.getElementById("resources-power")!.textContent = String(power)
+	document.getElementById("resources-power")!.textContent = String(power.value)
 }
 
 
