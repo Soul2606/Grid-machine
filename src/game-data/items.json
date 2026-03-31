@@ -213,6 +213,18 @@
 		"name":"Aluminum ingot",
 		"img":"svg/aluminum-ingot.svg"
 	},
+	"aluminum_plate":{
+		"name":"Aluminum plate",
+		"img":"svg/aluminum-plate.svg"
+	},
+	"gold_ingot":{
+		"name":"Gold ingot",
+		"img":"svg/gold-ingot2.svg"
+	},
+	"gold_plate":{
+		"name":"Gold plate",
+		"img":"svg/gold-plate.svg"
+	},
 	"sodium":{
 		"name":"Sodium",
 		"img":"svg/sodium.svg",
@@ -325,5 +337,9 @@
 	"plastic_circuit_board":{
 		"name":"Plastic circuit board",
 		"img":"svg/plastic-circuit-board.svg"
+	},
+	"solid_machine_hull":{
+		"name":"Solid machine hull",
+		"img":"svg/solid-machine-hull.svg"
 	}
 }

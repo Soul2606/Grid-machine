@@ -488,7 +488,7 @@
 	"outputs":[
 		{"id":"sulfuric_acid", "amount":1}
 	],
-	"requiredProcess":"assembly",
+	"requiredProcess":"chemical",
 	"processTimeSeconds":10,
 	"requiredTier":1
 },

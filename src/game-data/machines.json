@@ -141,5 +141,17 @@
 			{"id":"tin_wire", "amount":1},
 			{"id":"bronze_plate", "amount":1}
 		]
+	},
+	"solid_chemical_reactor":{
+		"name":"Solid Chemical reactor",
+		"capabilities":["chemical"],
+		"tier":1,
+		"cost":[
+			{"id":"wooden_circuit_board", "amount":3},
+			{"id":"solid_machine_hull", "amount":1},
+			{"id":"copper_wire", "amount":2},
+			{"id":"glass_tube", "amount":3},
+			{"id":"gold_plate", "amount":1}
+		]
 	}
 }
