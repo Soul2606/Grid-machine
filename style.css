@@ -396,6 +396,10 @@ main{
     grid-template-columns: repeat(3, auto);
 }
 
+.recipe-card-io img{
+    width: 100px;
+}
+
 .held-item-icon{
     position: relative;
     display: flex;

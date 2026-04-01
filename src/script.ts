@@ -1,6 +1,6 @@
 
 import { getData } from "./game-data.js"; // async
-import type { Item, Machine } from './types.js'
+import type { Item, Machine, Recipe } from './types.js'
 import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, relu, removeAllChildren } from './functions.js'
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js'
 import { createChemicalFormula, createInfoPanel, createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
@@ -384,15 +384,12 @@ workers.event.subscribe(updateWorkers)
 
 
 
-const showItemRecipe = (item:ItemInstance, mouseEnter?:(item:ItemInstance)=>void, mouseLeave?:(item:ItemInstance)=>void) => {
-	const target = item
-	const rs = getRecipesProducing(target)
-
+const showItemRecipes = (recipes:readonly Recipe[]) => {
 	const existingPro = new Map<string, HTMLElement>()
 
 	recipeWindow.style.display = ""
 	
-	for (const r of rs) {
+	for (const r of recipes) {
 		const card = createRecipeCard()
 		card.setRecipe(r)
 
@@ -406,25 +403,25 @@ const showItemRecipe = (item:ItemInstance, mouseEnter?:(item:ItemInstance)=>void
 			existingPro.set(r.requiredProcess, proBox.recipeWindow)
 		}
 
-		card.events.onClick = item=>{
-			if (typeof item === "string") return
+		card.events.onClick = value=>{
+			if (value.type === "tag") return
 			removeAllChildren(recipeDisplay)
-			showItemRecipe(item, mouseEnter, mouseLeave)
+			showItemRecipes(getRecipesProducing(value.value))
 		}
 
 		card.events.onMouseEnter = value=>{
-			if (typeof value === "string") {
+			if (value.type === "tag") {
 				MouseOverlay.show()
 				MouseOverlay.elements.infoPanel.show()
 				MouseOverlay.elements.infoPanel.setTitle(`Tag "${value}"`)
 				return
 			}
-			if (mouseEnter) mouseEnter(value)
+			setItemPopup(value.value)
 		}
 
 		card.events.onMouseLeave = value => {
-			if (typeof value === "string") return
-			if (mouseLeave) mouseLeave(value)
+			if (value.type === "tag") return
+			hideItemPopup(value.value)
 		}
 	}
 }
@@ -432,19 +429,42 @@ const showItemRecipe = (item:ItemInstance, mouseEnter?:(item:ItemInstance)=>void
 
 
 
-const showItemUsage = (item:ItemInstance, mouseEnter?:(item:ItemInstance)=>void, mouseLeave?:(item:ItemInstance)=>void) => {
+const showMachineRecipe = (machine:Machine) => {
+	recipeWindow.style.display = ""
+	const card = createRecipeCard()
+	card.setMachineRecipe(machine)
+	recipeDisplay.append(card.element)
+
+	card.events.onMouseEnter = value => {
+		if (value.type === "tag") return
+		setItemPopup(value.value)
+	}
+
+	card.events.onMouseLeave = ()=>hideItemPopup(null)
+
+	card.events.onClick = value => {
+		if (value.type === "tag") return
+		removeAllChildren(recipeDisplay)
+		showItemRecipes(getRecipesProducing(value.value))
+	}
+}
+
+
+
+
+const showItemUsage = (item:ItemInstance) => {
 	const rs = recipes.filter(r =>
 		r.inputs.some(i => i.id === item.item.id)
 	)
+
+	const ms = machines.filter(m =>
+		m.cost.some(i => i.id === item.item.id)
+	)
+
 	removeAllChildren(recipeDisplay)
-	for (const inst of
-		rs.flatMap(r =>
-			r.outputs.map(out =>
-				ItemInstance.fromItem(getItemFromId(out.id))
-			)
-		)
-	) {
-		showItemRecipe(inst, mouseEnter, mouseLeave)
+	showItemRecipes(rs)
+	for (const m of ms) {
+		showMachineRecipe(m)
 	}
 }
 
@@ -455,7 +475,7 @@ keyboardEvents.keydown.subscribe(code => {
 	if (!recipeHoverState) return
 	if (!recipeHoverState.valid) return
 	const val = recipeHoverState.value
-	showItemUsage(val, setItemPopup, hideItemPopup)
+	showItemUsage(val)
 })
 
 
@@ -476,7 +496,7 @@ const invItemCells = items.map(item => {
 			itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, ItemInstance.fromItem(v.getItem()))
 		} else if (sideMenuMode === "recipes") {
 			removeAllChildren(recipeDisplay)
-			showItemRecipe(inst, setItemPopup, hideItemPopup)
+			showItemRecipes(getRecipesProducing(inst))
 		}
 	})
 	
@@ -541,35 +561,8 @@ for(const machine of machines){
 			}
 			cell.style.backgroundColor = 'green'
 		} else if (sideMenuMode === "recipes") {
-			const recipe = new ResolvedRecipe(
-				machine.id,
-				machine.cost.map(ser=>
-					ItemEntry.fromSer(ser)
-				),
-				[new ItemEntry(items[0]!, null, 1)]
-			)
-			recipeWindow.style.display = ""
 			removeAllChildren(recipeDisplay)
-			const card = createRecipeCard()
-			card.setMachineRecipe(recipe)
-			recipeDisplay.append(card.element)
-
-			const mouseLeave = ()=>{
-				hideItemPopup(null)
-			}
-
-			card.events.onMouseEnter = value => {
-				if (typeof value === "string") return
-				setItemPopup(value)
-			}
-
-			card.events.onMouseLeave = mouseLeave
-
-			card.events.onClick = value => {
-				if (typeof value === "string") return
-				removeAllChildren(recipeDisplay)
-				showItemRecipe(value, setItemPopup, mouseLeave)
-			}
+			showMachineRecipe(machine)
 		}
 	})
 

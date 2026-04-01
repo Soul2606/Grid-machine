@@ -427,10 +427,17 @@ export function createProcessingLine() {
 
 
 export function createRecipeCard() {
+	type EventsValue = {
+		readonly type:"tag"
+		readonly value:string
+	}|{
+		readonly type:"item"
+		readonly value:ItemInstance
+	}
 	const events = {
-		onMouseEnter: null as null | ((value:ItemInstance|string)=>void),
-		onMouseLeave: null as null | ((value:ItemInstance|string)=>void),
-		onClick:      null as null | ((value:ItemInstance|string)=>void)
+		onMouseEnter: null as null | ((value:EventsValue)=>void),
+		onMouseLeave: null as null | ((value:EventsValue)=>void),
+		onClick:      null as null | ((value:EventsValue)=>void)
 	}
 	const root = document.createElement("div")
 	root.className = "recipe-card"
@@ -454,7 +461,7 @@ export function createRecipeCard() {
 	output.className = "recipe-card-io"
 	root.append(output)
 
-	function applyEvents(element:HTMLElement, value:ItemInstance|string) {
+	function applyEvents(element:HTMLElement, value:EventsValue) {
 		element.addEventListener("mouseenter", ()=>events.onMouseEnter?events.onMouseEnter(value):null)
 		element.addEventListener("mouseleave", ()=>events.onMouseLeave?events.onMouseLeave(value):null)
 		element.addEventListener("click",      ()=>events.onClick     ?events.onClick(value)     :null)
@@ -464,13 +471,13 @@ export function createRecipeCard() {
 		for (const inItem of recipe.inputs) {
 			const cell = createItemCell(inItem.item)
 			cell.amountLabel.textContent = String(inItem.amount)
-			applyEvents(cell.element, inItem)
+			applyEvents(cell.element, {type:"item", value:inItem})
 			input.append(cell.element)
 		}
 		for (const outItem of recipe.output) {
 			const cell = createItemCell(outItem.item)
 			cell.amountLabel.textContent = String(outItem.amount)
-			applyEvents(cell.element, outItem)
+			applyEvents(cell.element, {type:"item", value:outItem})
 			output.append(cell.element)
 		}
 	}
@@ -495,13 +502,13 @@ export function createRecipeCard() {
 					const item = getItemFromId(rIn.id)
 					const cell = createItemCell(item)
 					cell.amountLabel.textContent = String(rIn.amount)
-					applyEvents(cell.element, new ItemInstance(item))
+					applyEvents(cell.element, {type:"item", value:new ItemInstance(item)})
 					input.append(cell.element)
 				} else {
 					const cell = createItemTagCell(rIn.tag)
 					if (cell === null) throw new Error(`Cannot find tag: ${rIn.tag} in items: ${items.map(v => v.id).join(", ")}`);
 					cell.amountLabel.textContent = String(rIn.amount)
-					applyEvents(cell.element, rIn.tag)
+					applyEvents(cell.element, {type:"tag", value:rIn.tag})
 					input.append(cell.element)
 					animFunc.push(cell.next)
 				}
@@ -511,20 +518,33 @@ export function createRecipeCard() {
 		for (const rOut of recipe.outputs) {
 			const cell = createItemCell(getItemFromId(rOut.id))
 			cell.amountLabel.textContent = String(rOut.amount || 1)
-			applyEvents(cell.element, ItemInstance.fromSer(rOut))
+			applyEvents(cell.element, {type:"item", value:ItemInstance.fromSer(rOut)})
 			output.append(cell.element)
 		}
+	}
+
+	const setMachineRecipe = (machine:Machine) => {
+		removeAllChildren(input)
+		info.textContent = "Machine recipe"
+		setResolvedRecipe(new ResolvedRecipe("",
+			machine.cost.map(val =>
+				ItemEntry.fromItem(
+					getItemFromId(val.id),
+					val.amount
+				)
+			),
+			[]
+		))
+		removeAllChildren(output)
+		const el = document.createElement("img")
+		el.src = machine.img
+		output.append(el)
 	}
 
 	return {
 		element:root,
 		setRecipe,
-		setMachineRecipe:(res:ResolvedRecipe)=>{
-			removeAllChildren(input)
-			removeAllChildren(output)
-			info.textContent = "Machine recipe"
-			setResolvedRecipe(res)
-		},
+		setMachineRecipe,
 		animate:()=>animFunc.forEach(f=>f()),
 		events,
 	} as const
