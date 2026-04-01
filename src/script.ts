@@ -100,18 +100,26 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 
 
 
-function setItemPopup(item:Item) {
+function setItemPopup(item:ItemInstance) {
+	recipeHoverState = {valid:true, value:item}
 	MouseOverlay.show()
 	MouseOverlay.elements.infoPanel.show()
-	MouseOverlay.elements.infoPanel.setTitle(item.name)
+	MouseOverlay.elements.infoPanel.setTitle(item.item.name)
 	const desc = MouseOverlay.elements.infoPanel.description
 	removeAllChildren(desc)
-	desc.append(createChemicalFormula(item.formula))
+	desc.append(createChemicalFormula(item.item.formula))
 	desc.append((()=>{
 		const el = document.createElement("span")
-		el.textContent = item.description
+		el.textContent = item.item.description
 		return el
 	})())
+}
+
+function hideItemPopup(item:ItemInstance|null) {
+	if (recipeHoverState?.valid && item && recipeHoverState.value.isEqual(item)) {
+		recipeHoverState.valid = false
+	}
+	MouseOverlay.elements.infoPanel.hide()
 }
 
 
@@ -156,6 +164,11 @@ const keyboardEvents = getSignals()
  * What state the side menu is in.
  */
 var sideMenuMode:"recipes" | "inventory" | "machines" = "inventory"
+
+/**
+ * Used by "showUsage"
+ */
+var recipeHoverState: undefined | {valid:boolean, value:ItemInstance}
 
 
 const items = getData().items
@@ -325,20 +338,6 @@ const quantitySlider = (()=>{
 
 
 
-/*
-{
-let time = 0
-pubSubTick.subscribe(delta=>{
-	if (time + delta/1000 < 5) return
-	time = (time + delta/1000) % 5
-	recipeDisplay.animate()
-})
-}
-*/
-
-
-
-
 pubSubTick.subscribe(updatePower)
 
 
@@ -385,14 +384,14 @@ workers.event.subscribe(updateWorkers)
 
 
 
-const showRecipe = (item:Item, mouseEnter:(item:Item)=>void, mouseLeave:()=>void) => {
-	const target = new ItemInstance(item)
+const showItemRecipe = (item:ItemInstance, mouseEnter?:(item:ItemInstance)=>void, mouseLeave?:(item:ItemInstance)=>void) => {
+	const target = item
 	const rs = getRecipesProducing(target)
 
 	const existingPro = new Map<string, HTMLElement>()
 
 	recipeWindow.style.display = ""
-	removeAllChildren(recipeDisplay)
+	
 	for (const r of rs) {
 		const card = createRecipeCard()
 		card.setRecipe(r)
@@ -409,7 +408,8 @@ const showRecipe = (item:Item, mouseEnter:(item:Item)=>void, mouseLeave:()=>void
 
 		card.events.onClick = item=>{
 			if (typeof item === "string") return
-			showRecipe(item.item, mouseEnter, mouseLeave)
+			removeAllChildren(recipeDisplay)
+			showItemRecipe(item, mouseEnter, mouseLeave)
 		}
 
 		card.events.onMouseEnter = value=>{
@@ -419,28 +419,55 @@ const showRecipe = (item:Item, mouseEnter:(item:Item)=>void, mouseLeave:()=>void
 				MouseOverlay.elements.infoPanel.setTitle(`Tag "${value}"`)
 				return
 			}
-			mouseEnter(value.item)
+			if (mouseEnter) mouseEnter(value)
 		}
 
-		card.events.onMouseLeave = ()=>mouseLeave()
+		card.events.onMouseLeave = value => {
+			if (typeof value === "string") return
+			if (mouseLeave) mouseLeave(value)
+		}
 	}
 }
 
 
 
 
+const showItemUsage = (item:ItemInstance, mouseEnter?:(item:ItemInstance)=>void, mouseLeave?:(item:ItemInstance)=>void) => {
+	const rs = recipes.filter(r =>
+		r.inputs.some(i => i.id === item.item.id)
+	)
+	removeAllChildren(recipeDisplay)
+	for (const inst of
+		rs.flatMap(r =>
+			r.outputs.map(out =>
+				ItemInstance.fromItem(getItemFromId(out.id))
+			)
+		)
+	) {
+		showItemRecipe(inst, mouseEnter, mouseLeave)
+	}
+}
+
+
+
+keyboardEvents.keydown.subscribe(code => {
+	if (code !== "KeyU") return
+	if (!recipeHoverState) return
+	if (!recipeHoverState.valid) return
+	const val = recipeHoverState.value
+	showItemUsage(val, setItemPopup, hideItemPopup)
+})
+
+
+
+
 const invItemCells = items.map(item => {
+	const inst = ItemInstance.fromItem(item)
 	const v = createItemCell(item)
 	v.element.style.display = "none"
 
-
-	const mouseLeave = ()=>{
-		MouseOverlay.elements.infoPanel.hide()
-		MouseOverlay.elements.infoPanel.setTitle('')
-	}
-
-	v.element.addEventListener("mouseenter", ()=>setItemPopup(item))
-	v.element.addEventListener('mouseleave', ()=>mouseLeave())
+	v.element.addEventListener("mouseenter", ()=>setItemPopup(inst))
+	v.element.addEventListener('mouseleave', ()=>hideItemPopup(inst))
 
 	v.element.addEventListener('mousedown', e => {
 		e.preventDefault()
@@ -448,7 +475,8 @@ const invItemCells = items.map(item => {
 		if (sideMenuMode === "inventory") {
 			itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, ItemInstance.fromItem(v.getItem()))
 		} else if (sideMenuMode === "recipes") {
-			showRecipe(item, setItemPopup, mouseLeave)
+			removeAllChildren(recipeDisplay)
+			showItemRecipe(inst, setItemPopup, hideItemPopup)
 		}
 	})
 	
@@ -486,8 +514,7 @@ for(const machine of machines){
 	})
 	
 	cell.addEventListener('mouseleave', ()=>{
-		MouseOverlay.elements.infoPanel.hide()
-		MouseOverlay.elements.infoPanel.setTitle('')
+		hideItemPopup(null)
 	})
 
 	cell.addEventListener('click',()=>{
@@ -528,20 +555,20 @@ for(const machine of machines){
 			recipeDisplay.append(card.element)
 
 			const mouseLeave = ()=>{
-				MouseOverlay.elements.infoPanel.hide()
-				MouseOverlay.elements.infoPanel.setTitle('')
+				hideItemPopup(null)
 			}
 
 			card.events.onMouseEnter = value => {
 				if (typeof value === "string") return
-				setItemPopup(value.item)
+				setItemPopup(value)
 			}
 
 			card.events.onMouseLeave = mouseLeave
 
 			card.events.onClick = value => {
 				if (typeof value === "string") return
-				showRecipe(value.item, setItemPopup, mouseLeave)
+				removeAllChildren(recipeDisplay)
+				showItemRecipe(value, setItemPopup, mouseLeave)
 			}
 		}
 	})

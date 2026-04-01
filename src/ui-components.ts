@@ -429,7 +429,7 @@ export function createProcessingLine() {
 export function createRecipeCard() {
 	const events = {
 		onMouseEnter: null as null | ((value:ItemInstance|string)=>void),
-		onMouseLeave: null as null | (()=>void),
+		onMouseLeave: null as null | ((value:ItemInstance|string)=>void),
 		onClick:      null as null | ((value:ItemInstance|string)=>void)
 	}
 	const root = document.createElement("div")
@@ -456,7 +456,7 @@ export function createRecipeCard() {
 
 	function applyEvents(element:HTMLElement, value:ItemInstance|string) {
 		element.addEventListener("mouseenter", ()=>events.onMouseEnter?events.onMouseEnter(value):null)
-		element.addEventListener("mouseleave", ()=>events.onMouseLeave?events.onMouseLeave()     :null)
+		element.addEventListener("mouseleave", ()=>events.onMouseLeave?events.onMouseLeave(value):null)
 		element.addEventListener("click",      ()=>events.onClick     ?events.onClick(value)     :null)
 	}
 
