@@ -61,6 +61,26 @@
 },
 {
 	"inputs":[
+		{"id":"sticky_resin", "amount":2}
+	],
+	"outputs":[
+		{"id":"rubber", "amount":1}
+	],
+	"requiredProcess":"workshop",
+	"processTimeSeconds":10
+},
+{
+	"inputs":[
+		{"id":"sticky_resin", "amount":1}
+	],
+	"outputs":[
+		{"id":"rubber", "amount":1}
+	],
+	"requiredProcess":"compress",
+	"processTimeSeconds":10
+},
+{
+	"inputs":[
 		{"id":"sand", "amount":1}
 	],
 	"outputs":[
@@ -172,6 +192,17 @@
 },
 {
 	"inputs":[
+		{"id":"copper_wire", "amount":1},
+		{"id":"rubber", "amount":1}
+	],
+	"outputs":[
+		{"id":"copper_cable", "amount":1}
+	],
+	"requiredProcess":"workshop",
+	"processTimeSeconds":10
+},
+{
+	"inputs":[
 		{"id":"tin_plate", "amount":1}
 	],
 	"outputs":[
@@ -223,6 +254,28 @@
 },
 {
 	"inputs":[
+		{"id":"raw_coal", "amount":1}
+	],
+	"outputs":[
+		{"id":"coal_powder", "amount":1}
+	],
+	"requiredProcess":"crushing",
+	"processTimeSeconds":1,
+	"requiredTier":0
+},
+{
+	"inputs":[
+		{"id":"coal_powder", "amount":1}
+	],
+	"outputs":[
+		{"id":"carbon", "amount":1}
+	],
+	"requiredProcess":"electrolysis",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
 		{"id":"coal_powder", "amount":1},
 		{"id":"paper", "amount":2},
 		{"id":"copper_wire", "amount":1},
@@ -269,7 +322,8 @@
 	"inputs":[
 		{"id":"copper_wire", "amount":2},
 		{"id":"iron_plate", "amount":1},
-		{"id":"magnetic_steel_rod", "amount":1}
+		{"id":"magnetic_steel_rod", "amount":1},
+		{"id":"copper_cable", "amount":1}
 	],
 	"outputs":[
 		{"id":"basic_electric_motor", "amount":1}
@@ -282,7 +336,8 @@
 		{"id":"basic_electric_motor", "amount":1},
 		{"id":"iron_plate", "amount":1},
 		{"id":"iron_rod", "amount":2},
-		{"id":"bronze_gear", "amount":1}
+		{"id":"bronze_gear", "amount":1},
+		{"id":"copper_cable", "amount":1}
 	],
 	"outputs":[
 		{"id":"basic_piston", "amount":1}
@@ -378,7 +433,7 @@
 	],
 	"requiredProcess":"chemical",
 	"processTimeSeconds":60,
-	"requiredTier":1
+	"requiredTier":0
 },
 {
 	"inputs":[
@@ -390,7 +445,7 @@
 	],
 	"requiredProcess":"chemical",
 	"processTimeSeconds":15,
-	"requiredTier":1
+	"requiredTier":0
 },
 {
 	"inputs":[
@@ -402,7 +457,7 @@
 	],
 	"requiredProcess":"electrolysis",
 	"processTimeSeconds":120,
-	"requiredTier":1
+	"requiredTier":0
 },
 {
 	"inputs":[
@@ -414,7 +469,7 @@
 	],
 	"requiredProcess":"chemical",
 	"processTimeSeconds":5,
-	"requiredTier":1
+	"requiredTier":0
 },
 {
 	"inputs":[
@@ -501,7 +556,7 @@
 	],
 	"requiredProcess":"distillation",
 	"processTimeSeconds":20,
-	"requiredTier":1
+	"requiredTier":0
 },
 {
 	"inputs":[
@@ -514,7 +569,7 @@
 	],
 	"requiredProcess":"chemical",
 	"processTimeSeconds":10,
-	"requiredTier":1
+	"requiredTier":2
 },
 {
 	"inputs":[
@@ -525,7 +580,7 @@
 	],
 	"requiredProcess":"crushing",
 	"processTimeSeconds":5,
-	"requiredTier":1
+	"requiredTier":0
 },
 {
 	"inputs":[
@@ -537,7 +592,7 @@
 	],
 	"requiredProcess":"electrolysis",
 	"processTimeSeconds":5,
-	"requiredTier":1
+	"requiredTier":0
 },
 {
 	"inputs":[
@@ -549,7 +604,7 @@
 	],
 	"requiredProcess":"electrolysis",
 	"processTimeSeconds":5,
-	"requiredTier":1
+	"requiredTier":0
 },
 {
 	"inputs":[
@@ -561,7 +616,7 @@
 	],
 	"requiredProcess":"chemical",
 	"processTimeSeconds":10,
-	"requiredTier":1
+	"requiredTier":0
 },
 {
 	"inputs":[
@@ -573,7 +628,7 @@
 	],
 	"requiredProcess":"electrolysis",
 	"processTimeSeconds":5,
-	"requiredTier":1
+	"requiredTier":0
 },
 {
 	"inputs":[
@@ -585,7 +640,7 @@
 	],
 	"requiredProcess":"electrolysis",
 	"processTimeSeconds":5,
-	"requiredTier":1
+	"requiredTier":0
 },
 {
 	"inputs":[
@@ -597,7 +652,7 @@
 	],
 	"requiredProcess":"chemical",
 	"processTimeSeconds":10,
-	"requiredTier":1
+	"requiredTier":0
 },
 {
 	"inputs":[
@@ -610,7 +665,7 @@
 	],
 	"requiredProcess":"chemical",
 	"processTimeSeconds":1,
-	"requiredTier":1
+	"requiredTier":0
 },
 {
 	"inputs":[
@@ -623,7 +678,7 @@
 	],
 	"requiredProcess":"chemical",
 	"processTimeSeconds":6,
-	"requiredTier":1
+	"requiredTier":0
 },
 {
 	"inputs":[
@@ -636,7 +691,7 @@
 	],
 	"requiredProcess":"chemical",
 	"processTimeSeconds":10,
-	"requiredTier":1
+	"requiredTier":0
 },
 {
 	"inputs":[
@@ -649,5 +704,18 @@
 	],
 	"requiredProcess":"centrifuge",
 	"processTimeSeconds":30,
-	"requiredTier":1
+	"requiredTier":0
+},
+{
+	"inputs":[
+		{"id":"aluminum_plate", "amount":6},
+		{"id":"steel_rod", "amount":8},
+		{"id":"polyethylene", "amount":1}
+	],
+	"outputs":[
+		{"id":"solid_machine_hull", "amount":1}
+	],
+	"requiredProcess":"assembly",
+	"processTimeSeconds":5,
+	"requiredTier":0
 }]

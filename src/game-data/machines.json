@@ -66,6 +66,7 @@
 			{"id":"wooden_circuit_board", "amount":1},
 			{"id":"basic_machine_hull", "amount":1},
 			{"id":"iron_rod", "amount":4},
+			{"id":"copper_cable", "amount":1},
 			{"id":"copper_wire", "amount":4}
 		],
 		"energyNeeds":{
@@ -84,7 +85,7 @@
 			{"id":"iron_rod", "amount":8},
 			{"id":"basic_electric_motor", "amount":2},
 			{"id":"bronze_gear", "amount":12},
-			{"id":"copper_wire", "amount":2},
+			{"id":"copper_cable", "amount":2},
 			{"id":"bronze_plate", "amount":1}
 		],
 		"energyNeeds":{
@@ -102,7 +103,7 @@
 			{"id":"basic_machine_hull", "amount":1},
 			{"id":"iron_rod", "amount":4},
 			{"id":"basic_electric_motor", "amount":6},
-			{"id":"copper_wire", "amount":1},
+			{"id":"copper_cable", "amount":1},
 			{"id":"bronze_plate", "amount":2}
 		],
 		"energyNeeds":{
@@ -121,7 +122,7 @@
 			{"id":"iron_rod", "amount":4},
 			{"id":"basic_electric_motor", "amount":1},
 			{"id":"basic_piston", "amount":1},
-			{"id":"copper_wire", "amount":1},
+			{"id":"copper_cable", "amount":1},
 			{"id":"bronze_plate", "amount":1}
 		],
 		"energyNeeds":{
@@ -137,9 +138,23 @@
 		"cost":[
 			{"id":"wooden_circuit_board", "amount":1},
 			{"id":"basic_machine_hull", "amount":1},
-			{"id":"copper_wire", "amount":2},
+			{"id":"copper_cable", "amount":2},
 			{"id":"tin_wire", "amount":1},
 			{"id":"bronze_plate", "amount":1}
+		]
+	},
+	"basic_crusher":{
+		"name":"Basic Crusher",
+		"capabilities":["crushing"],
+		"tier":0,
+		"img":"svg/basic-crusher.svg",
+		"cost":[
+			{"id":"wooden_circuit_board", "amount":1},
+			{"id":"basic_machine_hull", "amount":1},
+			{"id":"copper_cable", "amount":1},
+			{"id":"basic_electric_motor", "amount":2},
+			{"id":"bronze_gear", "amount":8},
+			{"id":"iron_rod", "amount":4}
 		]
 	},
 	"solid_chemical_reactor":{
@@ -149,7 +164,7 @@
 		"cost":[
 			{"id":"wooden_circuit_board", "amount":3},
 			{"id":"solid_machine_hull", "amount":1},
-			{"id":"copper_wire", "amount":2},
+			{"id":"copper_cable", "amount":2},
 			{"id":"glass_tube", "amount":3},
 			{"id":"gold_plate", "amount":1}
 		]

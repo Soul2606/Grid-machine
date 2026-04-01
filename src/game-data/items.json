@@ -109,6 +109,10 @@
 		"name":"Sticky resin",
 		"img":"svg/sticky-resin.svg"
 	},
+	"rubber":{
+		"name":"Rubber",
+		"img":"svg/rubber-plate.svg"
+	},
 	"glass_tube":{
 		"name":"Glass tube",
 		"img":"svg/glass-tube.svg"
@@ -158,6 +162,10 @@
 	"copper_wire":{
 		"name":"Copper wire",
 		"img":"svg/copper-wire.svg"
+	},
+	"copper_cable":{
+		"name":"Copper cable",
+		"img":"svg/copper-cable.svg"
 	},
 	"wood_board":{
 		"name":"Wood board",
