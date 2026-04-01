@@ -308,10 +308,10 @@ async function fetchData(){
 			}))
 		} satisfies Data
 	}
-	const items = await fetchJSON('src/game-data/items.json')
-	const machines = await fetchJSON('src/game-data/machines.json')
-	const recipes = await fetchJSON('src/game-data/recipes.json')
-	const extraction = await fetchJSON('src/game-data/extraction.json')
+	const items = await fetchJSON('game-data/items.json')
+	const machines = await fetchJSON('game-data/machines.json')
+	const recipes = await fetchJSON('game-data/recipes.json')
+	const extraction = await fetchJSON('game-data/extraction.json')
 	return compile(items, machines, recipes, extraction)
 }
 
