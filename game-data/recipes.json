@@ -718,4 +718,25 @@
 	"requiredProcess":"assembly",
 	"processTimeSeconds":5,
 	"requiredTier":0
+},
+{
+	"inputs":[
+		{"id":"gold_amalgam", "amount":1}
+	],
+	"outputs":[
+		{"id":"gold_ingot", "amount":1}
+	],
+	"requiredProcess":"smelt",
+	"processTimeSeconds":5
+},
+{
+	"inputs":[
+		{"id":"gold_ingot", "amount":1}
+	],
+	"outputs":[
+		{"id":"gold_plate", "amount":1}
+	],
+	"requiredProcess":"metal_bending",
+	"processTimeSeconds":5,
+	"requiredTier":0
 }]

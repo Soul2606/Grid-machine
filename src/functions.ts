@@ -193,6 +193,23 @@ export function clamp(val: number, min: number = 0, max: number = 1) {
 
 
 
+export function clampByResource(delta:number, resource:number, need:number):{delta:number, used:number, satisfaction:number} {
+	if (need <= 0) {
+		return {delta, used:0, satisfaction:1}
+	}
+	const neg = delta < 0
+	delta = Math.abs(delta)
+	const final = Math.min(delta, delta / need * resource)
+	return {
+		delta:neg ? -final : final,
+		used:final * need,
+		satisfaction: final / delta
+	}
+}
+
+
+
+
 /**
  * Get all recipes that crafts the provided item
  */

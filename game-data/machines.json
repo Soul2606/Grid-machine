@@ -157,10 +157,26 @@
 			{"id":"iron_rod", "amount":4}
 		]
 	},
+	"basic_centrifuge":{
+		"name":"Basic Centrifuge",
+		"capabilities":["centrifuge"],
+		"tier":0,
+		"img":"svg/basic-centifuge.svg",
+		"cost":[
+			{"id":"wooden_circuit_board", "amount":1},
+			{"id":"basic_machine_hull", "amount":1},
+			{"id":"copper_cable", "amount":1},
+			{"id":"basic_electric_motor", "amount":1},
+			{"id":"bronze_gear", "amount":6},
+			{"id":"bronze_plate", "amount":2},
+			{"id":"iron_rod", "amount":4}
+		]
+	},
 	"solid_chemical_reactor":{
 		"name":"Solid Chemical reactor",
 		"capabilities":["chemical"],
 		"tier":1,
+		"img":"svg/solid-chemical-reactor.svg",
 		"cost":[
 			{"id":"wooden_circuit_board", "amount":3},
 			{"id":"solid_machine_hull", "amount":1},

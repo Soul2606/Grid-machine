@@ -60,6 +60,10 @@
 		"name":"Sphalerite",
 		"img":"svg/sphalerite.svg"
 	},
+	"gold_amalgam":{
+		"name":"Gold amalgam",
+		"img":"svg/gold-amalgam.svg"
+	},
 	"iron_ingot":{
 		"name":"Iron ingot",
 		"tags":["metal"],
@@ -227,11 +231,14 @@
 	},
 	"gold_ingot":{
 		"name":"Gold ingot",
-		"img":"svg/gold-ingot2.svg"
+		"img":"svg/gold-ingot2.svg",
+		"formula":"Au"
 	},
 	"gold_plate":{
 		"name":"Gold plate",
-		"img":"svg/gold-plate.svg"
+		"img":"svg/gold-plate.svg",
+		"formula":"Au",
+		"description":"Soft and acid resistant, good for handling acids and other fluids."
 	},
 	"sodium":{
 		"name":"Sodium",
@@ -349,5 +356,8 @@
 	"solid_machine_hull":{
 		"name":"Solid machine hull",
 		"img":"svg/solid-machine-hull.svg"
+	},
+	"basic_logic_circuit":{
+		"name":"Basic logic circuit"
 	}
 }

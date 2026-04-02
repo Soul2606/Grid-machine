@@ -1,6 +1,6 @@
 import { getDataMapToId } from "./game-data.js";
-import { Inventory, ItemEntry, MachineInstance, Signal, type MachineInstanceStatus } from "./classes.js";
-import { relu } from "./functions.js";
+import { Inventory, ItemEntry, ItemInstance, MachineInstance, Signal, type MachineInstanceStatus } from "./classes.js";
+import { clamp, clampByResource, getItemFromId, relu } from "./functions.js";
 import type { ItemInstanceSer, JSONValue, MachineInstanceSer } from "./types.js";
 
 
@@ -18,9 +18,16 @@ export const mainInventory = new Inventory();
 
 export const power = {value:0};
 
-export const steamTurbines = {value:0};
+export const steamEngines = {
+	value:0,
+	info:{
+		production:10,
+		consumption:0.01,
+		fuelId:"raw_coal",
+	} as const
+};
 
-export const maxPower = ()=>steamTurbines.value*20;
+export const maxPower = ()=>steamEngines.value*20;
 
 export const workers = provenance(10);
 
@@ -159,6 +166,38 @@ function provenance(initial = 0) {
 	};
 	return obj;
 }
+
+
+
+
+let fuelOverflow = 0
+tick.subscribe(delta => {
+	const fuel = ItemInstance.fromItem(getItemFromId(steamEngines.info.fuelId))
+	const fuelAmount = mainInventory.getReflection(fuel).amount + fuelOverflow
+
+	const fuelNeed = steamEngines.info.consumption
+	const powerProduction = steamEngines.info.production * delta / 1000
+
+	
+	// All constraints expressed as "max engines that can run"
+	const byEngines = steamEngines.value
+	const byFuel = fuelAmount / fuelNeed
+	const byStorage = (maxPower() - power.value) / powerProduction
+
+	const running = Math.min(byEngines, byFuel, byStorage)
+
+	const powerGain = running * powerProduction
+	const fuelUsed = relu(running * fuelNeed - fuelOverflow)
+	fuelOverflow -= clamp(running * fuelNeed, 0, fuelOverflow)
+	fuelOverflow += Math.ceil(fuelUsed) - fuelUsed
+
+	if (!mainInventory.subtractItem(fuel, Math.ceil(fuelUsed))) {
+		throw new Error("Invariant broke")
+	}
+
+	power.value += powerGain
+})
+
 
 
 
