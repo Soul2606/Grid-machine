@@ -54,7 +54,7 @@
 	],
 	"outputs":[
 		{"id":"coke", "amount":1},
-		{"id":"creosote", "amount":1}
+		{"id":"phenol", "amount":1}
 	],
 	"requiredProcess":"coke_oven",
 	"processTimeSeconds":20

@@ -57,6 +57,20 @@
 			"maximum":1
 		}
 	},
+	"laboratory":{
+		"name":"Laboratory",
+		"capabilities":["chemical", "distillation"],
+		"tier":0,
+		"cost":[
+			{"id":"bronze_plate", "amount":2},
+			{"id":"glass_tube", "amount":8},
+			{"id":"wood", "amount":12}
+		],
+		"workerNeeds":{
+			"minimum":1,
+			"maximum":1
+		}
+	},
 	"basic_polarizer":{
 		"name":"Basic Polarizer",
 		"capabilities":["polarization"],
@@ -183,6 +197,20 @@
 			{"id":"copper_cable", "amount":2},
 			{"id":"glass_tube", "amount":3},
 			{"id":"gold_plate", "amount":1}
+		]
+	},
+	"solid_distillery":{
+		"name":"Solid Distillery",
+		"capabilities":["distillation"],
+		"tier":1,
+		"img":"svg/solid-distillery.svg",
+		"cost":[
+			{"id":"wooden_circuit_board", "amount":3},
+			{"id":"solid_machine_hull", "amount":1},
+			{"id":"copper_cable", "amount":2},
+			{"id":"glass_tube", "amount":3},
+			{"id":"gold_plate", "amount":1},
+			{"id":"steel_ingot", "amount":1}
 		]
 	}
 }

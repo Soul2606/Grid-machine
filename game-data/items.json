@@ -40,8 +40,8 @@
 		"img":"svg/stone-powder.svg",
 		"formula":"SiO2"
 	},
-	"creosote":{
-		"name":"Creosote",
+	"phenol":{
+		"name":"Phenol",
 		"img":"svg/creosote.svg"
 	},
 	"hematite":{
