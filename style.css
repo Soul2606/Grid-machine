@@ -58,79 +58,8 @@ main{
 }
 
 .background-gradient{
-    /*Basic*/
-    --grad0: repeating-linear-gradient(
-        90deg,
-        #007ccf 0%,
-        #ffffff 30%,
-        #ffffff 70%,
-        #007ccf 100%
-    );
-    /*Solid*/
-    --grad1: repeating-linear-gradient(
-        90deg,
-        #fffb1d 0%,
-        #ffffff 30%,
-        #ffffff 70%,
-        #fffb1d 100%
-    );
-    /*Reinforced*/
-    --grad2: repeating-linear-gradient(
-        90deg,
-        #be00cf 0%,
-        #ffffff 30%,
-        #ffffff 70%,
-        #be00cf 100%
-    );
-    /*Advanced*/
-    --grad3: repeating-linear-gradient(
-        90deg,
-        #d85252 0%,
-        #ffffff 30%,
-        #ffffff 70%,
-        #d85252 100%
-    );
-    /*Industrial*/
-    --grad4: repeating-linear-gradient(
-        90deg,
-        #005e51 0%,
-        #ffffff 30%,
-        #ffffff 70%,
-        #005e51 100%
-    );
-    /*Extreme*/
-    --grad5: repeating-linear-gradient(
-        90deg,
-        #00ffdd 0%,
-        #d261ff 30%,
-        #d261ff 70%,
-        #00ffdd 100%
-    );
-    /*Insane*/
-    --grad6: repeating-linear-gradient(
-        90deg,
-        #ff0000 0%,
-        #9861ff 45%,
-        #9861ff 55%,
-        #ff0000 100%
-    );
-    /*Ludicrous*/
-    --grad7: repeating-linear-gradient(
-        90deg,
-        #ff6161,
-        #ff9361,
-        #ffe761,
-        #8eff61,
-        #61ffdd,
-        #61a5ff,
-        #616bff,
-        #ff61e5,
-        #ff6161
-    );
-
     background: var(--grad0);
-
-    background-size: 500px 100%; /* EXACT pattern width (8 + 40 + 8? no — just total cycle) */
+    background-size: 500px 100%;
     animation: movingGradient 3s linear infinite;
 }
 

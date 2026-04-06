@@ -3,80 +3,92 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Document</title>
+	<title>Progress</title>
+	<link rel="stylesheet" href="globals.css">
 	<style>
 		main{
 			display: grid;
 			grid-column: auto auto;
 		}
 
-		.grid{
-			display: grid;
-			grid-template-columns: repeat(auto-fill, 1fr);
-			gap: 5px;
-			grid-area: 2/2/3/3;
+		.color{
+			height: 50px;
+			width: 250px;
+			background-size: 500px 100%;
+			animation: movingGradient 12s linear infinite;
 		}
-		
-		.grid-item{
-			background-color: hsl(0, 0%, 87%);
-			text-wrap: nowrap;
+
+		@keyframes movingGradient {
+			from { background-position: 0 0; }
+			to   { background-position: 500px 0; }
 		}
 	</style>
 </head>
 <body>
-	<main>
-		<p style="grid-area: 1/2/2/3;">Complexity</p>
-		<p style="grid-area: 2/1/3/2; writing-mode: vertical-lr;">Technology</p>
-		<div class="grid">
-			<div class="grid-item" style="grid-area: 1/1/2/2;">
-				<span>Basic logic circuit</span>
-				<img src="">
-			</div>
-			<div class="grid-item" style="grid-area: 1/2/2/3;">
-				<span>Basic processor</span>
-				<img src="">
-			</div>
-			<div class="grid-item" style="grid-area: 2/1/3/2;">
-				<span>Solid logic circuit</span>
-				<img src="">
-			</div>
-			<div class="grid-item" style="grid-area: 2/2/3/3;">
-				<span>Solid processor</span>
-				<img src="">
-			</div>
-			<div class="grid-item" style="grid-area: 2/3/3/4;">
-				<span>Solid computer</span>
-				<img src="">
-			</div>
-			<div class="grid-item" style="grid-area: 2/4/3/5;">
-				<span>Solid computer assembly</span>
-				<img src="">
-			</div>
-			<div class="grid-item" style="grid-area: 3/2/4/3;">
-				<span>Advanced processor</span>
-				<img src="">
-			</div>
-			<div class="grid-item" style="grid-area: 3/3/4/4;">
-				<span>Advanced computer</span>
-				<img src="">
-			</div>
-			<div class="grid-item" style="grid-area: 3/4/4/5;">
-				<span>Advanced computer assembly</span>
-				<img src="">
-			</div>
-			<div class="grid-item" style="grid-area: 4/3/5/4;">
-				<span>Nano computer</span>
-				<img src="">
-			</div>
-			<div class="grid-item" style="grid-area: 4/4/5/5;">
-				<span>Nano computer assembly</span>
-				<img src="">
-			</div>
-			<div class="grid-item" style="grid-area: 4/5/5/6;">
-				<span>Nano super-computer</span>
-				<img src="">
-			</div>
-		</div>
-	</main>
+	<h2>Circuits</h2>
+	<p>Each circuit type: Logic circuit, Processor, Computer... corresponds to each tech tier: Basic, Solid, Advanced...</p>
+	<p>Down the table is each circuit tech level, the circuit type does not change with tech level, but the cost and complexity changes. Generally the higher tech circuits are cheaper but require more advanced technology to assemble.</p>
+	<table>
+		<tr>
+			<th>Logic circuit</th>
+			<th>Processor</th>
+			<th>Computer</th>
+			<th>Computer assembly</th>
+			<th>Super-computer</th>
+			<th>Mainframe</th>
+			<th>AI-Core</th>
+		</tr>
+		<tr>
+			<td>Basic Logic circuit</td>
+			<td>Basic Processor</td>
+		</tr>
+		<tr>
+			<td>Solid Logic circuit</td>
+			<td>Solid Processor</td>
+			<td>Solid Computer</td>
+			<td>Solid Computer assembly</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td>Nano Processor</td>
+			<td>Nano Computer</td>
+			<td>Nano Computer assembly</td>
+			<td>Nano Super-computer</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td></td>
+			<td>Quantum Computer</td>
+			<td>Quantum Computer assembly</td>
+			<td>Quantum Super-computer</td>
+			<td>Quantum Mainframe</td>
+			<td>Quantum AI-Core</td>
+		</tr>
+	</table>
+	<h2>Tiers</h2>
+	<p>Each tier comes with increasing speed and capabilities, but also an exponential increase in power consumption.</p>
+	<ul>
+		<li>Basic</li>
+		<div class="color" style="background: var(--grad0);"></div>
+		<li>Solid</li>
+		<div class="color" style="background: var(--grad1);"></div>
+		<li>Advanced</li>
+		<div class="color" style="background: var(--grad2);"></div>
+		<li>Industrial</li>
+		<div class="color" style="background: var(--grad3);"></div>
+		<li>Elite</li>
+		<div class="color" style="background: var(--grad4);"></div>
+		<li>Resonant</li>
+		<div class="color" style="background: var(--grad5);"></div>
+	</ul>
+	<hr>
+	<p>Examples:</p>
+	<ul>
+		<li>Basic Wiremill</li>
+		<li>Solid Wiremill</li>
+		<li>Advanced Wiremill</li>
+		<li>Industrial Wiremill</li>
+		<li>Elite Wiremill</li>
+	</ul>
 </body>
 </html>

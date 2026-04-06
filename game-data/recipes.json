@@ -112,6 +112,18 @@
 },
 {
 	"inputs":[
+		{"id":"iron_ingot", "amount":1},
+		{"id":"nickel_ingot", "amount":1},
+		{"id":"zinc_ingot", "amount":1}
+	],
+	"outputs":[
+		{"id":"nickel_zinc_ferrite_ingot", "amount":1}
+	],
+	"requiredProcess":"alloy",
+	"processTimeSeconds":20
+},
+{
+	"inputs":[
 		{"id":"steel_ingot", "amount":1}
 	],
 	"outputs":[
@@ -247,7 +259,7 @@
 		{"id":"raw_coal", "amount":1}
 	],
 	"outputs":[
-		{"id":"coal_powder", "amount":1}
+		{"id":"coal_dust", "amount":1}
 	],
 	"requiredProcess":"workshop",
 	"processTimeSeconds":5
@@ -257,7 +269,7 @@
 		{"id":"raw_coal", "amount":1}
 	],
 	"outputs":[
-		{"id":"coal_powder", "amount":1}
+		{"id":"coal_dust", "amount":1}
 	],
 	"requiredProcess":"crushing",
 	"processTimeSeconds":1,
@@ -265,7 +277,7 @@
 },
 {
 	"inputs":[
-		{"id":"coal_powder", "amount":1}
+		{"id":"coal_dust", "amount":1}
 	],
 	"outputs":[
 		{"id":"carbon", "amount":1}
@@ -276,7 +288,7 @@
 },
 {
 	"inputs":[
-		{"id":"coal_powder", "amount":1},
+		{"id":"coal_dust", "amount":1},
 		{"id":"paper", "amount":2},
 		{"id":"copper_wire", "amount":1},
 		{"id":"sticky_resin", "amount":1}
@@ -308,12 +320,70 @@
 {
 	"inputs":[
 		{"id":"wood_board", "amount":1},
-		{"id":"copper_wire", "amount":1},
-		{"id":"vacuum_tube", "amount":4},
-		{"id":"resistor", "amount":4}
+		{"id":"copper_wire", "amount":1}
 	],
 	"outputs":[
 		{"id":"wooden_circuit_board", "amount":1}
+	],
+	"requiredProcess":"workshop",
+	"processTimeSeconds":10
+},
+{
+	"inputs":[
+		{"id":"wooden_circuit_board", "amount":1},
+		{"id":"copper_cable", "amount":1},
+		{"id":"vacuum_tube", "amount":4},
+		{"id":"resistor", "amount":4},
+		{"id":"tin_plate", "amount":1}
+	],
+	"outputs":[
+		{"id":"logic_circuit", "amount":1}
+	],
+	"requiredProcess":"workshop",
+	"processTimeSeconds":10
+},
+{
+	"inputs":[
+		{"id":"plastic_circuit_board", "amount":1},
+		{"id":"smd_transistor", "amount":4},
+		{"id":"smd_resistor", "amount":4},
+		{"id":"polyethylene", "amount":1}
+	],
+	"outputs":[
+		{"id":"logic_circuit", "amount":2}
+	],
+	"requiredProcess":"workshop",
+	"processTimeSeconds":5
+},
+{
+	"inputs":[
+		{"id":"wooden_circuit_board", "amount":3},
+		{"id":"copper_cable", "amount":2},
+		{"id":"vacuum_tube", "amount":16},
+		{"id":"resistor", "amount":16},
+		{"id":"diode", "amount":4},
+		{"id":"nickel_zinc_ferrite_ingot", "amount":1},
+		{"id":"copper_wire", "amount":2},
+		{"id":"tin_plate", "amount":1}
+	],
+	"outputs":[
+		{"id":"processor", "amount":1}
+	],
+	"requiredProcess":"workshop",
+	"processTimeSeconds":20
+},
+{
+	"inputs":[
+		{"id":"plastic_circuit_board", "amount":1},
+		{"id":"copper_wire", "amount":1},
+		{"id":"smd_transistor", "amount":16},
+		{"id":"smd_resistor", "amount":16},
+		{"id":"smd_diode", "amount":4},
+		{"id":"RAM_chip", "amount":1},
+		{"id":"polyethylene", "amount":1}
+	],
+	"outputs":[
+		{"id":"processor", "amount":1}
 	],
 	"requiredProcess":"workshop",
 	"processTimeSeconds":10
@@ -369,18 +439,18 @@
 		{"id":"sapphire", "amount":1}
 	],
 	"outputs":[
-		{"id":"sapphire_powder", "amount":1}
+		{"id":"sapphire_dust", "amount":1}
 	],
 	"requiredProcess":"crushing",
 	"processTimeSeconds":2
 },
 {
 	"inputs":[
-		{"id":"sapphire_powder", "amount":5}
+		{"id":"sapphire_dust", "amount":5}
 	],
 	"outputs":[
 		{"id":"oxygen_gas", "amount":1},
-		{"id":"aluminum_powder", "amount":2}
+		{"id":"aluminum_dust", "amount":2}
 	],
 	"requiredProcess":"electrolysis",
 	"processTimeSeconds":20
@@ -390,8 +460,8 @@
 		{"id":"clay", "amount":5}
 	],
 	"outputs":[
-		{"id":"aluminum_powder", "amount":2},
-		{"id":"silicon_powder", "amount":2},
+		{"id":"aluminum_dust", "amount":2},
+		{"id":"silicon_dust", "amount":2},
 		{"id":"sodium", "amount":1},
 		{"id":"water", "amount":1}
 	],
@@ -512,7 +582,7 @@
 {
 	"inputs":[
 		{"id":"polyethylene", "amount":1},
-		{"id":"silicon_powder", "amount":1}
+		{"id":"silicon_dust", "amount":1}
 	],
 	"outputs":[
 		{"id":"smd_transistor", "amount":32}
@@ -576,7 +646,7 @@
 		{"id":"stone", "amount":1}
 	],
 	"outputs":[
-		{"id":"stone_powder", "amount":1}
+		{"id":"stone_dust", "amount":1}
 	],
 	"requiredProcess":"crushing",
 	"processTimeSeconds":5,
@@ -584,11 +654,11 @@
 },
 {
 	"inputs":[
-		{"id":"stone_powder", "amount":1}
+		{"id":"stone_dust", "amount":1}
 	],
 	"outputs":[
 		{"id":"oxygen_gas", "amount":1},
-		{"id":"silicon_powder", "amount":1}
+		{"id":"silicon_dust", "amount":1}
 	],
 	"requiredProcess":"electrolysis",
 	"processTimeSeconds":5,
@@ -600,7 +670,7 @@
 	],
 	"outputs":[
 		{"id":"oxygen_gas", "amount":1},
-		{"id":"silicon_powder", "amount":1}
+		{"id":"silicon_dust", "amount":1}
 	],
 	"requiredProcess":"electrolysis",
 	"processTimeSeconds":5,

@@ -77,7 +77,7 @@
 		"tier":0,
 		"img":"svg/basic-polarizer.svg",
 		"cost":[
-			{"id":"wooden_circuit_board", "amount":1},
+			{"id":"logic_circuit", "amount":1},
 			{"id":"basic_machine_hull", "amount":1},
 			{"id":"iron_rod", "amount":4},
 			{"id":"copper_cable", "amount":1},
@@ -94,7 +94,7 @@
 		"tier":0,
 		"img":"svg/basic-wiremill.svg",
 		"cost":[
-			{"id":"wooden_circuit_board", "amount":1},
+			{"id":"logic_circuit", "amount":1},
 			{"id":"basic_machine_hull", "amount":1},
 			{"id":"iron_rod", "amount":8},
 			{"id":"basic_electric_motor", "amount":2},
@@ -113,7 +113,7 @@
 		"tier":0,
 		"img":"svg/basic-metal-bender.svg",
 		"cost":[
-			{"id":"wooden_circuit_board", "amount":1},
+			{"id":"logic_circuit", "amount":1},
 			{"id":"basic_machine_hull", "amount":1},
 			{"id":"iron_rod", "amount":4},
 			{"id":"basic_electric_motor", "amount":6},
@@ -131,7 +131,7 @@
 		"tier":0,
 		"img":"svg/basic-lathe.svg",
 		"cost":[
-			{"id":"wooden_circuit_board", "amount":1},
+			{"id":"logic_circuit", "amount":1},
 			{"id":"basic_machine_hull", "amount":1},
 			{"id":"iron_rod", "amount":4},
 			{"id":"basic_electric_motor", "amount":1},
@@ -150,7 +150,7 @@
 		"tier":0,
 		"img":"svg/basic-electrolyzer.svg",
 		"cost":[
-			{"id":"wooden_circuit_board", "amount":1},
+			{"id":"logic_circuit", "amount":1},
 			{"id":"basic_machine_hull", "amount":1},
 			{"id":"copper_cable", "amount":2},
 			{"id":"tin_wire", "amount":1},
@@ -163,7 +163,7 @@
 		"tier":0,
 		"img":"svg/basic-crusher.svg",
 		"cost":[
-			{"id":"wooden_circuit_board", "amount":1},
+			{"id":"logic_circuit", "amount":1},
 			{"id":"basic_machine_hull", "amount":1},
 			{"id":"copper_cable", "amount":1},
 			{"id":"basic_electric_motor", "amount":2},
@@ -177,7 +177,7 @@
 		"tier":0,
 		"img":"svg/basic-centifuge.svg",
 		"cost":[
-			{"id":"wooden_circuit_board", "amount":1},
+			{"id":"logic_circuit", "amount":1},
 			{"id":"basic_machine_hull", "amount":1},
 			{"id":"copper_cable", "amount":1},
 			{"id":"basic_electric_motor", "amount":1},
@@ -192,7 +192,7 @@
 		"tier":1,
 		"img":"svg/solid-chemical-reactor.svg",
 		"cost":[
-			{"id":"wooden_circuit_board", "amount":3},
+			{"id":"processor", "amount":1},
 			{"id":"solid_machine_hull", "amount":1},
 			{"id":"copper_cable", "amount":2},
 			{"id":"glass_tube", "amount":3},
@@ -205,7 +205,7 @@
 		"tier":1,
 		"img":"svg/solid-distillery.svg",
 		"cost":[
-			{"id":"wooden_circuit_board", "amount":3},
+			{"id":"processor", "amount":1},
 			{"id":"solid_machine_hull", "amount":1},
 			{"id":"copper_cable", "amount":2},
 			{"id":"glass_tube", "amount":3},

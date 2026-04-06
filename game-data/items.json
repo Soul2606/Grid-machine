@@ -14,10 +14,10 @@
 		"name":"Coke",
 		"img":"svg/coke.svg"
 	},
-	"coal_powder":{
-		"name":"Coal powder",
+	"coal_dust":{
+		"name":"Coal dust",
 		"tags":["primitive_fuel"],
-		"img":"svg/coal-powder.svg",
+		"img":"svg/coal-dust.svg",
 		"energy":"1MJ"
 	},
 	"water":{
@@ -35,14 +35,15 @@
 		"img":"svg/oxygen-gas.svg",
 		"formula":"O2"
 	},
-	"stone_powder":{
-		"name":"Stone powder",
-		"img":"svg/stone-powder.svg",
+	"stone_dust":{
+		"name":"Stone dust",
+		"img":"svg/stone-dust.svg",
 		"formula":"SiO2"
 	},
 	"phenol":{
 		"name":"Phenol",
-		"img":"svg/creosote.svg"
+		"img":"svg/creosote.svg",
+		"formula":"C6H5OH"
 	},
 	"hematite":{
 		"name":"Hematite",
@@ -171,6 +172,14 @@
 		"name":"Copper cable",
 		"img":"svg/copper-cable.svg"
 	},
+	"nickel_ingot":{
+		"name":"Nickel ingot",
+		"img":"svg/nickel-ingot.svg"
+	},
+	"nickel_zinc_ferrite_ingot":{
+		"name":"Nickel zinc ferrite ingot",
+		"img":"svg/nickel-zinc-ferrite-ingot.svg"
+	},
 	"wood_board":{
 		"name":"Wood board",
 		"img":"svg/wood-board.svg"
@@ -186,6 +195,14 @@
 	"wooden_circuit_board":{
 		"name":"Wooden circuit board",
 		"img":"svg/logic-circuit-board.svg"
+	},
+	"logic_circuit":{
+		"name":"Logic circuit",
+		"img":"svg/logic-circuit.svg"
+	},
+	"processor":{
+		"name":"Processor",
+		"img":"svg/processor.svg"
 	},
 	"basic_electric_motor":{
 		"name":"Basic electric motor",
@@ -212,14 +229,14 @@
 		"img":"svg/sapphire.svg",
 		"formula":"O3Al2"
 	},
-	"sapphire_powder":{
-		"name":"Sapphire powder",
-		"img":"svg/sapphire-powder.svg",
+	"sapphire_dust":{
+		"name":"Sapphire dust",
+		"img":"svg/sapphire-dust.svg",
 		"formula":"O3Al2"
 	},
-	"aluminum_powder":{
-		"name":"Aluminum powder",
-		"img":"svg/aluminum-powder.svg"
+	"aluminum_dust":{
+		"name":"Aluminum dust",
+		"img":"svg/aluminum-dust.svg"
 	},
 	"aluminum_ingot":{
 		"name":"Aluminum ingot",
@@ -245,9 +262,9 @@
 		"img":"svg/sodium.svg",
 		"formula":"Na"
 	},
-	"silicon_powder":{
-		"name":"Silicon powder",
-		"img":"svg/silicon-powder.svg"
+	"silicon_dust":{
+		"name":"Silicon dust",
+		"img":"svg/silicon-dust.svg"
 	},
 	"gallium":{
 		"name":"Gallium",
@@ -300,9 +317,6 @@
 	"smd_inductor":{
 		"name":"SMD Inductor",
 		"img":"svg/smd-inductor.svg"
-	},
-	"nickel_zinc_ferrite_ingot":{
-		"name":"Nickel zinc ferrite ingot"
 	},
 	"ethanol":{
 		"name":"Ethanol",
@@ -357,7 +371,8 @@
 		"name":"Solid machine hull",
 		"img":"svg/solid-machine-hull.svg"
 	},
-	"basic_logic_circuit":{
-		"name":"Basic logic circuit"
+	"RAM_chip":{
+		"name":"RAM Chip",
+		"img":"svg/ram-chip.svg"
 	}
 }

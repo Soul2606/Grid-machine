@@ -1,0 +1,44 @@
+:root{
+	--grad0: repeating-linear-gradient(
+		90deg,
+		#007ccf 0%,
+		#ffffff 30%,
+		#ffffff 70%,
+		#007ccf 100%
+	);
+		--grad2: repeating-linear-gradient(
+		90deg, 
+		#389e35 0%, 
+		#ffffff 30%, 
+		#ffffff 70%, 
+		#389e35 100%
+	);
+	--grad3: repeating-linear-gradient(
+		90deg,
+		#be00cf 0%,
+		#ffffff 30%,
+		#ffffff 70%,
+		#be00cf 100%
+	);
+	--grad5: repeating-linear-gradient(
+		90deg,
+		#d85252 0%,
+		#ffffff 30%,
+		#ffffff 70%,
+		#d85252 100%
+	);
+	--grad4: repeating-linear-gradient(
+		90deg,
+		#005e51 0%,
+		#ffffff 30%,
+		#ffffff 70%,
+		#005e51 100%
+	);
+	--grad1: repeating-linear-gradient(
+		90deg,
+		#fffb1d 0%,
+		#ffffff 30%,
+		#ffffff 70%,
+		#fffb1d 100%
+	);
+}
