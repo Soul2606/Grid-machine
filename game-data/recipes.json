@@ -124,6 +124,17 @@
 },
 {
 	"inputs":[
+		{"id":"chromium_dust", "amount":1},
+		{"id":"nickel_ingot", "amount":1}
+	],
+	"outputs":[
+		{"id":"nichrome_ingot", "amount":2}
+	],
+	"requiredProcess":"alloy",
+	"processTimeSeconds":20
+},
+{
+	"inputs":[
 		{"id":"steel_ingot", "amount":1}
 	],
 	"outputs":[
@@ -809,4 +820,108 @@
 	"requiredProcess":"metal_bending",
 	"processTimeSeconds":5,
 	"requiredTier":0
+},
+{
+	"inputs":[
+		{"id":"ruby", "amount":1}
+	],
+	"outputs":[
+		{"id":"ruby_dust", "amount":1}
+	],
+	"requiredProcess":"crushing",
+	"processTimeSeconds":5,
+	"requiredTier":0
+},
+{
+	"inputs":[
+		{"id":"ruby_dust", "amount":5}
+	],
+	"outputs":[
+		{"id":"chromium_dust", "amount":2},
+		{"id":"oxygen_gas", "amount":3}
+	],
+	"requiredProcess":"electrolysis",
+	"processTimeSeconds":10,
+	"requiredTier":0
+},
+{
+	"inputs":[
+		{"id":"ethylene_gas", "amount":1},
+		{"id":"chlorine_gas", "amount":1}
+	],
+	"outputs":[
+		{"id":"vinyl_chloride", "amount":1},
+		{"id":"hydrochloric_acid", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":10,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"vinyl_chloride", "amount":1},
+		{"id":"oxygen_gas", "amount":1}
+	],
+	"outputs":[
+		{"id":"polyvinyl_chloride", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":2,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"silicon_dust", "amount":100},
+		{"id":"gallium", "amount":1}
+	],
+	"outputs":[
+		{"id":"monocrystalline_silicon_boule", "amount":1}
+	],
+	"requiredProcess":"blasting",
+	"processTimeSeconds":60,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"monocrystalline_silicon_boule", "amount":1}
+	],
+	"outputs":[
+		{"id":"silicon_wafer", "amount":32}
+	],
+	"requiredProcess":"cutting",
+	"processTimeSeconds":30,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"silicon_wafer", "amount":1}
+	],
+	"outputs":[
+		{"id":"RAM_chip", "amount":8}
+	],
+	"requiredProcess":"laser_engraving",
+	"processTimeSeconds":30,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"rubber", "amount":1}
+	],
+	"outputs":[
+		{"id":"rubber_pipe", "amount":2}
+	],
+	"requiredProcess":"workshop",
+	"processTimeSeconds":10
+},
+{
+	"inputs":[
+		{"id":"solid_pump", "amount":2},
+		{"id":"rubber_pipe", "amount":1},
+		{"id":"aluminum_ingot", "amount":1}
+	],
+	"outputs":[
+		{"id":"pneumatic_robot_arm", "amount":1}
+	],
+	"requiredProcess":"workshop",
+	"processTimeSeconds":10
 }]

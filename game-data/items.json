@@ -257,6 +257,10 @@
 		"formula":"Au",
 		"description":"Soft and acid resistant, good for handling acids and other fluids."
 	},
+	"gold_wire":{
+		"name":"Gold wire",
+		"img":"svg/gold-wire.svg"
+	},
 	"sodium":{
 		"name":"Sodium",
 		"img":"svg/sodium.svg",
@@ -371,8 +375,60 @@
 		"name":"Solid machine hull",
 		"img":"svg/solid-machine-hull.svg"
 	},
+	"monocrystalline_silicon_boule":{
+		"name":"Monocrystalline silicon boule",
+		"img":"svg/monocrystalline-silicon-boule.svg"
+	},
+	"silicon_wafer":{
+		"name":"Silicon wafer",
+		"img":"svg/silicon-wafer.svg"
+	},
 	"RAM_chip":{
 		"name":"RAM Chip",
 		"img":"svg/ram-chip.svg"
+	},
+	"raw_oil":{
+		"name":"Raw oil"
+	},
+	"hydraulic_fluid":{
+		"name":"Hydraulic fluid"
+	},
+	"solid_pump":{
+		"name":"Solid pump",
+		"img":"svg/basic-pump.svg"
+	},
+	"rubber_pipe":{
+		"name":"Rubber pipe"
+	},
+	"hydraulic_piston":{
+		"name":"Hydraulic piston"
+	},
+	"pneumatic_robot_arm":{
+		"name":"Pneumatic robot arm",
+		"img":"svg/pneumatic-robot-arm.svg"
+	},
+	"ruby":{
+		"name":"Ruby",
+		"img":"svg/ruby.svg"
+	},
+	"ruby_dust":{
+		"name":"Ruby dust",
+		"img":"svg/ruby-dust.svg"
+	},
+	"chromium_dust":{
+		"name":"Chromium dust",
+		"img":"svg/chromium-dust.svg"
+	},
+	"nichrome_ingot":{
+		"name":"Nichrome ingot",
+		"img":"svg/nichrome-ingot.svg"
+	},
+	"vinyl_chloride":{
+		"name":"Vinyl chloride",
+		"formula":"CH2CHCl"
+	},
+	"polyvinyl_chloride":{
+		"name":"PVC",
+		"img":"svg/pvc.svg"
 	}
 }
