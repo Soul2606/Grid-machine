@@ -196,7 +196,7 @@
 			{"id":"processor", "amount":1},
 			{"id":"solid_machine_hull", "amount":1},
 			{"id":"copper_cable", "amount":2},
-			{"id":"glass_tube", "amount":3},
+			{"id":"tempered_glass", "amount":3},
 			{"id":"gold_plate", "amount":1}
 		]
 	},
@@ -223,7 +223,7 @@
 			{"id":"processor", "amount":1},
 			{"id":"solid_machine_hull", "amount":1},
 			{"id":"copper_cable", "amount":2},
-			{"id":"glass_tube", "amount":2},
+			{"id":"tempered_glass", "amount":2},
 			{"id":"gold_plate", "amount":1},
 			{"id":"nichrome_ingot", "amount":1}
 		]

@@ -915,13 +915,69 @@
 },
 {
 	"inputs":[
-		{"id":"solid_pump", "amount":2},
+		{"id":"solid_pump", "amount":1},
 		{"id":"rubber_pipe", "amount":1},
-		{"id":"aluminum_ingot", "amount":1}
+		{"id":"aluminum_plate", "amount":1}
+	],
+	"outputs":[
+		{"id":"hydraulic_piston", "amount":1}
+	],
+	"requiredProcess":"workshop",
+	"processTimeSeconds":10
+},
+{
+	"inputs":[
+		{"id":"hydraulic_piston", "amount":2},
+		{"id":"rubber_pipe", "amount":1},
+		{"id":"aluminum_plate", "amount":1},
+		{"id":"logic_circuit", "amount":1}
 	],
 	"outputs":[
 		{"id":"pneumatic_robot_arm", "amount":1}
 	],
 	"requiredProcess":"workshop",
 	"processTimeSeconds":10
+},
+{
+	"inputs":[
+		{"id":"sand", "amount":4},
+		{"id":"phenol", "amount":1}
+	],
+	"outputs":[
+		{"id":"tempered_glass", "amount":4}
+	],
+	"requiredProcess":"smelt",
+	"processTimeSeconds":10
+},
+{
+	"inputs":[
+		{"id":"wood", "amount":1},
+		{"id":"phenol", "amount":1},
+		{"id":"copper_wire", "amount":1}
+	],
+	"outputs":[
+		{"id":"wooden_circuit_board", "amount":2}
+	],
+	"requiredProcess":"workshop",
+	"processTimeSeconds":10
+},
+{
+	"inputs":[
+		{"id":"plastic_circuit_board", "amount":2},
+		{"id":"copper_wire", "amount":2},
+		{"id":"gold_wire", "amount":1},
+		{"id":"smd_transistor", "amount":32},
+		{"id":"smd_resistor", "amount":32},
+		{"id":"smd_diode", "amount":8},
+		{"id":"smd_inductor", "amount":4},
+		{"id":"RAM_chip", "amount":1},
+		{"id":"CPU_chip", "amount":1},
+		{"id":"polyethylene", "amount":1},
+		{"id":"polyvinyl_chloride", "amount":1}
+	],
+	"outputs":[
+		{"id":"computer", "amount":1}
+	],
+	"requiredProcess":"assembly",
+	"processTimeSeconds":20
 }]

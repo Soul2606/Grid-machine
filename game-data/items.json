@@ -371,6 +371,10 @@
 		"name":"Plastic circuit board",
 		"img":"svg/plastic-circuit-board.svg"
 	},
+	"tempered_glass":{
+		"name":"Tempered glass",
+		"img":"svg/tempered-glass.svg"
+	},
 	"solid_machine_hull":{
 		"name":"Solid machine hull",
 		"img":"svg/solid-machine-hull.svg"
@@ -430,5 +434,13 @@
 	"polyvinyl_chloride":{
 		"name":"PVC",
 		"img":"svg/pvc.svg"
+	},
+	"CPU_chip":{
+		"name":"CPU Chip",
+		"img":"svg/cpu-chip.svg"
+	},
+	"computer":{
+		"name":"Computer",
+		"img":"svg/computer.svg"
 	}
 }
