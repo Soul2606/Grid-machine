@@ -187,6 +187,21 @@
 			{"id":"iron_rod", "amount":4}
 		]
 	},
+	"basic_sawmill":{
+		"name":"Basic Sawmill",
+		"capabilities":["cutting"],
+		"tier":0,
+		"img":"svg/basic-sawmill.svg",
+		"cost":[
+			{"id":"logic_circuit", "amount":1},
+			{"id":"basic_machine_hull", "amount":1},
+			{"id":"copper_cable", "amount":1},
+			{"id":"basic_electric_motor", "amount":1},
+			{"id":"bronze_gear", "amount":4},
+			{"id":"iron_rod", "amount":4},
+			{"id":"steel_ingot", "amount":1}
+		]
+	},
 	"solid_chemical_reactor":{
 		"name":"Solid Chemical reactor",
 		"capabilities":["chemical"],
@@ -240,6 +255,18 @@
 			{"id":"pneumatic_robot_arm", "amount":2},
 			{"id":"basic_electric_motor", "amount":2},
 			{"id":"rubber", "amount":1}
+		]
+	},
+	"solid_laser_engraver":{
+		"name":"Solid Laser engraver",
+		"capabilities":["laser_engraving"],
+		"tier":1,
+		"img":"svg/solid-laser-engraver.svg",
+		"cost":[
+			{"id":"processor", "amount":1},
+			{"id":"solid_machine_hull", "amount":1},
+			{"id":"copper_cable", "amount":2},
+			{"id":"steel_rod", "amount":4}
 		]
 	}
 }

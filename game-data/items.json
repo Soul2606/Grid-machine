@@ -142,7 +142,8 @@
 	},
 	"bronze_gear":{
 		"name":"Bronze gear",
-		"img":"svg/bronze-gear.svg"
+		"img":"svg/bronze-gear.svg",
+		"description":"Useful component for the Factorio"
 	},
 	"steel_ingot":{
 		"name":"Steel ingot",
@@ -179,6 +180,10 @@
 	"nickel_zinc_ferrite_ingot":{
 		"name":"Nickel zinc ferrite ingot",
 		"img":"svg/nickel-zinc-ferrite-ingot.svg"
+	},
+	"plank":{
+		"name":"Plank",
+		"img":"svg/plank.svg"
 	},
 	"wood_board":{
 		"name":"Wood board",
@@ -442,5 +447,30 @@
 	"computer":{
 		"name":"Computer",
 		"img":"svg/computer.svg"
+	},
+	"sodium_hydroxide":{
+		"name":"Sodium hydroxide",
+		"img":"svg/sodium-hydroxide.svg",
+		"formula":"NaOH"
+	},
+	"propene_gas":{
+		"name":"Propene gas",
+		"formula":"C3H6"
+	},
+	"bisphenol_a":{
+		"name":"Bisphenol A",
+		"formula":"(CH3)2C(C6H4OH)2"
+	},
+	"epichlorohydrin":{
+		"name":"Epichlorohydrin",
+		"formula":"C3H5ClO"
+	},
+	"epoxy_resin":{
+		"name":"Epoxy resin",
+		"img":"svg/epoxy-resin.svg",
+		"formula":"C21H25ClO5"
+	},
+	"epoxy_circuit_board":{
+		"name":"Epoxy circuit board"
 	}
 }

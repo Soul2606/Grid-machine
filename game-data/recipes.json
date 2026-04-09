@@ -236,7 +236,27 @@
 },
 {
 	"inputs":[
-		{"id":"wood", "amount":1},
+		{"id":"wood", "amount":1}
+	],
+	"outputs":[
+		{"id":"plank", "amount":3}
+	],
+	"requiredProcess":"workshop",
+	"processTimeSeconds":10
+},
+{
+	"inputs":[
+		{"id":"wood", "amount":1}
+	],
+	"outputs":[
+		{"id":"plank", "amount":6}
+	],
+	"requiredProcess":"cutting",
+	"processTimeSeconds":5
+},
+{
+	"inputs":[
+		{"id":"plank", "amount":1},
 		{"id":"sticky_resin", "amount":1}
 	],
 	"outputs":[
@@ -815,7 +835,7 @@
 		{"id":"gold_ingot", "amount":1}
 	],
 	"outputs":[
-		{"id":"gold_plate", "amount":1}
+		{"id":"gold_plate", "amount":4}
 	],
 	"requiredProcess":"metal_bending",
 	"processTimeSeconds":5,
@@ -951,9 +971,9 @@
 },
 {
 	"inputs":[
-		{"id":"wood", "amount":1},
+		{"id":"plank", "amount":1},
 		{"id":"phenol", "amount":1},
-		{"id":"copper_wire", "amount":1}
+		{"id":"copper_plate", "amount":1}
 	],
 	"outputs":[
 		{"id":"wooden_circuit_board", "amount":2}
@@ -973,11 +993,88 @@
 		{"id":"RAM_chip", "amount":1},
 		{"id":"CPU_chip", "amount":1},
 		{"id":"polyethylene", "amount":1},
-		{"id":"polyvinyl_chloride", "amount":1}
+		{"id":"polyvinyl_chloride", "amount":1},
+		{"id":"aluminum_plate", "amount":1}
 	],
 	"outputs":[
 		{"id":"computer", "amount":1}
 	],
 	"requiredProcess":"assembly",
 	"processTimeSeconds":20
+},
+{
+	"inputs":[
+		{"id":"aluminum_ingot", "amount":1}
+	],
+	"outputs":[
+		{"id":"aluminum_plate", "amount":4}
+	],
+	"requiredProcess":"metal_bending",
+	"processTimeSeconds":5
+},
+{
+	"inputs":[
+		{"id":"sodium", "amount":2},
+		{"id":"water", "amount":2}
+	],
+	"outputs":[
+		{"id":"sodium_hydroxide", "amount":1},
+		{"id":"hydrogen_gas", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5
+},
+{
+	"inputs":[
+		{"id":"phenol", "amount":2},
+		{"id":"propene_gas", "amount":1}
+	],
+	"outputs":[
+		{"id":"bisphenol_a", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"ethylene_gas", "amount":2},
+		{"id":"chlorine_gas", "amount":1},
+		{"id":"oxygen_gas", "amount":1}
+	],
+	"outputs":[
+		{"id":"epichlorohydrin", "amount":1},
+		{"id":"hydrogen_gas", "amount":1},
+		{"id":"hydrochloric_acid", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"sodium_hydroxide", "amount":1},
+		{"id":"bisphenol_a", "amount":1},
+		{"id":"epichlorohydrin", "amount":1}
+	],
+	"outputs":[
+		{"id":"epoxy_resin", "amount":1},
+		{"id":"water", "amount":1},
+		{"id":"salt", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"epoxy_resin", "amount":1},
+		{"id":"copper_wire", "amount":1}
+	],
+	"outputs":[
+		{"id":"epoxy_circuit_board", "amount":1}
+	],
+	"requiredProcess":"assembly",
+	"processTimeSeconds":5,
+	"requiredTier":1
 }]
