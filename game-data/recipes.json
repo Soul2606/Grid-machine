@@ -1014,11 +1014,108 @@
 },
 {
 	"inputs":[
+		{"id":"raw_oil", "amount":2}
+	],
+	"outputs":[
+		{"id":"methane_gas", "amount":1}
+	],
+	"requiredProcess":"distillation",
+	"processTimeSeconds":3,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"raw_oil", "amount":2}
+	],
+	"outputs":[
+		{"id":"ethylene_gas", "amount":1}
+	],
+	"requiredProcess":"distillation",
+	"processTimeSeconds":3,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"raw_oil", "amount":2}
+	],
+	"outputs":[
+		{"id":"propene_gas", "amount":1}
+	],
+	"requiredProcess":"distillation",
+	"processTimeSeconds":3,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"nitrogen_gas", "amount":1},
+		{"id":"hydrogen_gas", "amount":3}
+	],
+	"outputs":[
+		{"id":"ammonia", "amount":2}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":15,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"salt", "amount":1},
+		{"id":"ammonia", "amount":1},
+		{"id":"carbon_dioxide", "amount":1},
+		{"id":"water", "amount":1}
+	],
+	"outputs":[
+		{"id":"sodium_bicarbonate", "amount":1},
+		{"id":"ammonium_chloride", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"ammonium_chloride", "amount":1}
+	],
+	"outputs":[
+		{"id":"ammonia", "amount":1},
+		{"id":"hydrochloric_acid", "amount":1}
+	],
+	"requiredProcess":"electrolysis",
+	"processTimeSeconds":1,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"sodium_bicarbonate", "amount":2}
+	],
+	"outputs":[
+		{"id":"soda_ash", "amount":1},
+		{"id":"carbon_dioxide", "amount":1},
+		{"id":"water", "amount":1}
+	],
+	"requiredProcess":"electrolysis",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"soda_ash", "amount":1},
+		{"id":"sand", "amount":8}
+	],
+	"outputs":[
+		{"id":"glass_fiber", "amount":8}
+	],
+	"requiredProcess":"blasting",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
 		{"id":"sodium", "amount":2},
 		{"id":"water", "amount":2}
 	],
 	"outputs":[
-		{"id":"sodium_hydroxide", "amount":1},
+		{"id":"sodium_hydroxide", "amount":2},
 		{"id":"hydrogen_gas", "amount":1}
 	],
 	"requiredProcess":"chemical",
@@ -1069,6 +1166,7 @@
 {
 	"inputs":[
 		{"id":"epoxy_resin", "amount":1},
+		{"id":"glass_fiber", "amount":1},
 		{"id":"copper_wire", "amount":1}
 	],
 	"outputs":[

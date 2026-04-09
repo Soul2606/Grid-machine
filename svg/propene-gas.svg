@@ -8,7 +8,7 @@
    version="1.1"
    id="svg1"
    inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
-   sodipodi:docname="methane-gas.svg"
+   sodipodi:docname="propene-gas.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -16,7 +16,7 @@
    xmlns:svg="http://www.w3.org/2000/svg">
   <sodipodi:namedview
      id="namedview1"
-     pagecolor="#ffffff"
+     pagecolor="#808080"
      bordercolor="#000000"
      borderopacity="0.25"
      inkscape:showpageshadow="2"
@@ -39,11 +39,11 @@
        id="linearGradient6"
        inkscape:collect="always">
       <stop
-         style="stop-color:#ffad6d;stop-opacity:1;"
+         style="stop-color:#f9ff3e;stop-opacity:1;"
          offset="0"
          id="stop6" />
       <stop
-         style="stop-color:#ff80ee;stop-opacity:1;"
+         style="stop-color:#ffffff;stop-opacity:1;"
          offset="1"
          id="stop7" />
     </linearGradient>
@@ -51,11 +51,11 @@
        id="linearGradient3"
        inkscape:collect="always">
       <stop
-         style="stop-color:#ff7000;stop-opacity:1;"
+         style="stop-color:#ff831f;stop-opacity:1;"
          offset="0"
          id="stop4" />
       <stop
-         style="stop-color:#ff12ac;stop-opacity:1;"
+         style="stop-color:#fffb4a;stop-opacity:1;"
          offset="1"
          id="stop3" />
     </linearGradient>

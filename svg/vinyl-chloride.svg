@@ -8,7 +8,7 @@
    version="1.1"
    id="svg1"
    inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
-   sodipodi:docname="methane-gas.svg"
+   sodipodi:docname="vinyl-chloride.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -39,11 +39,11 @@
        id="linearGradient6"
        inkscape:collect="always">
       <stop
-         style="stop-color:#ffad6d;stop-opacity:1;"
+         style="stop-color:#ff6d6d;stop-opacity:1;"
          offset="0"
          id="stop6" />
       <stop
-         style="stop-color:#ff80ee;stop-opacity:1;"
+         style="stop-color:#ffc66d;stop-opacity:1;"
          offset="1"
          id="stop7" />
     </linearGradient>
@@ -55,7 +55,7 @@
          offset="0"
          id="stop4" />
       <stop
-         style="stop-color:#ff12ac;stop-opacity:1;"
+         style="stop-color:#ff1212;stop-opacity:1;"
          offset="1"
          id="stop3" />
     </linearGradient>
@@ -68,10 +68,10 @@
        inkscape:collect="always"
        xlink:href="#linearGradient3"
        id="linearGradient4"
-       x1="44.045753"
-       y1="86.777054"
-       x2="44.045753"
-       y2="16.612087"
+       x1="44.045757"
+       y1="16.612085"
+       x2="44.045757"
+       y2="86.777061"
        gradientUnits="userSpaceOnUse"
        gradientTransform="translate(0,-1.2013267)" />
     <linearGradient

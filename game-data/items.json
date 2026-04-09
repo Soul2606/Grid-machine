@@ -35,6 +35,11 @@
 		"img":"svg/oxygen-gas.svg",
 		"formula":"O2"
 	},
+	"nitrogen_gas":{
+		"name":"Nitrogen gas",
+		"img":"svg/nitrogen-gas.svg",
+		"formula":"N2"
+	},
 	"stone_dust":{
 		"name":"Stone dust",
 		"img":"svg/stone-dust.svg",
@@ -397,7 +402,8 @@
 		"img":"svg/ram-chip.svg"
 	},
 	"raw_oil":{
-		"name":"Raw oil"
+		"name":"Raw oil",
+		"img":"svg/raw-oil.svg"
 	},
 	"hydraulic_fluid":{
 		"name":"Hydraulic fluid"
@@ -434,6 +440,7 @@
 	},
 	"vinyl_chloride":{
 		"name":"Vinyl chloride",
+		"img":"svg/vinyl-chloride.svg",
 		"formula":"CH2CHCl"
 	},
 	"polyvinyl_chloride":{
@@ -448,13 +455,34 @@
 		"name":"Computer",
 		"img":"svg/computer.svg"
 	},
+	"ammonia":{
+		"name":"Ammonia",
+		"img":"svg/ammonia.svg",
+		"formula":"NH3"
+	},
+	"ammonium_chloride":{
+		"name":"Ammonium chloride",
+		"img":"svg/salt.svg",
+		"formula":"NH4Cl"
+	},
+	"sodium_bicarbonate":{
+		"name":"Sodium bicarbonate",
+		"img":"svg/salt.svg",
+		"formula":"NaHCO3"
+	},
 	"sodium_hydroxide":{
 		"name":"Sodium hydroxide",
 		"img":"svg/sodium-hydroxide.svg",
 		"formula":"NaOH"
 	},
+	"soda_ash":{
+		"name":"Soda ash",
+		"img":"svg/soda-ash.svg",
+		"formula":"Na2CO3"
+	},
 	"propene_gas":{
 		"name":"Propene gas",
+		"img":"svg/propene-gas.svg",
 		"formula":"C3H6"
 	},
 	"bisphenol_a":{
@@ -470,7 +498,11 @@
 		"img":"svg/epoxy-resin.svg",
 		"formula":"C21H25ClO5"
 	},
+	"glass_fiber":{
+		"name":"Glass fiber"
+	},
 	"epoxy_circuit_board":{
-		"name":"Epoxy circuit board"
+		"name":"Epoxy circuit board",
+		"img":"svg/epoxy-circuit-board.svg"
 	}
 }
