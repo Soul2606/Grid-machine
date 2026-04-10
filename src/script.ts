@@ -5,7 +5,7 @@ import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, 
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js'
 import { createChemicalFormula, createInfoPanel, createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
 import { getSignals, isPressed } from "./keyboard-events.js";
-import { addSteamEngine, addToSimulation, getSteamEngines, mainInventory, power, tick as pubSubTick, workers } from "./engine.js";
+import { addSteamEngine, addToSimulation, getSteamEngines, getWorkers, mainInventory, power, tick as pubSubTick, setWorkers, workersReact } from "./engine.js";
 
 
 
@@ -16,7 +16,7 @@ import { addSteamEngine, addToSimulation, getSteamEngines, mainInventory, power,
 
 
 function updateWorkers() {
-	document.getElementById("resources-workers")!.textContent = String(workers.amount)
+	document.getElementById("resources-workers")!.textContent = String(getWorkers())
 }
 
 
@@ -396,7 +396,7 @@ document.getElementById('recipe-window-button')!.addEventListener('click',()=>{
 document.body.classList.remove('loading')
 
 updateWorkers()
-workers.event.subscribe(updateWorkers)
+workersReact.subscribe(updateWorkers)
 
 
 
@@ -662,14 +662,15 @@ const machineUI = {
 
 
 machineUI.events.onAssignWorker = () => {
-	if (workers.amount < 1) return
+	const workers = getWorkers()
+	if (workers < 1) return
 	const owner = machineUI?.owner
 	if (!owner) return
 	const need = owner.getWorkerNeed()
 	if (!need) return
 	const status = owner.changeWorker(1)
 	if (status === "success") {
-		workers.transfer(1, owner)
+		setWorkers(workers - 1)
 	} else {
 		console.log(status)
 	}
@@ -682,7 +683,7 @@ machineUI.events.onLayOffWorker = () => {
 	if (!need) return
 	const status = owner.changeWorker(-1)
 	if (status === "success") {
-		workers.transfer(-1, owner)
+		setWorkers(getWorkers() - 1)
 	} else {
 		console.log(status)
 	}

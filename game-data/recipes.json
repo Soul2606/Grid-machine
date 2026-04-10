@@ -757,6 +757,18 @@
 },
 {
 	"inputs":[
+		{"id":"hydrochloric_acid", "amount":2}
+	],
+	"outputs":[
+		{"id":"hydrogen_gas", "amount":1},
+		{"id":"chlorine_gas", "amount":1}
+	],
+	"requiredProcess":"electrolysis",
+	"processTimeSeconds":10,
+	"requiredTier":0
+},
+{
+	"inputs":[
 		{"id":"hydrochloric_acid", "amount":3},
 		{"id":"iron_ingot", "amount":1}
 	],

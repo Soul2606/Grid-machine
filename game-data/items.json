@@ -413,7 +413,8 @@
 		"img":"svg/basic-pump.svg"
 	},
 	"rubber_pipe":{
-		"name":"Rubber pipe"
+		"name":"Rubber pipe",
+		"img":"svg/rubber-pipe.svg"
 	},
 	"hydraulic_piston":{
 		"name":"Hydraulic piston"

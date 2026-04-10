@@ -1,6 +1,5 @@
-import { getDataMapToId } from "./game-data.js";
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, Signal, type MachineInstanceStatus } from "./classes.js";
-import { clamp, clampByResource, getItemFromId, relu } from "./functions.js";
+import { clamp, getItemFromId, relu } from "./functions.js";
 import type { ItemInstanceSer, JSONValue, MachineInstanceSer } from "./types.js";
 
 
@@ -30,7 +29,15 @@ const steamEngines = {
 
 export const maxPower = ()=>steamEngines.value*20;
 
-export const workers = provenance(10);
+
+
+
+var workers = 10;
+
+const workersSignal = new Signal()
+
+
+
 
 export function removeMachine(mac:MachineInstance) {
 	const existing = machinesSimulated.get(mac)
@@ -40,6 +47,9 @@ export function removeMachine(mac:MachineInstance) {
 	return true
 }
 
+
+
+
 export function getMachines() {
 	return machinesSimulated
 	.entries()
@@ -48,6 +58,7 @@ export function getMachines() {
 		setTickEvent:val.setTickEvent
 	}))
 }
+
 
 
 
@@ -148,25 +159,22 @@ export function load()  {
 
 
 
-function provenance(initial = 0) {
-	const sig = new Signal()
-	const obj = {
-		amount: initial,
-		provenance: new Map<object, number>(),
-		transfer: (amount: number, recipientId: object) => {
-			let n = obj.provenance.get(recipientId) ?? 0;
-			const delta = Math.max(Math.min(amount, obj.amount), -n);
-			n += delta;
-			obj.amount -= delta;
-			n === 0 ? obj.provenance.delete(recipientId)
-				: obj.provenance.set(recipientId, n);
-			sig.send(undefined);
-			return delta;
-		},
-		event: sig.createInterface(true),
-	};
-	return obj;
+export function setWorkers(value:number) {
+	workers = value
+	workersSignal.send(undefined)
 }
+
+
+
+
+export function getWorkers() {
+	return workers
+}
+
+
+
+
+export const workersReact = workersSignal.createInterface(true) 
 
 
 
