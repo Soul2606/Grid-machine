@@ -499,7 +499,8 @@
 		"formula":"C21H25ClO5"
 	},
 	"glass_fiber":{
-		"name":"Glass fiber"
+		"name":"Glass fiber",
+		"img":"svg/glass-fiber.svg"
 	},
 	"epoxy_circuit_board":{
 		"name":"Epoxy circuit board",

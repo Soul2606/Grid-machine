@@ -5,7 +5,7 @@ import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, 
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js'
 import { createChemicalFormula, createInfoPanel, createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
 import { getSignals, isPressed } from "./keyboard-events.js";
-import { addToSimulation, mainInventory, power, tick as pubSubTick, workers, steamEngines as engineSteamEngines } from "./engine.js";
+import { addSteamEngine, addToSimulation, getSteamEngines, mainInventory, power, tick as pubSubTick, workers } from "./engine.js";
 
 
 
@@ -191,8 +191,8 @@ if (!recipeDisplay) throw new Error("error");
 const steamEngines = document.getElementById("steam-engines")
 if (!steamEngines) throw new Error("error");
 
-const addSteamEngine = document.getElementById("add-steam-engine")
-if (!addSteamEngine) throw new Error("error");
+const addSteamEngineBtn = document.getElementById("add-steam-engine")
+if (!addSteamEngineBtn) throw new Error("error");
 
 
 
@@ -346,16 +346,12 @@ const quantitySlider = (()=>{
 
 
 
-addSteamEngine.addEventListener("click", ()=>{
-	if (mainInventory.subtractItems([
-		ItemEntry.fromSer({id:"stone", amount:10, metadata:null}),
-	])) {
-		engineSteamEngines.value++
-	}
+addSteamEngineBtn.addEventListener("click", ()=>{
+	addSteamEngine()
 })
 
 pubSubTick.subscribe(()=>{
-	steamEngines.textContent = String(engineSteamEngines.value)
+	steamEngines.textContent = String(getSteamEngines().value)
 })
 
 

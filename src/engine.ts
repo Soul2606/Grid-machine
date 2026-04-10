@@ -18,8 +18,9 @@ export const mainInventory = new Inventory();
 
 export const power = {value:0};
 
-export const steamEngines = {
+const steamEngines = {
 	value:0,
+	// Hard coded stats are bad, this should be fetched from a config file
 	info:{
 		production:10,
 		consumption:0.01,
@@ -165,6 +166,24 @@ function provenance(initial = 0) {
 		event: sig.createInterface(true),
 	};
 	return obj;
+}
+
+
+
+
+export function addSteamEngine(amount=1) {
+	if (mainInventory.subtractItems([
+		ItemEntry.fromSer({id:"stone", amount:10*amount, metadata:null}),
+	])) {
+		steamEngines.value += amount
+	}
+}
+
+
+
+
+export function getSteamEngines() {
+	return steamEngines as Readonly<typeof steamEngines>
 }
 
 
