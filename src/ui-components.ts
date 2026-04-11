@@ -194,11 +194,13 @@ export function createItemTagCell(tag:string) {
 
 
 
-export function createMachine(machine: Machine) {
+export function createMachine(name:string, img:string) {
+	console.log("name:", name, "img:", img);
+	
 	const cell = document.createElement('div')
 	cell.className = 'machine'
-	cell.textContent = machine.name
-	if (machine.img) cell.style.backgroundImage = `url(${machine.img})`
+	cell.textContent = name
+	cell.style.backgroundImage = `url(${img})`
 
 	const stack = document.createElement('p')
 	stack.textContent = String(1)

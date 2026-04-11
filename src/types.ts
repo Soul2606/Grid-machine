@@ -22,9 +22,12 @@ export type ItemInstanceSer = {
 // Serialized snapshot of a Machine instance
 export type MachineInstanceSer = Readonly<{
 	capableRecipes: readonly Recipe[];
-	work: number;
-	stack: number;
-	cost: ItemInstanceSer[];
+	work:           number;
+	stack:          number;
+	cost:           ItemInstanceSer[];
+	name:           string;
+	sprite:         string;
+	machineId:      string|null;
 	workingOn: {
 		readonly amount: number;
 		readonly recipe: ResolvedRecipeSer;

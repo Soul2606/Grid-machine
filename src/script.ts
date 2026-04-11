@@ -5,7 +5,7 @@ import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, 
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js'
 import { createChemicalFormula, createInfoPanel, createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
 import { getSignals, isPressed } from "./keyboard-events.js";
-import { addSteamEngine, addToSimulation, getSteamEngines, getWorkers, load, mainInventory, power, tick as pubSubTick, save, setWorkers, workersReact } from "./engine.js";
+import { addSteamEngine, addToSimulation, getMachine, getMachines, getSteamEngines, getWorkers, load, mainInventory, power, tick as pubSubTick, save, setWorkers, workersReact } from "./engine.js";
 
 
 
@@ -715,7 +715,8 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 	
 	const machineInst = MachineInstance.fromMachine(machineObject)
 	
-	addMachine(machineInst, machineObject)
+	addToSimulation(machineInst)
+	document.getElementById('machine-line')!.append(bindToUi(machineInst))
 
 	transferContext.transfer(true)
 	transferContext = {kind: "empty"}
@@ -724,19 +725,21 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 
 
 
-const addMachine = (machineInst:MachineInstance, machineObject:Machine) => {
+const bindToUi = (machineInst:MachineInstance) => {
+	const api = getMachine(machineInst);
+	if (!api) throw new Error("Machine does not exist");
 
-	const {element:machineCell, setStack, setProgress, setWarning} = createMachine(machineObject)
-	if (machineObject.energyNeeds) setWarning('no_fuel')
+	const {element:root, setStack, setProgress, setWarning} = createMachine(machineInst.name, machineInst.sprite)
+	if (machineInst.getPowerNeed()) setWarning('no_fuel')
 
-	machineCell.addEventListener('click',()=>{
+	root.addEventListener('click',()=>{
 		if (transferContext.kind === "empty") {
 			machineUI.owner = machineInst
 			machineUI.events.onEvent = ()=>setStack(String(machineInst.getStack()))
 			machineUI.refresh(machineInst, mainInventory, )
 			machineWindow.style.display = ""
 		} else if (transferContext.kind === "machine") {
-			if (transferContext.value.id === machineObject.id) {
+			if (transferContext.value.id === machineInst.machineId) {
 				machineInst.setStack(1 + machineInst.getStack())
 				setStack(String(machineInst.getStack()))
 				transferContext.transfer(true)
@@ -791,14 +794,10 @@ const addMachine = (machineInst:MachineInstance, machineObject:Machine) => {
 		}
 		transferContext = {kind: "empty"}
 	})
-
-
-
-	document.getElementById('machine-line')!.appendChild(machineCell)
 	
 	
 	// Declare setTimeout machine logic
-	addToSimulation(machineInst, status => {
+	api.setTickEvent(status => {
 		if (machineUI.owner === machineInst) {
 			machineUI.refreshText(machineInst)
 		}
@@ -814,6 +813,8 @@ const addMachine = (machineInst:MachineInstance, machineObject:Machine) => {
 			setProgress(100)
 		}
 	})
+
+	return root
 }
 
 
@@ -823,7 +824,14 @@ document.getElementById("save")!.addEventListener("click", () => {
 	save()
 })
 
+//In ui script.ts
 document.getElementById("load")!.addEventListener("click", () => {
+	const machineLine = document.getElementById('machine-line')
+	if (!machineLine) throw new Error(`Machine line does not exist`);
+	removeAllChildren(machineLine)
 	load()
+	for(const [machine, api] of getMachines()) {
+		machineLine.append(bindToUi(machine))
+	}
 })
 

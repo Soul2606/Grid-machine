@@ -331,7 +331,10 @@ export class MachineInstance {
 			stack,
 			0,
 			[],
-			modules
+			modules,
+			machine.name,
+			machine.img,
+			machine.id
 		)
 	}
 
@@ -349,18 +352,24 @@ export class MachineInstance {
 				fuelNeed:  structuredClone(ser.fuelNeed),
 				powerNeed: structuredClone(ser.powerNeed),
 				workerNeed:structuredClone(ser.workerNeed)
-			}
+			},
+			ser.name,
+			ser.sprite,
+			ser.machineId??undefined
 		)
 	}
 
 	// ============== Properties ====================
 	//Public
+	readonly sprite:        string
+	readonly name:          string
+	readonly machineId:     string|undefined
 	readonly capableRecipes = new Map<string, Recipe>()
-	readonly cost: readonly ItemEntry[]
+	readonly cost:            readonly ItemEntry[]
 
 	//Private
-	private stack: number
-	private work: number    // 1 work equals 1 second of processing
+	private stack:     number
+	private work:      number    // 1 work equals 1 second of processing
 	private workingOn: {recipe: ResolvedRecipe, amount: number}[] // Queue system, first item is the one thats actually being worked on
 	//Modules
 	private readonly fuelNeed?:   {readonly need:number, readonly tags:readonly string[], energy:number}
@@ -369,12 +378,15 @@ export class MachineInstance {
 
 	// ============== Constructor ====================
 	constructor(
-		recipes: readonly CustomRecipe[],
-		cost: readonly ItemEntry[],
-		stack = 1,
-		work = 0,
+		recipes:   readonly CustomRecipe[],
+		cost:      readonly ItemEntry[],
+		stack      = 1,
+		work       = 0,
 		workingOn: {recipe: ResolvedRecipe, amount: number}[] = [],
-		modules:MIModules = {}
+		modules:   MIModules = {},
+		name       = "",
+		sprite     = "",
+		machineId?:string
 	) {
 		recipes.forEach(rec =>{
 			const uid = this.generateUID()
@@ -387,9 +399,12 @@ export class MachineInstance {
 				processTimeSeconds: rec.processTimeSeconds
 			})
 		})
-		this.cost = cost
-		this.stack =   stack
-		this.work =    work
+		this.name      = name
+		this.sprite    = sprite
+		this.machineId = machineId
+		this.cost      = cost
+		this.stack     =   stack
+		this.work      =    work
 		this.workingOn = workingOn
 		if (modules.fuelNeed)   this.fuelNeed   = modules.fuelNeed
 		if (modules.powerNeed) this.powerNeed   = modules.powerNeed
@@ -417,6 +432,9 @@ export class MachineInstance {
 			work: this.work,
 			stack: this.stack,
 			cost: this.cost.map(ent => ent.serialize()),
+			name: this.name,
+			sprite: this.sprite,
+			machineId: this.machineId??null,
 			workingOn: this.workingOn.map(wo => ({
 				amount: wo.amount,
 				recipe: wo.recipe.serialize()

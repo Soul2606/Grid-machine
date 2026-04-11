@@ -1,6 +1,6 @@
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, Signal, type MachineInstanceStatus } from "./classes.js";
 import { clamp, getItemFromId, relu } from "./functions.js";
-import type { ItemInstanceSer, JSONValue, MachineInstanceSer } from "./types.js";
+import type { ItemInstanceSer, JSONValue, Machine, MachineInstanceSer } from "./types.js";
 
 
 
@@ -11,11 +11,7 @@ type MachineInstanceAPI = {
 
 
 
-const machinesSimulated = new Map<MachineInstance, 
-{
-	readonly unsubscribe:()=>boolean
-	readonly setTickEvent:(event:(status:MachineInstanceStatus)=>void)=>void
-}>()
+const machinesSimulated = new Map<MachineInstance, MachineInstanceAPI>()
 
 
 
@@ -45,24 +41,15 @@ const workersSignal = new Signal()
 
 
 
-export function removeMachine(mac:MachineInstance) {
-	const existing = machinesSimulated.get(mac)
-	if (existing === undefined) return false
-	machinesSimulated.delete(mac)
-	existing.unsubscribe()
-	return true
+export function getMachine(machine:MachineInstance) {
+	return machinesSimulated.get(machine)
 }
 
 
 
 
-export function getMachine(machine:MachineInstance) {
-	const exist = machinesSimulated.get(machine)
-	if (exist === undefined) return undefined
-	return {
-		setTickEvent: exist.setTickEvent,
-		remove: exist.unsubscribe, 
-	} satisfies MachineInstanceAPI
+export function getMachines() {
+	return machinesSimulated.entries()
 }
 
 
@@ -91,12 +78,13 @@ export const tick = (() => {
  * @param tickCall This is called last, after all internal logic is run, so global values might be mutated.
  * @returns An unsubscribe function that removes this machine when called.
  */
-export function addToSimulation(machine:MachineInstance, tickCall?:(status:MachineInstanceStatus)=>void):()=>boolean {
+export function addToSimulation(machine:MachineInstance) {
 	const existing = machinesSimulated.get(machine)
-	let tickEvent = tickCall
+	let tickEvent:(status:MachineInstanceStatus)=>void | undefined
+
 	/**DO NOT LOSE THIS! */
 	const unsubscribe = existing !== undefined
-	? existing.unsubscribe
+	? existing.remove
 	: tick.subscribe((delta)=>{
 		// Get power
 		;(()=>{
@@ -116,16 +104,23 @@ export function addToSimulation(machine:MachineInstance, tickCall?:(status:Machi
 		mainInventory.addItems(status.crafted)
 		if (tickEvent) tickEvent(status)
 	})
-	machinesSimulated.set(machine, {
-		unsubscribe,
-		setTickEvent: event=>{
+
+	const api:MachineInstanceAPI = {
+		remove: ()=>{
+			if (unsubscribe()) {
+				machinesSimulated.delete(machine)
+				return true
+			}
+			return false
+		},
+		setTickEvent: event => {
 			tickEvent = event
 		}
-	})
-	return ()=>{
-		machinesSimulated.delete(machine)
-		return unsubscribe()
 	}
+
+	machinesSimulated.set(machine, api)
+
+	return api
 }
 
 
@@ -134,7 +129,7 @@ export function addToSimulation(machine:MachineInstance, tickCall?:(status:Machi
 type SaveFormat = {
 	version:number
 	items:ItemInstanceSer[]
-	machines:{data:MachineInstanceSer, id:string}[]
+	machines:MachineInstanceSer[]
 }
 
 
@@ -144,10 +139,7 @@ export function save() {
 	localStorage.setItem('save', JSON.stringify({
 		version: 0.1,
 		items:    mainInventory.getAllItemInstances().map(i => i.serialize()),
-		machines: machinesSimulated.keys().toArray().map(v => ({
-			data:v.serialize(),
-			id:"",
-		}))
+		machines: machinesSimulated.keys().toArray().map(v => v.serialize())
 	} satisfies SaveFormat))
 }
 
@@ -156,11 +148,14 @@ export function save() {
 
 export function load()  {
 	const save: SaveFormat = JSON.parse(localStorage.getItem('save')??"null")
-	console.log(save);
 	if (save.version !== 0.1) console.warn(`Wrong save version, current: 0.1, save: ${save.version}`)
 	mainInventory.clear()
 	mainInventory.addItems(save.items.map(ItemEntry.fromSer))
-	for (const {data:mac, id} of save.machines) {
+	for (const [mac, api] of machinesSimulated.entries()) {
+		api.remove()
+	}
+	machinesSimulated.clear()
+	for (const mac of save.machines) {
 		addToSimulation(MachineInstance.fromSer(mac))
 	}
 }
