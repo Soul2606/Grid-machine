@@ -828,7 +828,9 @@ document.getElementById("save")!.addEventListener("click", () => {
 document.getElementById("load")!.addEventListener("click", () => {
 	const machineLine = document.getElementById('machine-line')
 	if (!machineLine) throw new Error(`Machine line does not exist`);
-	removeAllChildren(machineLine)
+	for (const element of machineLine.querySelectorAll(":scope > .machine")) {
+		element.remove()
+	}
 	load()
 	for(const [machine, api] of getMachines()) {
 		machineLine.append(bindToUi(machine))
