@@ -5,7 +5,7 @@ import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, 
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js'
 import { createChemicalFormula, createInfoPanel, createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
 import { getSignals, isPressed } from "./keyboard-events.js";
-import { addSteamEngine, addToSimulation, getSteamEngines, getWorkers, mainInventory, power, tick as pubSubTick, setWorkers, workersReact } from "./engine.js";
+import { addSteamEngine, addToSimulation, getSteamEngines, getWorkers, load, mainInventory, power, tick as pubSubTick, save, setWorkers, workersReact } from "./engine.js";
 
 
 
@@ -22,7 +22,7 @@ function updateWorkers() {
 
 
 function updatePower() {
-	document.getElementById("resources-power")!.textContent = String(power.value)
+	document.getElementById("resources-power")!.textContent = power.value.toFixed(3)
 }
 
 
@@ -712,10 +712,22 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 	
 	const machineObject = transferContext.value
 	if (!machineObject) return
-	const {element:machineCell, setStack, setProgress, setWarning} = createMachine(machineObject)
-	setWarning('no_fuel')
-
+	
 	const machineInst = MachineInstance.fromMachine(machineObject)
+	
+	addMachine(machineInst, machineObject)
+
+	transferContext.transfer(true)
+	transferContext = {kind: "empty"}
+})
+
+
+
+
+const addMachine = (machineInst:MachineInstance, machineObject:Machine) => {
+
+	const {element:machineCell, setStack, setProgress, setWarning} = createMachine(machineObject)
+	if (machineObject.energyNeeds) setWarning('no_fuel')
 
 	machineCell.addEventListener('click',()=>{
 		if (transferContext.kind === "empty") {
@@ -783,8 +795,6 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 
 
 	document.getElementById('machine-line')!.appendChild(machineCell)
-	transferContext.transfer(true)
-	transferContext = {kind: "empty"}
 	
 	
 	// Declare setTimeout machine logic
@@ -804,6 +814,16 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 			setProgress(100)
 		}
 	})
+}
+
+
+
+
+document.getElementById("save")!.addEventListener("click", () => {
+	save()
 })
 
+document.getElementById("load")!.addEventListener("click", () => {
+	load()
+})
 

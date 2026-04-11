@@ -4,6 +4,12 @@ import type { ItemInstanceSer, JSONValue, MachineInstanceSer } from "./types.js"
 
 
 
+type MachineInstanceAPI = {
+	readonly setTickEvent:(event:(status:MachineInstanceStatus)=>void)=>void
+	readonly remove:()=>boolean
+}
+
+
 
 const machinesSimulated = new Map<MachineInstance, 
 {
@@ -21,13 +27,13 @@ const steamEngines = {
 	value:0,
 	// Hard coded stats are bad, this should be fetched from a config file
 	info:{
-		production:10,
+		production:1000,
 		consumption:0.01,
 		fuelId:"raw_coal",
 	} as const
 };
 
-export const maxPower = ()=>steamEngines.value*20;
+export const maxPower = ()=>steamEngines.value*2000;
 
 
 
@@ -50,13 +56,13 @@ export function removeMachine(mac:MachineInstance) {
 
 
 
-export function getMachines() {
-	return machinesSimulated
-	.entries()
-	.map(([key, val]) => ({
-		machine:key,
-		setTickEvent:val.setTickEvent
-	}))
+export function getMachine(machine:MachineInstance) {
+	const exist = machinesSimulated.get(machine)
+	if (exist === undefined) return undefined
+	return {
+		setTickEvent: exist.setTickEvent,
+		remove: exist.unsubscribe, 
+	} satisfies MachineInstanceAPI
 }
 
 
@@ -128,7 +134,7 @@ export function addToSimulation(machine:MachineInstance, tickCall?:(status:Machi
 type SaveFormat = {
 	version:number
 	items:ItemInstanceSer[]
-	machines:MachineInstanceSer[]
+	machines:{data:MachineInstanceSer, id:string}[]
 }
 
 
@@ -138,7 +144,10 @@ export function save() {
 	localStorage.setItem('save', JSON.stringify({
 		version: 0.1,
 		items:    mainInventory.getAllItemInstances().map(i => i.serialize()),
-		machines: machinesSimulated.keys().toArray().map(v => v.serialize())
+		machines: machinesSimulated.keys().toArray().map(v => ({
+			data:v.serialize(),
+			id:"",
+		}))
 	} satisfies SaveFormat))
 }
 
@@ -151,8 +160,8 @@ export function load()  {
 	if (save.version !== 0.1) console.warn(`Wrong save version, current: 0.1, save: ${save.version}`)
 	mainInventory.clear()
 	mainInventory.addItems(save.items.map(ItemEntry.fromSer))
-	for (const mac of save.machines) {
-		addToSimulation(MachineInstance.fromSer(mac)) // This is a problem. When a page loads the save, it needs to hook its ui reactivity to this event
+	for (const {data:mac, id} of save.machines) {
+		addToSimulation(MachineInstance.fromSer(mac))
 	}
 }
 
