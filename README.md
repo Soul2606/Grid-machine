@@ -1,3 +1,4 @@
 # Grid machine
+Grid machine is a dumb name and will be changed.
 
-Grid machine is a dumb name and will be replaced.
+This is a browser game about automation and resource management, designed to be optimized for large factories.
