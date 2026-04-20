@@ -29,7 +29,9 @@
 	</style>
 </head>
 <body>
+	<h1>Progression</h1>
 	<h2>Circuits</h2>
+	<hr>
 	<p>Each circuit type: Logic circuit, Processor, Computer... corresponds to each tech tier: Basic, Solid, Advanced...</p>
 	<p>Down the table is each circuit tech level, the circuit type does not change with tech level, but the cost and complexity changes. Generally the higher tech circuits are cheaper but require more advanced technology to assemble.</p>
 	<table>
@@ -45,12 +47,20 @@
 		<tr>
 			<td>Basic Logic circuit</td>
 			<td>Basic Processor</td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
 		</tr>
 		<tr>
 			<td>Solid Logic circuit</td>
 			<td>Solid Processor</td>
 			<td>Solid Computer</td>
 			<td>Solid Computer assembly</td>
+			<td></td>
+			<td></td>
+			<td></td>
 		</tr>
 		<tr>
 			<td></td>
@@ -58,6 +68,8 @@
 			<td>Nano Computer</td>
 			<td>Nano Computer assembly</td>
 			<td>Nano Super-computer</td>
+			<td></td>
+			<td></td>
 		</tr>
 		<tr>
 			<td></td>
@@ -72,21 +84,21 @@
 	<h2>Tiers</h2>
 	<hr>
 	<p>Each tier comes with increasing speed and capabilities, but also an exponential increase in power consumption.</p>
+	<p>Every recipe has a tier which means the machine tier needs to be equal or greater than the recipe tier in order to be crafted. The crafting time of a recipe will be reduced by half for each tier the machine is above the required crafting tier.</p>
 	<ul>
-		<li>Basic</li>
+		<li>Basic | Tier0</li>
 		<div class="color" style="background: var(--grad0);"></div>
-		<li>Solid</li>
+		<li>Solid | Tier1</li>
 		<div class="color" style="background: var(--grad1);"></div>
-		<li>Advanced</li>
+		<li>Advanced | Tier2</li>
 		<div class="color" style="background: var(--grad2);"></div>
-		<li>Industrial</li>
+		<li>Industrial | Tier3</li>
 		<div class="color" style="background: var(--grad3);"></div>
-		<li>Elite</li>
+		<li>Elite | Tier4</li>
 		<div class="color" style="background: var(--grad4);"></div>
-		<li>Resonant</li>
+		<li>Resonant | Tier5</li>
 		<div class="color" style="background: var(--grad5);"></div>
 	</ul>
-	<hr>
 	<p>Examples:</p>
 	<ul>
 		<li>Basic Wiremill</li>
@@ -95,5 +107,104 @@
 		<li>Industrial Wiremill</li>
 		<li>Elite Wiremill</li>
 	</ul>
+	<h2>Materials</h2>
+	<hr>
+	<div style="display: flex; flex-wrap: wrap; gap: 25px;">
+		<div>
+			<h3>Lead</h3>
+			<p>Melting point:327°C</p>
+			<p>Radiation resistant</p>
+		</div>
+		<div>
+			<h3>Tin</h3>
+			<p>Melting point:231°C</p>
+			<p>Water resistant</p>
+		</div>
+		<div>
+			<h3>Aluminum</h3>
+			<p>Melting point:660°C</p>
+			<p>Very High thermal conductivity</p>
+		</div>
+		<div>
+			<h3>Copper</h3>
+			<p>Melting point:1084°C</p>
+			<p>Good electrical conductivity</p>
+		</div>
+		<div>
+			<h3>Iron</h3>
+			<p>Melting point:1538°C</p>
+			<p>Ferromagnetic</p>
+		</div>
+		<div>
+			<h3>Steel</h3>
+			<p>Melting point:1567°C</p>
+			<p>Ferromagnetic, Strong</p>
+		</div>
+		<div>
+			<h3>Titanium</h3>
+			<p>Melting point:1668°C</p>
+			<p>Weak acid resistance</p>
+		</div>
+		<div>
+			<h3>Tungsten</h3>
+			<p>Melting point:3422°C</p>
+			<p>Brittle</p>
+		</div>
+		<div>
+			<h3>Stainless Steel</h3>
+			<p>Melting point:2020°C</p>
+			<p>Strong, Acid resistance, Cryo resistance</p>
+		</div>
+		<div>
+			<h3>Tungsten Carbide</h3>
+			<p>Melting point:2870°C</p>
+			<p>Strong, Hard</p>
+		</div>
+		<div>
+			<h3>Maraging Steel</h3>
+			<p>Melting point:1410°C</p>
+			<p>Ultra high strength</p>
+		</div>
+		<div>
+			<h3>Stellite</h3>
+			<p>Melting point:3800°C</p>
+			<p>Stress resistance, Heat resistance</p>
+		</div>
+		<div>
+			<h3>Hastelloy</h3>
+			<p>Melting point:1490°C</p>
+			<p>Corrosion resistance, Acid resistance, Cryo resistance </p>
+		</div>
+		<div>
+			<h3>Mu-metal</h3>
+			<p>Melting point:1010°C</p>
+			<p>High magnetic permeability</p>
+		</div>
+		<div>
+			<h3>Naquadah</h3>
+			<p>Melting point:4010°C</p>
+			<p>Magical, Energy amplifying</p>
+		</div>
+		<div>
+			<h3>Thermium</h3>
+			<p>Melting point:6000°C</p>
+			<p>Magical, Ultra high heat resistance, Insulator</p>
+		</div>
+		<div>
+			<h3>Dimeritium</h3>
+			<p>Melting point:1030°C</p>
+			<p>Magical, Magic resistance</p>
+		</div>
+		<div>
+			<h3>Contriveium</h3>
+			<p>Melting point:4690°C</p>
+			<p>Magical, Indestructible</p>
+		</div>
+		<div>
+			<h3>Neutronium</h3>
+			<p>Melting point:∞°C</p>
+			<p>Magical, Indestructible, Perfect</p>
+		</div>
+	</div>
 </body>
 </html>

@@ -8,6 +8,19 @@ import type { CraftingOptions, Extractor, Input, Item, ItemInstanceSer, JSONValu
 const {items, machines, recipes, extractors} = getDataMapToId()
 
 
+
+
+export function get<T extends HTMLElement = HTMLElement>(id:string) {
+	const el = document.getElementById(id)
+	if (!el) {
+		throw new Error(`Cannot get element from id: ${id}`);
+	}
+	return el as T
+}
+
+
+
+
 export function relu(x: number) {
 	return Math.max(x, 0)
 }

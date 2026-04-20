@@ -1,7 +1,7 @@
 
 import { getData } from "./game-data.js"; // async
 import type { Item, Machine, Recipe } from './types.js'
-import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, relu, removeAllChildren } from './functions.js'
+import { get, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, relu, removeAllChildren } from './functions.js'
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js'
 import { createChemicalFormula, createInfoPanel, createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
 import { getSignals, isPressed } from "./keyboard-events.js";
@@ -16,13 +16,13 @@ import { addSteamEngine, addToSimulation, getMachine, getMachines, getSteamEngin
 
 
 function updateWorkers() {
-	document.getElementById("resources-workers")!.textContent = String(getWorkers())
+	get("resources-workers")!.textContent = String(getWorkers())
 }
 
 
 
 function updatePower() {
-	document.getElementById("resources-power")!.textContent = power.value.toFixed(3)
+	get("resources-power")!.textContent = power.value.toFixed(3)
 }
 
 
@@ -179,19 +179,19 @@ const extraction  = getData().extractors
 
 
 
-const machineWindow = document.getElementById("machine-window")
+const machineWindow = get("machine-window")
 if (!machineWindow) throw new Error("error");
 
-const recipeWindow = document.getElementById("recipe-window")
+const recipeWindow = get("recipe-window")
 if (!recipeWindow) throw new Error("error");
 
-const recipeDisplay = document.getElementById("recipe-display")
+const recipeDisplay = get("recipe-display")
 if (!recipeDisplay) throw new Error("error");
 
-const steamEngines = document.getElementById("steam-engines")
+const steamEngines = get("steam-engines")
 if (!steamEngines) throw new Error("error");
 
-const addSteamEngineBtn = document.getElementById("add-steam-engine")
+const addSteamEngineBtn = get("add-steam-engine")
 if (!addSteamEngineBtn) throw new Error("error");
 
 
@@ -199,7 +199,7 @@ if (!addSteamEngineBtn) throw new Error("error");
 
 /*This is a singleton for managing the elements that follow the mouse*/
 const MouseOverlay = (()=>{
-	const element = document.getElementById('mouse-icon')
+	const element = get('mouse-icon')
 	if (element === null) throw new Error("No root mouse element found");
 	let visible = false
 
@@ -360,10 +360,10 @@ pubSubTick.subscribe(updatePower)
 
 
 
-document.getElementById('side-menu-width-button')!.addEventListener('mousedown',e=>{
+get('side-menu-width-button')!.addEventListener('mousedown',e=>{
 	const minWidth = 300//px
 	const originalMouseX = e.clientX
-	const originalInventoryWidth = Number(document.getElementById('side-menu')!.getBoundingClientRect().width)
+	const originalInventoryWidth = Number(get('side-menu')!.getBoundingClientRect().width)
 	const up = ()=>{
 		window.removeEventListener('mouseup',up)
 		window.removeEventListener('mousemove',move)
@@ -371,8 +371,8 @@ document.getElementById('side-menu-width-button')!.addEventListener('mousedown',
 	const move = (e:MouseEvent)=>{
 		e.clientX
 		const newWidth = Math.max(originalInventoryWidth + e.clientX - originalMouseX, minWidth)
-		document.getElementById('side-menu-container')!.style.width = newWidth + 20 + 'px'
-		document.getElementById('side-menu')!.style.width = newWidth + 'px'
+		get('side-menu-container')!.style.width = newWidth + 20 + 'px'
+		get('side-menu')!.style.width = newWidth + 'px'
 	}
 	window.addEventListener('mousemove',move);
 	window.addEventListener('mouseup',up)
@@ -381,13 +381,13 @@ document.getElementById('side-menu-width-button')!.addEventListener('mousedown',
 
 
 
-document.getElementById('machine-window-button')!.addEventListener('click',()=>{
+get('machine-window-button')!.addEventListener('click',()=>{
 	machineWindow.style.display = 'none'
 })
 
 
 
-document.getElementById('recipe-window-button')!.addEventListener('click',()=>{
+get('recipe-window-button')!.addEventListener('click',()=>{
 	recipeWindow.style.display = 'none'
 })
 
@@ -517,7 +517,7 @@ const invItemCells = items.map(item => {
 		}
 	})
 	
-	document.getElementById('inventory-grid')!.appendChild(v.element)
+	get('inventory-grid')!.appendChild(v.element)
 	return v
 })
 
@@ -542,7 +542,7 @@ for(const machine of machines){
 	cell.className = 'inventory-grid-cell'
 	cell.textContent = machine.name
 	if (machine.img) cell.style.backgroundImage = `url(${machine.img})`
-	document.getElementById('machines-grid')!.appendChild(cell)
+	get('machines-grid')!.appendChild(cell)
 
 	cell.addEventListener('mouseenter', ()=>{
 		MouseOverlay.show()
@@ -590,8 +590,8 @@ for(const machine of machines){
 
 { // Side Menu Header Buttons functionality
 const showGrid = (showInventory: boolean, showMachines: boolean) => {
-	document.getElementById('inventory-grid')!.style.display = showInventory ? '' : 'none';
-	document.getElementById('machines-grid')!.style.display = showMachines ? '' : 'none';
+	get('inventory-grid')!.style.display = showInventory ? '' : 'none';
+	get('machines-grid')!.style.display = showMachines ? '' : 'none';
 };
 
 const repairCells = () => {
@@ -602,7 +602,7 @@ const repairCells = () => {
 	}
 };
 
-document.getElementById('side-menu-recipes-button')!
+get('side-menu-recipes-button')!
 .addEventListener('click', () => {
 	sideMenuMode = 'recipes'
 	showGrid(true, true);
@@ -615,14 +615,14 @@ document.getElementById('side-menu-recipes-button')!
 	}
 });
 
-document.getElementById('side-menu-inventory-button')!
+get('side-menu-inventory-button')!
 .addEventListener('click', () => {
 	sideMenuMode = 'inventory'
 	showGrid(true, false);
 	repairCells();
 });
 
-document.getElementById('side-menu-machines-button')!
+get('side-menu-machines-button')!
 .addEventListener('click', () => {
 	sideMenuMode = 'machines'
 	showGrid(false, true);
@@ -632,7 +632,7 @@ document.getElementById('side-menu-machines-button')!
 
 
 
-document.getElementById('extract-starter')!.addEventListener('click',()=>{
+get('extract-starter')!.addEventListener('click',()=>{
 	
 	const starterMine = extraction.find(item=>item.id==='starter')
 	if (!starterMine) throw new Error("Could not find the starter extractor");
@@ -707,7 +707,7 @@ machineWindow.append(machineUI.element)
 
 
 
-document.getElementById('machine-line-cell-button')!.addEventListener('click',()=>{
+get('machine-line-cell-button')!.addEventListener('click',()=>{
 	if (transferContext.kind !== "machine")return
 	
 	const machineObject = transferContext.value
@@ -716,7 +716,7 @@ document.getElementById('machine-line-cell-button')!.addEventListener('click',()
 	const machineInst = MachineInstance.fromMachine(machineObject)
 	
 	addToSimulation(machineInst)
-	document.getElementById('machine-line')!.append(bindToUi(machineInst))
+	get('machine-line')!.append(bindToUi(machineInst))
 
 	transferContext.transfer(true)
 	transferContext = {kind: "empty"}
@@ -730,6 +730,7 @@ const bindToUi = (machineInst:MachineInstance) => {
 	if (!api) throw new Error("Machine does not exist");
 
 	const {element:root, setStack, setProgress, setWarning} = createMachine(machineInst.name, machineInst.sprite)
+	setStack(machineInst.getStack())
 	if (machineInst.getPowerNeed()) setWarning('no_fuel')
 
 	root.addEventListener('click',()=>{
@@ -820,14 +821,13 @@ const bindToUi = (machineInst:MachineInstance) => {
 
 
 
-document.getElementById("save")!.addEventListener("click", () => {
+get("save").addEventListener("click", () => {
 	save()
 })
 
 //In ui script.ts
-document.getElementById("load")!.addEventListener("click", () => {
-	const machineLine = document.getElementById('machine-line')
-	if (!machineLine) throw new Error(`Machine line does not exist`);
+get("load").addEventListener("click", () => {
+	const machineLine = get('machine-line')
 	for (const element of machineLine.querySelectorAll(":scope > .machine")) {
 		element.remove()
 	}

@@ -205,8 +205,8 @@ export function createMachine(name:string, img:string) {
 	const stack = document.createElement('p')
 	stack.textContent = String(1)
 
-	const setStack = (text: string) => {
-		stack.textContent = text
+	const setStack = (text: string|number) => {
+		stack.textContent = String(text)
 	}
 
 	cell.appendChild(stack)
