@@ -5,7 +5,7 @@ import { get, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProduc
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js'
 import { createChemicalFormula, createInfoPanel, createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
 import { getSignals, isPressed } from "./keyboard-events.js";
-import { addSteamEngine, addToSimulation, getMachine, getMachines, getSteamEngines, getWorkers, load, mainInventory, power, tick as pubSubTick, save, setWorkers, workersReact } from "./engine.js";
+import { addSteamEngine, addToSimulation, getMachine, getMachines, getSteamEngines, getWorkers, load as loadEngine, mainInventory, power, tick as pubSubTick, save as saveEngine, setWorkers, workersReact } from "./engine.js";
 
 
 
@@ -821,19 +821,37 @@ const bindToUi = (machineInst:MachineInstance) => {
 
 
 
-get("save").addEventListener("click", () => {
-	save()
-})
-
-//In ui script.ts
-get("load").addEventListener("click", () => {
+function load() {
 	const machineLine = get('machine-line')
 	for (const element of machineLine.querySelectorAll(":scope > .machine")) {
 		element.remove()
 	}
-	load()
+	loadEngine()
 	for(const [machine, api] of getMachines()) {
 		machineLine.append(bindToUi(machine))
 	}
+}
+
+
+get("save").addEventListener("click", () => {
+	saveEngine()
+})
+
+
+get("load").addEventListener("click", load)
+
+
+// Initialize on startup
+if (localStorage.getItem("load") === "true") {
+	load()
+}
+localStorage.setItem("load", "false")
+
+
+
+
+get("create-processing-line").addEventListener("click", ()=>{
+	saveEngine()
+	window.location.href = "processing-line.html"
 })
 

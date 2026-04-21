@@ -121,3 +121,42 @@ The term **Item** is not entirely accurate as represents real life objects that 
 Sometimes different function can disagree on the truth of the same state, in that case: Prediction functions are advisory; execution functions are authoritative. All execution functions should return enough data that any script from the outside can know exactly what happened. 
 
 **resolveCraftingCosts** is a super important function, it is responsible for taking huge amount of data and turn that into a definitive set of items that can be used to satisfy the provided recipe.
+
+## Crafting system structure
+
+User generated recipe schema.
+``` JSON
+{
+	"inputs":[
+		{"id":"clay", "amount":1}
+	],
+	"outputs":[
+		{"id":"ceramic", "amount":1}
+	],
+	"requiredProcess":"smelt",
+	"processTimeSeconds":5
+}
+```
+Convert to recipe data.
+``` JSON
+{
+	"id": "1",
+	"inputs":[
+		{"id":"clay", "amount":1, "meta":null}
+	],
+	"outputs":[
+		{"id":"ceramic", "amount":1, "meta":null}
+	],
+	"requiredProcess": "smelt",
+	"requiredTier": 0,
+	"processTimeSeconds": 5
+}
+```
+Solve recipe using various means, most common is by unsing the `resolveCraftingCosts` function.
+``` Typescript
+class ResolvedRecipe {
+readonly id: string;
+readonly inputs: readonly ItemEntry[];
+readonly output: readonly ItemEntry[];
+}
+```

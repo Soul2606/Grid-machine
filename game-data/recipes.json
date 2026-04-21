@@ -155,6 +155,16 @@
 },
 {
 	"inputs":[
+		{"id":"copper_ingot", "amount":1}
+	],
+	"outputs":[
+		{"id":"copper_plate", "amount":4}
+	],
+	"requiredProcess":"metal_bending",
+	"processTimeSeconds":5
+},
+{
+	"inputs":[
 		{"id":"bronze_ingot", "amount":1}
 	],
 	"outputs":[
