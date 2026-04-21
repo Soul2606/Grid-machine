@@ -195,6 +195,16 @@
 },
 {
 	"inputs":[
+		{"id":"tin_ingot", "amount":1}
+	],
+	"outputs":[
+		{"id":"tin_plate", "amount":4}
+	],
+	"requiredProcess":"metal_bending",
+	"processTimeSeconds":5
+},
+{
+	"inputs":[
 		{"id":"iron_ingot", "amount":1}
 	],
 	"outputs":[

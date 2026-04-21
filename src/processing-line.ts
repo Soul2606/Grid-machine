@@ -89,8 +89,15 @@ function refresh() {
 		
 	} else if (results.status === "ok") {
 		console.log(results.problems);
+		console.log(results.superRecipes);
+		console.log(results.history);
+		
+		
 		const inputs = get("inputs")
 		const outputs = get("final-outputs")
+
+		removeAllChildren(inputs)
+		removeAllChildren(outputs)
 		for (const {input, output} of results.superRecipes) {
 			const recOut = create("div")
 			outputs.append(recOut)

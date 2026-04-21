@@ -254,20 +254,20 @@ export function getRecipesProducing(craftable: ItemInstance) {
 
 
 /**
- * returns each recipe that consumes every provided item
- * @param consumed items the recipe must consume
- * @param recipes recipes checked
- * @param items all items
+ * Returns each recipe that consumes exactly every provided item.
+ * @param consumed the items the recipe must consume
  */
 export function getRecipesConsuming(consumed: ItemInstance|(readonly ItemInstance[])) {
-	const CONSUMED = Array.isArray(consumed) ? consumed : [consumed]
-	return recipes.values().toArray().filter(recipe => 
-		getRecipeInputs(recipe).every(input =>
+	const _consumed = Array.isArray(consumed) ? consumed : [consumed]
+	return recipes.values().toArray().filter(recipe => {
+		const inputs = getRecipeInputs(recipe)
+		return inputs.every(input =>
 			input.items.some(i =>
-				CONSUMED.some(j => j.isEqual(i))
+				_consumed.some(j => j.isEqual(i))
 			)
+			&& _consumed.length === inputs.length
 		)
-	)
+	})
 }
 
 
@@ -369,9 +369,6 @@ export function capableRecipes(machine: Machine) {
  * - step
  * @param line order matters, can contain duplicates
  * @param input in not mutated
- * @param recipes all
- * @param items all
- * @returns object with status: string
  */
 export function runProcessingLine(
 	line: readonly Machine[],
@@ -379,40 +376,73 @@ export function runProcessingLine(
 ) {
 	let current: readonly ItemEntry[] = input
 	const output: ItemEntry[] = []
+	type History = Readonly<{
+		incoming:readonly string[],
+		consumed:readonly string[],
+		unused:readonly string[],
+		recipe: string,
+	}>
+	const history:History[] = []
+
 	for (let i=0; i<line.length; i++) {
 		const machine = line[i]!
 		const capable = capableRecipes(machine)
+		
 		let recipe: Recipe|undefined
+		let unused:readonly ItemEntry[] = []
+		let consumed:readonly ItemEntry[] = []
+
 		for (let j=0; j<current.length; j++) {
-			const c = current[j]!
-			const rec = getRecipesConsuming(c).filter(r => capable.some(c => c.id === r.id))
+			const inst = current[j]!
+			const rec = getRecipesConsuming(inst).filter(r => capable.some(c => c.id === r.id))
 			if (rec.length === 1) {
 				recipe = rec[0]
-				output.push(...current.toSpliced(j, 1))
+				if (!recipe) break
+				const inv = new Inventory()
+				inv.addItems(current)
+				const resolve = trySingleCraft(recipe, inv)
+				if (!resolve) break
+				unused = inv.getAllItemInstances()
+				output.push(...unused)
+				consumed = resolve.inputs
 				break
 			}
-		}	
+		}
+
+		history.push({
+			incoming:current.map(i => `id:${i.item.id}, am:${i.amount}`),
+			consumed:consumed.map(i => `id:${i.item.id}, am:${i.amount}`),
+			unused: unused.map(i => `id:${i.item.id}, am:${i.amount}`),
+			recipe: recipe?.id??"",
+		})
+
 		if (!recipe) {
 			return {
 				status:"branching_inputs",
 				incoming:current,
-				step:i
+				step:i,
+				history
 			} as const
 		}
+
 		const out = getRecipeOutputs(recipe)
 		if (out.length === 0) {
 			return {
 				status:"no_output",
 				recipe:recipe,
-				step:i
+				step:i,
+				history
 			} as const
 		}
 		current = out
 	}
+
 	output.push(...current)
+
 	return {
 		status:"ok",
 		output,
+		history,
 	} as const
 }
 
@@ -431,13 +461,14 @@ export function parseProcessingLine(
 ) {
 	const problems = []
 	const superRecipes = []
+	let history = []
 	const firstM = line[0]
 	if (!firstM) return {status: "empty_line"} as const
 	const capable = capableRecipes(firstM)
 	for (const recipe of capable) {
 		const inputs = getRecipeInputs(recipe)
-		const outputs = getRecipeOutputs(recipe)
-		const result = runProcessingLine(line.toSpliced(0,1), outputs)
+		const result = runProcessingLine(line, inputs.map(i => ItemEntry.fromInst(i.items[0]!, i.amount)))
+		history.push(result.history)
 		if (result.status !== "ok") {
 			problems.push(result)
 			continue
@@ -447,7 +478,7 @@ export function parseProcessingLine(
 			output: result.output,
 		})
 	}
-	return {superRecipes, problems, status:"ok"} as const
+	return {superRecipes, problems, status:"ok", history} as const
 }
 
 
@@ -520,8 +551,10 @@ export function maxCraftableCount(inputs: readonly Input[], inventory: Inventory
 
 /**
  * Resolves a recipe against an inventory under given options.
- * Returns a resolved recipe,
- * or false if the recipe is not affordable.
+ * 
+ * Returns an array of resolved recipes, the reason for the array is for batch crafting, aka instead of giving: "ResolvedRecipe * 3" it gives "[ResolvedRecipe, ResolvedRecipe, ResolvedRecipe]". This is easy to rectify because Resolved recipes have an equality method.
+ * 
+ * Returns false if the recipe is not affordable.
  * 
  * Does not mutate any give value
  */
@@ -529,7 +562,7 @@ export function resolveCraftingCosts(
 	recipe: Recipe,
 	inventory: Inventory,
 	options: CraftingOptions = { multiply: 1 }
-	): ResolvedRecipe[] | false {
+): ResolvedRecipe[] | false {
 	if (!(inventory instanceof Inventory)) return false
 	const inputs = applyCraftingOptions(options, getRecipeInputs(recipe))
 
@@ -599,13 +632,15 @@ export function tryCraft(
 
 
 /**
- * Similar to tryCraft except it does not allow batch crafting
+ * Similar to tryCraft except it does not allow batch crafting.
+ * 
+ * If the options: maximize is true, or multiply is not one, then the craft will fail.
  */
 export function trySingleCraft(
 	recipe: Recipe,
 	inventory: Inventory,
 	options: CraftingOptions = {multiply: 1}
-	): ResolvedRecipe | false {
+): ResolvedRecipe | false {
 	if (options.multiply !== 1 || options.maximize) {
 		console.warn("Invalid options", JSON.stringify(options))
 		return false
