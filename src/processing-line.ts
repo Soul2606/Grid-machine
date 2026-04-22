@@ -83,7 +83,11 @@ function refresh() {
 	lineData = lineData.filter(id => !invalid.has(id))
 
 	// This somehow works. I have some regrets on the crafting system but it is too late now ):
-	const results = parseProcessingLine(lineData.map(id => machines.get(id)!))
+	const results = parseProcessingLine(lineData.map(id => ({
+		machine:machines.get(id)!,
+		stack:1
+	})))
+
 	if (results.status === "empty_line") {
 		console.log("empty line");
 		
@@ -98,7 +102,7 @@ function refresh() {
 
 		removeAllChildren(inputs)
 		removeAllChildren(outputs)
-		for (const {input, output} of results.superRecipes) {
+		for (const {input, output, time} of results.superRecipes) {
 			const recOut = create("div")
 			outputs.append(recOut)
 			for (const out of output) {
@@ -108,6 +112,9 @@ function refresh() {
 			}
 
 			const recIn = create("div")
+			const span = create("span")
+			span.textContent = `time:${time}`
+			recIn.append(span)
 			inputs.append(recIn)
 			for (const inp of input) {
 				const inputEl = create("div")

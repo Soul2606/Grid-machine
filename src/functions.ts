@@ -353,87 +353,162 @@ export function capableRecipes(machine: Machine) {
 
 
 
+type LineHistory = Readonly<{
+	incoming:readonly string[],
+	consumed:readonly string[],
+	unused:readonly string[],
+	recipes:string,
+	batchSize:number,
+	recipeConflicts:readonly string[],
+	tooComplex:boolean,
+}>
+
+type LineResult = Readonly<{
+	status:"ok"
+	history:readonly LineHistory[]
+	output:readonly ItemEntry[]
+	time:number
+}>
+|Readonly<{
+	status:"ambiguous"
+	history:readonly LineHistory[]
+	step:number
+	incoming:readonly ItemEntry[]
+}>
+|Readonly<{
+	status:"no_recipe"
+	history:readonly LineHistory[]
+	step:number
+	incoming:readonly ItemEntry[]
+}>
+|Readonly<{
+	status:"no_output"
+	history:readonly LineHistory[]
+	step:number
+	recipes:readonly Recipe[]
+}>
+
 /**
  * From a machine line and initial input, tries to rout the output from each machine to the input of the next machine.
  * 
- * If a machine down the line has multiple outputs it will try to route the first output that can be taken unambiguously by the current machine.
- * Unambiguously mans exactly one recipe is capable of taking the item.
+ * If a machine down the line has multiple outputs it will try to route every item that can be taken unambiguously by the next machine.
+ * Unambiguously mans that none of the items have branching paths they can go, and out of all the possible recipes none of them overlap.
  * The rest of the incoming items go directly to output.
  * 
- * If you get the "branching_inputs" status then that means the no input items can be taken unambiguously by the current machine. 
+ * If you get the "ambiguous" status then that means the items can not be taken unambiguously by the next machine. 
  * - incoming: the set of incoming items.
- * - step: where along the machine line we are.
+ * 
+ * If you get "no_recipe" then no items can be used by the next machine.
  * 
  * If you get the "no_output" status then the selected recipe has no outputs. This is usually an issue with the game data and not the machine line. 
  * - recipe: the recipe with no output.
- * - step
  * @param line order matters, can contain duplicates
  * @param input in not mutated
  */
 export function runProcessingLine(
-	line: readonly Machine[],
+	line:readonly Readonly<{
+		machine:Machine,
+		stack:number
+	}>[],
 	input: readonly ItemEntry[]
-) {
+):LineResult {
+
 	let current: readonly ItemEntry[] = input
 	const output: ItemEntry[] = []
-	type History = Readonly<{
-		incoming:readonly string[],
-		consumed:readonly string[],
-		unused:readonly string[],
-		recipe: string,
-	}>
-	const history:History[] = []
+	const history:LineHistory[] = []
+	const times:number[] = []
 
 	for (let i=0; i<line.length; i++) {
-		const machine = line[i]!
-		const capable = capableRecipes(machine)
-		
-		let recipe: Recipe|undefined
+		const step = line[i]!
+		const capable = capableRecipes(step.machine)
+
+		let recipes:Recipe[] = []
+		let batchSize = 0
+		let ambiguous = false
+		let tooComplex = false
+		let conflicting:Recipe[] = []
 		let unused:readonly ItemEntry[] = []
 		let consumed:readonly ItemEntry[] = []
 
-		for (let j=0; j<current.length; j++) {
-			const inst = current[j]!
-			const rec = getRecipesConsuming(inst).filter(r => capable.some(c => c.id === r.id))
-			if (rec.length === 1) {
-				recipe = rec[0]
-				if (!recipe) break
-				const inv = new Inventory()
-				inv.addItems(current)
-				const resolve = trySingleCraft(recipe, inv)
-				if (!resolve) break
-				unused = inv.getAllItemInstances()
-				output.push(...unused)
-				consumed = resolve.inputs
-				break
+		for (const rec of capable) {
+			const inv = new Inventory()
+			inv.addItems(current)
+			const resolves = tryCraft(rec, inv, {maximize:true})
+
+			// This recipe cannot be crafted.
+			if (!resolves) continue
+
+			// If the inventory cannot satisfy all previous recipes consumption then the recipes are overlapping.
+			if (!inv.clone().subtractItems(consumed)) {
+				ambiguous = true
+				conflicting.push(rec)
+				continue
 			}
+
+			const sqa = ResolvedRecipe.squash(resolves)
+
+			if (sqa.length !== 1) {
+				// Recipe batch did not resolve cleanly, scattered batch crafting is unsupported.
+				tooComplex = true
+				continue
+			}
+
+			const resolve = sqa[0]!
+			batchSize = resolve.amount
+			recipes.push(rec)
+			unused = inv.getAllItemInstances()
+			output.push(...unused)
+			consumed = resolve.value.inputs.map(ent =>
+				ItemEntry.fromInst(ent, ent.amount * resolve.amount)
+			)
 		}
 
 		history.push({
 			incoming:current.map(i => `id:${i.item.id}, am:${i.amount}`),
 			consumed:consumed.map(i => `id:${i.item.id}, am:${i.amount}`),
 			unused: unused.map(i => `id:${i.item.id}, am:${i.amount}`),
-			recipe: recipe?.id??"",
+			recipes: recipes.map(r => r.id).join(", "),
+			batchSize,
+			recipeConflicts:conflicting.map(r => r.id),
+			tooComplex,
 		})
 
-		if (!recipe) {
+		if (ambiguous) {
 			return {
-				status:"branching_inputs",
+				status:"ambiguous",
 				incoming:current,
 				step:i,
 				history
 			} as const
 		}
 
-		const out = getRecipeOutputs(recipe)
-		if (out.length === 0) {
+		if (!recipes) {
 			return {
-				status:"no_output",
-				recipe:recipe,
+				status:"no_recipe",
+				incoming:current,
 				step:i,
 				history
 			} as const
 		}
+
+		const out = ItemEntry.squash(recipes.flatMap(recipe =>
+			getRecipeOutputs(recipe)
+		))
+		out.forEach(ent =>
+			ent.amount *= batchSize
+		)
+		if (out.length === 0) {
+			return {
+				status:"no_output",
+				recipes:recipes,
+				step:i,
+				history
+			} as const
+		}
+
+		times.push(...recipes.map(r =>
+			r.processTimeSeconds / step.stack * batchSize
+		))
 		current = out
 	}
 
@@ -442,6 +517,7 @@ export function runProcessingLine(
 	return {
 		status:"ok",
 		output,
+		time:Math.max(...times),
 		history,
 	} as const
 }
@@ -457,28 +533,45 @@ export function runProcessingLine(
  * @returns 
  */
 export function parseProcessingLine(
-	line: readonly Machine[]
+	line:readonly Readonly<{
+		machine:Machine,
+		stack:number
+	}>[]
 ) {
 	const problems = []
-	const superRecipes = []
-	let history = []
-	const firstM = line[0]
-	if (!firstM) return {status: "empty_line"} as const
-	const capable = capableRecipes(firstM)
+	const superRecipes:Readonly<{
+		input: readonly Input[],
+		output:readonly ItemEntry[],
+		time:  number
+	}>[] = []
+	let history:(readonly LineHistory[])[] = []
+	const first = line[0]
+	if (!first) return {status: "empty_line"} as const
+	const capable = capableRecipes(first.machine)
 	for (const recipe of capable) {
 		const inputs = getRecipeInputs(recipe)
-		const result = runProcessingLine(line, inputs.map(i => ItemEntry.fromInst(i.items[0]!, i.amount)))
-		history.push(result.history)
-		if (result.status !== "ok") {
-			problems.push(result)
+		const firstInputs = inputs.map(i => ItemEntry.fromInst(i.items[0]!, i.amount))
+
+		const results = runProcessingLine(line, firstInputs)
+		history.push(results.history)
+		if (results.status !== "ok") {
+			problems.push(results)
 			continue
 		}
+
 		superRecipes.push({
 			input: inputs,
-			output: result.output,
+			output: ItemEntry.squash(results.output),
+			time: results.time
 		})
 	}
-	return {superRecipes, problems, status:"ok", history} as const
+
+	return {
+		status:"ok",
+		superRecipes,
+		problems,
+		history,
+	} as const
 }
 
 
@@ -624,6 +717,7 @@ export function tryCraft(
 	): ResolvedRecipe[] | false {
 	const resolve = resolveCraftingCosts(recipe, inventory, options)
 	if (!resolve) return resolve
+	if (resolve.length === 0) return false
 	if (!inventory.subtractItems(resolve.flatMap(res => res.inputs))) throw new Error("Invariant broke");
 	return resolve
 }

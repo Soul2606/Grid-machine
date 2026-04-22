@@ -249,7 +249,7 @@
 		{"id":"tin_plate", "amount":1}
 	],
 	"outputs":[
-		{"id":"tin_wire", "amount":1}
+		{"id":"tin_wire", "amount":2}
 	],
 	"requiredProcess":"wire_extrusion",
 	"processTimeSeconds":8

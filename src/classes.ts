@@ -167,7 +167,7 @@ export class Inventory {
 		this.max - this.getAmount(item)
 	}
 
-
+	/**Creates a clone with no shared references (including all internal entries). */
 	clone(){
 		const newI = new Inventory(
 			this.max,
@@ -178,7 +178,7 @@ export class Inventory {
 	}
 
 	/**
-	 * Copies and overwrites content of provided inventory from this inventory
+	 * Copies and overwrites content from provided inventory to this inventory
 	 */
 	copyContent(inv: Inventory) {
 		this.itemInstances = inv.getAllItemInstances()
@@ -670,6 +670,27 @@ export class ResolvedRecipe {
 			ser.inputs.map(ItemEntry.fromSer),
 			ser.output.map(ItemEntry.fromSer)
 		)
+	}
+
+	static squash(val:readonly ResolvedRecipe[]){
+		const arr:{
+			amount:number,
+			value:ResolvedRecipe
+		}[] = []
+		
+		for (const r of val) {
+			const exist = arr.find(v => v.value.equals(r))
+			if (exist) {
+				exist.amount++
+			} else {
+				arr.push({
+					amount:1,
+					value:r,
+				})
+			}
+		}
+
+		return arr
 	}
 
 	/**This is not an identifier of this class. Its the id of the recipe that this resolved from. Use the `equals` method instead. */
