@@ -21,7 +21,7 @@ export type ItemInstanceSer = {
 
 // Serialized snapshot of a Machine instance
 export type MachineInstanceSer = Readonly<{
-	capableRecipes: readonly Recipe[];
+	capableRecipes: readonly CustomRecipeSer[];
 	work:           number;
 	stack:          number;
 	cost:           ItemInstanceSer[];
@@ -50,7 +50,9 @@ export type MachineInstanceSer = Readonly<{
 }>
 
 
-// Game data 
+
+
+// ========= Game data =========
 export type Item = {
 	readonly id: string
 	readonly name: string
@@ -94,7 +96,7 @@ export type RecipeInput = {
 
 export type Recipe = {
 	readonly id: string
-	readonly inputs: readonly RecipeInput[]
+	readonly inputs:  readonly RecipeInput[]
 	readonly outputs: readonly ItemInstanceSer[]
 	readonly requiredProcess: string
 	readonly requiredTier: number
@@ -111,12 +113,19 @@ export type Extractor = {
 		readonly weight: number
 	}>
 }
-// Game data end
+// ========= Game data end =========
+
+
 
 
 // type represents a Recipe input slot, because multiple different items can are valid in a single input, then items is an array of Items
 export type Input = {
 	readonly items: readonly ItemInstance[]
+	readonly amount: number
+}
+
+export type InputSer = {
+	readonly items: readonly ItemInstanceSer[]
 	readonly amount: number
 }
 
@@ -138,7 +147,23 @@ export type CraftingOptions = Readonly<{ // defaults:
 
 
 export type ResolvedRecipeSer = Readonly<{
-	id: string
+	time: number
 	inputs: readonly ItemInstanceSer[]
 	output: readonly ItemInstanceSer[]
 }>
+
+
+// A recipe inside a machine instance. Dependent on environment context. Uses local uid.
+export type CustomRecipe = {
+	readonly inputs:  readonly Input[]
+	readonly outputs: readonly ItemEntry[]
+	readonly processTimeSeconds: number
+}
+
+
+export type CustomRecipeSer = {
+	readonly inputs:  readonly InputSer[]
+	readonly outputs: readonly ItemInstanceSer[]
+	readonly processTimeSeconds: number
+}
+

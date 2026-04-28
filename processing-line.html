@@ -8,14 +8,25 @@
 	<script type="module" src="dist/processing-line.js" defer></script>
 	<style>
 		main{
-			display: flex;
+			display: grid;
+			grid-template-columns: auto auto 60px auto;
 			gap: 5px;
 			overflow-x: auto;
 			padding: 15px;
+			min-height: 100px;
+		}
+
+		.slot{
+			display: grid;
+			grid-template-rows: subgrid;
+			grid-row: 1/-1;
+		}
+
+		#add{
+			grid-row: 1/-1;
 		}
 
 		#line{
-			display: flex;
 			gap: 5px;
 		}
 
@@ -32,25 +43,12 @@
 		#select img{
 			width: 100px;
 		}
-
-		.inventory-grid-cell{
-			background-color: var(--surface-3-color);
-			background-size: cover;
-			margin: 2px;
-			width: 80px;
-			height: 80px;
-			user-select: none;
-			border-width: 2px; 
-			border-style: inset;
-			border-color: var(--border-color);
-			display: flex;
-			align-items: end;
-		}
 	</style>
 </head>
 <body>
-	<h1>Processing line editor (WIP)</h1>
+	<h1>Professional Processing line editor 😎(WIP)</h1>
 	<button id="back">Back to main menu</button>
+	<p>Instructions: Refresh the page to reset, Click add and select a machine to add it to the line. </p>
 	<hr>
 	<dialog id="select">
 		<div style="display: flex; justify-content: space-between;">
@@ -61,13 +59,14 @@
 			<!--injected by js-->
 		</div>
 	</dialog>
-	<main>
-		<div class="slot item" id="inputs"></div>
-		<section id="line">
+	<main id="main">
+		<div class="slot" id="inputs"></div>
+		<section class="slot" id="line">
 			<!--injected by js-->
 		</section>
 		<button id="add">Add</button>
-		<div class="slot item" id="final-outputs"></div>
+		<div class="slot" id="final-outputs"></div>
 	</main>
+	<button id="confirm" style="background-color: greenyellow;">Confirm</button>
 </body>
 </html>

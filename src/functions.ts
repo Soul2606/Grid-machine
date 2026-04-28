@@ -1,7 +1,7 @@
 import { getDataMapToId } from "./game-data.js";
 import { ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js';
 import { Inventory } from './classes.js';
-import type { CraftingOptions, Extractor, Input, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe, RecipeInput } from "./types.js";
+import type { CraftingOptions, CustomRecipe, CustomRecipeSer, Extractor, Input, InputSer, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe, RecipeInput } from "./types.js";
 
 
 //Global variables
@@ -354,12 +354,12 @@ export function capableRecipes(machine: Machine) {
 
 
 type LineHistory = Readonly<{
-	incoming:readonly string[],
-	consumed:readonly string[],
-	unused:readonly string[],
-	recipes:string,
+	incoming:readonly ItemEntry[],
+	consumed:readonly ItemEntry[],
+	unused:readonly ItemEntry[],
+	recipes:Recipe[],
 	batchSize:number,
-	recipeConflicts:readonly string[],
+	recipeConflicts:readonly Recipe[],
 	tooComplex:boolean,
 }>
 
@@ -433,7 +433,7 @@ export function runProcessingLine(
 		for (const rec of capable) {
 			const inv = new Inventory()
 			inv.addItems(current)
-			const resolves = tryCraft(rec, inv, {maximize:true})
+			const resolves = tryCraft(toCustomRecipe(rec), inv, {maximize:true})
 
 			// This recipe cannot be crafted.
 			if (!resolves) continue
@@ -464,12 +464,12 @@ export function runProcessingLine(
 		}
 
 		history.push({
-			incoming:current.map(i => `id:${i.item.id}, am:${i.amount}`),
-			consumed:consumed.map(i => `id:${i.item.id}, am:${i.amount}`),
-			unused: unused.map(i => `id:${i.item.id}, am:${i.amount}`),
-			recipes: recipes.map(r => r.id).join(", "),
+			incoming:current,
+			consumed:consumed,
+			unused:  unused,
+			recipes: recipes,
 			batchSize,
-			recipeConflicts:conflicting.map(r => r.id),
+			recipeConflicts:conflicting,
 			tooComplex,
 		})
 
@@ -540,11 +540,11 @@ export function parseProcessingLine(
 ) {
 	const problems = []
 	const superRecipes:Readonly<{
-		input: readonly Input[],
-		output:readonly ItemEntry[],
-		time:  number
+		input:  readonly Input[],
+		output: readonly ItemEntry[],
+		time:   number,
+		history:readonly LineHistory[]
 	}>[] = []
-	let history:(readonly LineHistory[])[] = []
 	const first = line[0]
 	if (!first) return {status: "empty_line"} as const
 	const capable = capableRecipes(first.machine)
@@ -553,7 +553,7 @@ export function parseProcessingLine(
 		const firstInputs = inputs.map(i => ItemEntry.fromInst(i.items[0]!, i.amount))
 
 		const results = runProcessingLine(line, firstInputs)
-		history.push(results.history)
+
 		if (results.status !== "ok") {
 			problems.push(results)
 			continue
@@ -562,7 +562,8 @@ export function parseProcessingLine(
 		superRecipes.push({
 			input: inputs,
 			output: ItemEntry.squash(results.output),
-			time: results.time
+			time: results.time,
+			history: results.history,
 		})
 	}
 
@@ -570,7 +571,6 @@ export function parseProcessingLine(
 		status:"ok",
 		superRecipes,
 		problems,
-		history,
 	} as const
 }
 
@@ -652,12 +652,12 @@ export function maxCraftableCount(inputs: readonly Input[], inventory: Inventory
  * Does not mutate any give value
  */
 export function resolveCraftingCosts(
-	recipe: Recipe,
+	recipe: CustomRecipe,
 	inventory: Inventory,
 	options: CraftingOptions = { multiply: 1 }
 ): ResolvedRecipe[] | false {
 	if (!(inventory instanceof Inventory)) return false
-	const inputs = applyCraftingOptions(options, getRecipeInputs(recipe))
+	const inputs = applyCraftingOptions(options, recipe.inputs)
 
 	const maxCraftable = maxCraftableCount(inputs, inventory)
 
@@ -670,7 +670,7 @@ export function resolveCraftingCosts(
 		multiplier = Math.max(0, Math.floor(options.multiply ?? 1))
 	}
 
-	const output = getRecipeOutputs(recipe)
+	const output = recipe.outputs.map(ItemEntry.from)
 
 	// Simulated inventory
 	const simInv = inventory.clone()
@@ -696,7 +696,7 @@ export function resolveCraftingCosts(
 			if (remaining > 0) return false // not enough items
 		}
 		resolvedRecipes.push(new ResolvedRecipe(
-			recipe.id,
+			recipe.processTimeSeconds,
 			chosenInstances,
 			output
 		))
@@ -711,7 +711,7 @@ export function resolveCraftingCosts(
  * Similar to resolveCraftingCosts but it actually executes the craft and mutates the provided inventory if craft is completely successful
  */
 export function tryCraft(
-	recipe: Recipe,
+	recipe: CustomRecipe,
 	inventory: Inventory,
 	options?: CraftingOptions
 	): ResolvedRecipe[] | false {
@@ -731,7 +731,7 @@ export function tryCraft(
  * If the options: maximize is true, or multiply is not one, then the craft will fail.
  */
 export function trySingleCraft(
-	recipe: Recipe,
+	recipe: CustomRecipe,
 	inventory: Inventory,
 	options: CraftingOptions = {multiply: 1}
 ): ResolvedRecipe | false {
@@ -806,6 +806,59 @@ export function stepExponential(max: number):number[] {
 		return expo1234(max)
 	} else {
 		return expo125(max)
+	}
+}
+
+
+
+
+export function serializeInput(val:Input):InputSer {
+	return {
+		amount:val.amount,
+		items:val.items.map(v=>v.serialize())
+	}
+}
+
+
+
+
+export function deserializeInput(val:InputSer):Input {
+	return {
+		amount:val.amount,
+		items:val.items.map(ItemInstance.fromSer)
+	}
+}
+
+
+
+
+export function serializeCustomRecipe(val:CustomRecipe):CustomRecipeSer {
+	return {
+		inputs:val.inputs.map(serializeInput),
+		outputs:val.outputs.map(v=>v.serialize()),
+		processTimeSeconds:val.processTimeSeconds
+	}
+}
+
+
+
+
+export function deserializeCustomRecipe(val:CustomRecipeSer):CustomRecipe {
+	return {
+		inputs:val.inputs.map(deserializeInput),
+		outputs:val.outputs.map(ItemEntry.fromSer),
+		processTimeSeconds:val.processTimeSeconds
+	}
+}
+
+
+
+
+export function toCustomRecipe(rec:Recipe):CustomRecipe {
+	return {
+		inputs: getRecipeInputs(rec),
+		outputs: getRecipeOutputs(rec),
+		processTimeSeconds: rec.processTimeSeconds
 	}
 }
 

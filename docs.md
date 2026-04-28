@@ -160,3 +160,42 @@ readonly inputs: readonly ItemEntry[];
 readonly output: readonly ItemEntry[];
 }
 ```
+---
+### Diagram of the recipe and machine instance pipeline
+Rectangle: value, Diamond: function. The diagram requires mermaid to be installed.
+```mermaid
+graph TD
+
+A[JSON Files] --> B[Definitions]
+
+B -->|Blueprint| C[Custom Recipe]
+C -->|Construct| D[Machine Instance]
+
+UI[User interaction] --> RC
+I[Inventory] --> RC
+D --> RC
+
+RC{Resolve Recipe Cost} --> R[Resolved Recipe]
+
+R -->|Add to queue| D
+
+D -->|From queue| S{Simulate Tick}
+S -->|Update State| D
+S -->|Emit Outputs| G[Game State]
+```
+### Machine instance
+```mermaid
+graph TD
+A[Work queue] --> S
+E[State] <--Read-Write--> S
+subgraph Static
+B[Basic data: cost, sprite, id?]
+C[Capabilities]
+end
+subgraph External
+I[Inventory] -->
+D{Resolve}
+end
+C -->|Present| D -->|Add| A
+S{Simulate} -->|Mutate/remove| A
+```

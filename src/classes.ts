@@ -1,6 +1,6 @@
 import { getData, getDataMapToId } from "./game-data.js";
-import { getItemFromId, JSONEquals, energyToNumber, maxCraftableCount, getRecipeInputs, getRecipeOutputs, relu, distributeIntEvenly, clamp, getRecipeFromId } from './functions.js';
-import type { CraftingOptions, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe, ResolvedRecipeSer, } from './types.js';
+import { getItemFromId, JSONEquals, energyToNumber, maxCraftableCount, getRecipeInputs, getRecipeOutputs, relu, distributeIntEvenly, clamp, getRecipeFromId, deserializeCustomRecipe, serializeCustomRecipe, capableRecipes, toCustomRecipe } from './functions.js';
+import type { CraftingOptions, CustomRecipe, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, Recipe, ResolvedRecipeSer, } from './types.js';
 
 
 
@@ -299,9 +299,6 @@ type MIModules = {
 }
 
 
-type CustomRecipe = Omit<Recipe, "id">
-
-
 export type MachineInstanceStatus = "idle" | {
 	lowEnergy: boolean;
 	progress: number;
@@ -325,8 +322,9 @@ export class MachineInstance {
 		if (pn) {
 			modules.powerNeed = {need:energyToNumber(pn.energy), voltageTier:pn.voltageTier, energy:0}
 		}
+		const capable = capableRecipes(machine)
 		return new MachineInstance(
-			recipes.values().toArray().filter(recipe=>machine.capabilities.includes(recipe.requiredProcess)),
+			capable.map(toCustomRecipe),
 			machine.cost.map(inst => ItemEntry.fromSer(inst)),
 			stack,
 			0,
@@ -340,7 +338,7 @@ export class MachineInstance {
 
 	static fromSer(ser:MachineInstanceSer){
 		return new MachineInstance(
-			ser.capableRecipes,
+			ser.capableRecipes.map(deserializeCustomRecipe),
 			ser.cost.map(ItemEntry.fromSer),
 			ser.stack,
 			ser.work,
@@ -364,7 +362,7 @@ export class MachineInstance {
 	readonly sprite:        string
 	readonly name:          string
 	readonly machineId:     string|undefined
-	readonly capableRecipes = new Map<string, Recipe>()
+	readonly capableRecipes = new Map<string, CustomRecipe>()
 	readonly cost:            readonly ItemEntry[]
 
 	//Private
@@ -390,14 +388,7 @@ export class MachineInstance {
 	) {
 		recipes.forEach(rec =>{
 			const uid = this.generateUID()
-			this.capableRecipes.set(uid, {
-				id: uid,
-				inputs: rec.inputs,
-				outputs: rec.outputs,
-				requiredProcess: rec.requiredProcess,
-				requiredTier: rec.requiredTier,
-				processTimeSeconds: rec.processTimeSeconds
-			})
+			this.capableRecipes.set(uid, rec)
 		})
 		this.name      = name
 		this.sprite    = sprite
@@ -417,9 +408,10 @@ export class MachineInstance {
 		return `uid-${this.capableRecipes.size}`
 	}
 
-	private craft(multiplier: number, recipe: Recipe) {
-		const output = getRecipeOutputs(recipe)
-		return output.map(ent=>{ent.amount *= multiplier; return ent})
+	private craft(multiplier: number, recipe: ResolvedRecipe) {
+		
+		const output = recipe.output
+		return output.map(ent=>{const n = ItemEntry.from(ent); n.amount *= multiplier; return n})
 	}
 
 	/**Returns a serialized snapshot of the state of a machine instance. */
@@ -428,7 +420,7 @@ export class MachineInstance {
 		const fuelNeed = structuredClone(this.fuelNeed)
 		const powerNeed = structuredClone(this.powerNeed)
 		return {
-			capableRecipes: this.capableRecipes.values().toArray(),
+			capableRecipes: this.capableRecipes.values().toArray().map(serializeCustomRecipe),
 			work: this.work,
 			stack: this.stack,
 			cost: this.cost.map(ent => ent.serialize()),
@@ -465,9 +457,8 @@ export class MachineInstance {
 		return structuredClone(this.powerNeed)
 	}
 
-	addWorkingOn(recipes: ResolvedRecipe[]){
+	addWorkingOn(recipes: ResolvedRecipe[]){		
 		for (const recipe of recipes) {
-			if (!this.capableRecipes.has(recipe.id)) throw new Error("Id not recognized");
 			const existing = this.workingOn.find(wo => wo.recipe.equals(recipe))
 			if (existing) {
 				existing.amount ++
@@ -478,15 +469,15 @@ export class MachineInstance {
 		return this
 	}
 
-	refundWorkingOn(recipeId: string): ItemInstance[]|"id_not_found"{
-		const existing = this.workingOn.find(wo => wo.recipe.id === recipeId)
+	refundWorkingOn(recipeId: ResolvedRecipe): ItemInstance[]|"not_found"{
+		const existing = this.workingOn.find(wo => wo.recipe.equals(recipeId))
 		if (existing) {
 			const consumed = existing.recipe.inputs.map(item => ItemEntry.fromInst(item, item.amount * existing.amount))
 			existing.amount = 0
 			this.workingOn = this.workingOn.filter(wo => wo.amount > 0) // prune
 			return consumed
 		}
-		return "id_not_found"
+		return "not_found"
 	}
 
 	/**Returns a multiplier based on workers per need. Accounts for if workers are not being needed. */
@@ -511,19 +502,12 @@ export class MachineInstance {
 	 * @returns status about this simulation tick
 	 */
 	tick(deltaMS: number, manually = false):MachineInstanceStatus {
-		const workingOn = this.workingOn.map(wo =>({
-			woQueue: wo,
-			recipe: (()=>{
-				const v = this.capableRecipes.get(wo.recipe.id)
-				if (v === undefined) throw new Error("Invariant broke!");
-				return v
-			})()
-		}))
-		
+		const workingOn = this.workingOn
+				
 		if (workingOn.length === 0) {
 			return 'idle' as const
 		}
-		workingOn.sort((a,b)=>a.recipe.processTimeSeconds - b.recipe.processTimeSeconds)	
+		workingOn.sort((a,b)=>a.recipe.time - b.recipe.time)	
 
 		const deltaS = deltaMS/1000
 		const workTimeLabor = manually ? deltaS : deltaS * this.stack * this.workerMultiplier()
@@ -536,8 +520,8 @@ export class MachineInstance {
 			workPower
 		)
 		
-		const	totalWorkNeed = workingOn.reduce((prev, val)=>prev + val.woQueue.amount * val.recipe.processTimeSeconds, 0) // total demand, used and unfulfilled
-		const lowestDemand = Math.min(...workingOn.map(w => w.recipe.processTimeSeconds)) //Infinity on empty queue is intended
+		const	totalWorkNeed = workingOn.reduce((prev, val)=>prev + val.amount * val.recipe.time, 0) // total demand, used and unfulfilled
+		const lowestDemand = Math.min(...workingOn.map(w => w.recipe.time)) //Infinity on empty queue is intended
 
 		const workAdded = Math.min(relu(totalWorkNeed - this.work), maxWorkAdded)
 		const lowEnergy = workTimeLabor > maxWorkAdded && totalWorkNeed > maxWorkAdded // time and labour was not the limiting factor
@@ -547,10 +531,10 @@ export class MachineInstance {
 		
 		const crafted: ItemEntry[] = []
 		for (const wo of workingOn) {
-			const sec = wo.recipe.processTimeSeconds
-			const amountOfCrafts = Math.min(wo.woQueue.amount, Math.floor(this.work / sec))
+			const sec = wo.recipe.time
+			const amountOfCrafts = Math.min(wo.amount, Math.floor(this.work / sec))
 			crafted.push(...this.craft(amountOfCrafts, wo.recipe))
-			wo.woQueue.amount -= amountOfCrafts
+			wo.amount -= amountOfCrafts
 			this.work -= sec * amountOfCrafts
 		}
 		this.workingOn = this.workingOn.filter(w => w.amount > 0) // Prune
@@ -666,7 +650,7 @@ export class ResolvedRecipe {
 
 	static fromSer(ser:ResolvedRecipeSer){
 		return new ResolvedRecipe(
-			ser.id,
+			ser.time,
 			ser.inputs.map(ItemEntry.fromSer),
 			ser.output.map(ItemEntry.fromSer)
 		)
@@ -694,29 +678,29 @@ export class ResolvedRecipe {
 	}
 
 	/**This is not an identifier of this class. Its the id of the recipe that this resolved from. Use the `equals` method instead. */
-	readonly id: string
+	readonly time: number
 	readonly inputs: readonly ItemEntry[]
 	readonly output: readonly ItemEntry[]
 	constructor(
-		id:string,
+		time:number,
 		inputs: readonly ItemEntry[],
 		output: readonly ItemEntry[]
 	){
-		this.id = id
+		this.time = time
 		this.inputs = inputs
 		this.output = output
 	}
 
 	serialize():ResolvedRecipeSer{
 		return {
-			id: this.id,
+			time: this.time,
 			inputs: this.inputs.map(ent => ent.serialize()),
 			output: this.output.map(ent => ent.serialize())
 		}
 	}
 
 	equals(rr: ResolvedRecipe){
-		return this.id === rr.id && 
+		return this.time === rr.time && 
 		this.inputs.length == rr.inputs.length &&
 		this.inputs.every(inp =>
 			rr.inputs.some(i=>inp.strictEquals(i))

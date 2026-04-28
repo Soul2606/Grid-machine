@@ -760,7 +760,7 @@ const bindToUi = (machineInst:MachineInstance) => {
 				const ri = machineInst.capableRecipes.values().toArray().map(r=>{ // Find a recipes that has 1 input and that input has at least 1 matching item
 					return {
 						recipe:r,
-						inputs:getRecipeInputs(r)
+						inputs:r.inputs
 					}
 				}).filter(obj=>
 					obj.inputs.length === 1
@@ -781,9 +781,9 @@ const bindToUi = (machineInst:MachineInstance) => {
 						success = true // success so the main inventory does not get it back
 						machineInst.addWorkingOn(
 							Array(batches).fill(new ResolvedRecipe(
-								ri.recipe.id,
+								ri.recipe.processTimeSeconds,
 								[ri.input],
-								getRecipeOutputs(ri.recipe)
+								ri.recipe.outputs.map(ItemEntry.from),
 							))
 						)
 						mainInventory.addItem(incoming, incoming.amount - cost1 * batches) // Give back leftovers

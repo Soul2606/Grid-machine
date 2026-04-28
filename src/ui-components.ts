@@ -321,17 +321,16 @@ export function createMachineUI(
 		machine.capableRecipes.forEach(cr => {
 			const options: CraftingOptions = {}
 
-			const out = getRecipeOutputs(cr)
-			console.log(cr.id)
+			const out = cr.outputs
 			console.log("out: ", out.map(o=>o.item.id).join(","))
 
 			const outFirst = out[0]
-			if (outFirst === undefined) throw new Error("Recipe produces nothing. id: " + cr.id)
+			if (outFirst === undefined) throw new Error("Recipe produces nothing.")
 
 			const cell = createItemCell(outFirst.item)
 
 			const getCount = () => {
-				const count = maxCraftableCount(getRecipeInputs(cr), availableResources, options)
+				const count = maxCraftableCount(cr.inputs, availableResources, options)
 				cell.amountLabel.textContent = String(count)
 				return count
 			}
@@ -494,7 +493,6 @@ export function createRecipeCard() {
 		removeAllChildren(output)
 		info.textContent = `Time: ${recipe.processTimeSeconds} | Tier:${recipe.requiredTier}`
 		if (resolve) {
-			if (recipe.id !== resolve.id) console.warn(`Ids do not match: ${recipe.id}, ${resolve.id}`)
 			setResolvedRecipe(resolve)
 		} else {			
 			animFunc = []
@@ -528,7 +526,7 @@ export function createRecipeCard() {
 	const setMachineRecipe = (machine:Machine) => {
 		removeAllChildren(input)
 		info.textContent = "Machine recipe"
-		setResolvedRecipe(new ResolvedRecipe("",
+		setResolvedRecipe(new ResolvedRecipe(0,
 			machine.cost.map(val =>
 				ItemEntry.fromItem(
 					getItemFromId(val.id),
