@@ -167,3 +167,10 @@ export type CustomRecipeSer = {
 	readonly processTimeSeconds: number
 }
 
+
+// Serialized minimal blueprint for constructing a MachineInstance
+export type MachineInstanceBlueprint = Readonly<{
+	capabilities:CustomRecipeSer[]
+	cost:ItemInstanceSer[]
+}>
+

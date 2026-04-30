@@ -548,6 +548,7 @@ export function parseProcessingLine(
 	const first = line[0]
 	if (!first) return {status: "empty_line"} as const
 	const capable = capableRecipes(first.machine)
+	
 	for (const recipe of capable) {
 		const inputs = getRecipeInputs(recipe)
 		const firstInputs = inputs.map(i => ItemEntry.fromInst(i.items[0]!, i.amount))

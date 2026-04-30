@@ -1,9 +1,9 @@
-import { create, get, getRecipeOutputs, parseProcessingLine, removeAllChildren } from "./functions.js";
+import { create, get, getRecipeOutputs, parseProcessingLine, removeAllChildren, serializeCustomRecipe } from "./functions.js";
 import * as game from "./engine.js";
 import { getDataMapToId } from "./game-data.js";
 import { createItemCell } from "./ui-components.js";
-import type { CustomRecipe, Input, Item, Machine, Recipe } from "./types.js";
-import { MachineInstance, type ItemEntry } from "./classes.js";
+import type { CustomRecipe, Input, Item, JSONValue, Machine, MachineInstanceBlueprint, Recipe } from "./types.js";
+import { ItemEntry, MachineInstance } from "./classes.js";
 
 game.load()
 
@@ -95,6 +95,7 @@ function refresh() {
 
 	if (results.status !== "ok") return
 
+	const height = results.superRecipes.length
 	console.log("problems", results.problems);
 	console.log("superRecipes", results.superRecipes);
 
@@ -102,7 +103,7 @@ function refresh() {
 		const mac = machineLine[i]!;
 		const img = create("img")
 		img.src = mac.machine.img
-		img.style.gridRow = "1/" + String(results.superRecipes.length + 1)
+		img.style.gridRow = "1/" + String(height + 1)
 		line.append(img)
 
 		for (let j = 0; j < results.superRecipes.length; j++) {
@@ -154,7 +155,7 @@ function refresh() {
 		}
 	}
 
-	get("main").style.gridTemplateRows = "auto ".repeat(results.superRecipes.length)
+	get("main").style.gridTemplateRows = "auto ".repeat(height)
 	line.style.gridTemplateColumns = "auto ".repeat(lineData.length * 2)
 	
 	compiledRecipes = results.superRecipes.map(sr => ({
@@ -166,9 +167,10 @@ function refresh() {
 
 
 
+
 get("confirm").addEventListener("click", () => {
 	if (!compiledRecipes || !lineStats) {
-		console.log("Nothing to confirm");
+		get("confirm-feedback").textContent = "Nothing to confirm"
 		return
 	}
 
@@ -181,15 +183,28 @@ get("confirm").addEventListener("click", () => {
 		} satisfies CustomRecipe
 	})
 
-	new MachineInstance(
-		customRecipes,
-		[],
-		1,
-		0,
-		[],
-		undefined,
-		"Processing line"
-	)
+	const blueprint:MachineInstanceBlueprint = {
+		capabilities:customRecipes.map(serializeCustomRecipe),
+		cost:ItemEntry.squash(lineData.flatMap(str => {
+			const mac = machines.get(str)
+			if (!mac) return []
+			return mac.cost.map(ItemEntry.fromSer)
+		})).map(ent => ent.serialize())
+	}
+
+	console.log("Final blueprint:", JSON.stringify(blueprint));
+	get("confirm-feedback").textContent = "Successfully saved line to save file"
+
+	const current:JSONValue = JSON.parse(localStorage.getItem("processingLines")??"[]")
+	if (!Array.isArray(current)) {
+		localStorage.setItem("processingLines",JSON.stringify([blueprint]))
+		return
+	}
+
+	//@ts-ignore
+	current.push(blueprint)
+
+	localStorage.setItem("processingLines",JSON.stringify(current))
 })
 
 
