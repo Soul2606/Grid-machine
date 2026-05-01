@@ -82,22 +82,19 @@ function refresh() {
 	removeAllChildren(inputs)
 	removeAllChildren(outputs)
 
-	// This somehow works. I have some regrets on the crafting system but it is too late now ):
-	const results = parseProcessingLine(lineData.map(id => ({
+	// Constructing the ui from the data is tough without any framework
+	const suRecipes = parseProcessingLine(lineData.map(id => ({
 		machine:machines.get(id)!,
 		stack:1
 	})))
 
-	if (results.status === "empty_line") {
+	if (suRecipes === "empty_line") {
 		console.log("empty line");
 		return
 	}
 
-	if (results.status !== "ok") return
-
-	const height = results.superRecipes.length
-	console.log("problems", results.problems);
-	console.log("superRecipes", results.superRecipes);
+	const height = suRecipes.length
+	console.log("superRecipes", suRecipes);
 
 	for (let i = 0; i < machineLine.length; i++) {
 		const mac = machineLine[i]!;
@@ -106,8 +103,8 @@ function refresh() {
 		img.style.gridRow = "1/" + String(height + 1)
 		line.append(img)
 
-		for (let j = 0; j < results.superRecipes.length; j++) {
-			const history = results.superRecipes[j]!.history[i]
+		for (let j = 0; j < suRecipes.length; j++) {
+			const history = suRecipes[j]!.history[i]
 			if (!history) continue
 
 			const outputsEl = create("div")
@@ -127,21 +124,12 @@ function refresh() {
 		}
 	}
 	
-	for (const {input, output, time, history} of results.superRecipes) {
-		
-		console.log("history", history);
-		const recOut = create("div")
-		outputs.append(recOut)
-		for (const out of output) {
-			const cell = createItemCell(out.item)
-			cell.amountLabel.textContent = out.amount.toString()
-			recOut.append(cell.element)
-		}
+	for (const superRecipe of suRecipes) {
+
+		const input = superRecipe.input
+		const history = superRecipe.history
 
 		const recIn = create("div")
-		const span = create("span")
-		span.textContent = `time:${time}`
-		recIn.append(span)
 		inputs.append(recIn)
 		for (const inp of input) {
 			const inputEl = create("div")
@@ -153,16 +141,41 @@ function refresh() {
 				inputEl.append(cell.element)
 			}
 		}
+
+		if (superRecipe.status !== "ok") {
+			const errMessage = create("p")
+			errMessage.textContent = superRecipe.status
+			recIn.append(errMessage)
+			continue
+		}
+
+		const {output, time} = superRecipe
+
+		const span = create("span")
+		span.textContent = `time:${time}`
+		recIn.append(span)
+		
+		console.log("history", history);
+		const recOut = create("div")
+		outputs.append(recOut)
+		for (const out of output) {
+			const cell = createItemCell(out.item)
+			cell.amountLabel.textContent = out.amount.toString()
+			recOut.append(cell.element)
+		}
 	}
 
 	get("main").style.gridTemplateRows = "auto ".repeat(height)
 	line.style.gridTemplateColumns = "auto ".repeat(lineData.length * 2)
 	
-	compiledRecipes = results.superRecipes.map(sr => ({
-		inputs:sr.input,
-		outputs:sr.output,
-		time:sr.time
-	}))
+	compiledRecipes = suRecipes.flatMap(sr => {
+		if (sr.status !== "ok") return []
+		return [{
+			inputs:sr.input,
+			outputs:sr.output,
+			time:sr.time
+		}]
+	})
 }
 
 

@@ -482,7 +482,7 @@ export function runProcessingLine(
 			} as const
 		}
 
-		if (!recipes) {
+		if (recipes.length === 0) {
 			return {
 				status:"no_recipe",
 				incoming:current,
@@ -527,40 +527,55 @@ export function runProcessingLine(
 
 /**
  * Tries to compile an entire machine line into a set of super recipes (recipe derived from a chain of recipes) based on the capabilities of the first machine in line.
- * @param line order matters, can contain duplicates
- * @param recipes all
- * @param items all
  * @returns 
  */
 export function parseProcessingLine(
 	line:readonly Readonly<{
 		machine:Machine,
 		stack:number
-	}>[]
+	}>[],
+	multipliers:(undefined|number)[] = []
 ) {
-	const problems = []
-	const superRecipes:Readonly<{
-		input:  readonly Input[],
-		output: readonly ItemEntry[],
-		time:   number,
+
+	type SuperRecipe = Readonly<{
+		status: "ok"
+		input:  readonly Input[]
+		output: readonly ItemEntry[]
+		time:   number
 		history:readonly LineHistory[]
-	}>[] = []
+	}>
+	|Readonly<{
+		status: "ambiguous"|"no_recipe"|"no_output"
+		input:  readonly Input[]
+		history:readonly LineHistory[]
+	}>
+
+	const problems = []
+	const superRecipes:SuperRecipe[] = []
 	const first = line[0]
-	if (!first) return {status: "empty_line"} as const
+	if (!first) return "empty_line"
 	const capable = capableRecipes(first.machine)
 	
-	for (const recipe of capable) {
+	for (const [index, recipe] of capable.entries()) {
+		const multiplier = Math.floor(Math.max(1, multipliers[index] ?? 1))
 		const inputs = getRecipeInputs(recipe)
-		const firstInputs = inputs.map(i => ItemEntry.fromInst(i.items[0]!, i.amount))
+		const firstInputs = inputs.map(inst => 
+			ItemEntry.fromInst(inst.items[0]!, inst.amount * multiplier)
+		)
 
 		const results = runProcessingLine(line, firstInputs)
 
 		if (results.status !== "ok") {
-			problems.push(results)
+			superRecipes.push({
+				status: results.status,
+				input:  inputs,
+				history:results.history,
+			})
 			continue
 		}
 
 		superRecipes.push({
+			status: "ok",
 			input: inputs,
 			output: ItemEntry.squash(results.output),
 			time: results.time,
@@ -568,11 +583,7 @@ export function parseProcessingLine(
 		})
 	}
 
-	return {
-		status:"ok",
-		superRecipes,
-		problems,
-	} as const
+	return superRecipes
 }
 
 

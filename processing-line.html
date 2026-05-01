@@ -48,8 +48,41 @@
 <body>
 	<h1>Professional Processing line editor 😎(WIP)</h1>
 	<button id="back">Back to main menu</button>
-	<p>Instructions: Refresh the page to reset, Click add and select a machine to add it to the line. </p>
+
+	<h2>Instructions</h2>
+	<p>Refresh the page to reset, Click add and select a machine to add it to the line. </p>
+<!--
+	<h4>Optimize processing line speed</h4>
+
+	<p>
+	Some processing lines may run slower than expected because crafting time and bulk crafting are fully simulated.
+	If one recipe is slower than the others, or one machine must craft a large number of items, it can become a bottleneck for the entire line.
+	</p>
+
+	<p>
+	You can identify bottlenecks by checking machine uptime.
+	A machine with low uptime spends much of its time waiting for items or downstream space.
+	A machine with 100% uptime is working constantly and is likely limiting the speed of the line.
+	</p>
+
+	<p>You can increase total production speed by stacking additional copies of the bottleneck machine.</p>
+
+	<p>Note: It is usually impossible to achieve a perfect ratio where every machine has 100% uptime.</p>
+
 	<hr>
+-->
+	<h4>Error message meaning</h4>
+	<dl>
+		<dt>No_recipe</dt>
+		<dd>The following machine has no recipes that can consume any items provided from the previous machine.</dd>
+		<dt>Ambiguous</dt>
+		<dd>Multiple recipes can consume the same items or there is an overlapping set of items being consumed.</dd>
+		<dt>No_outputs</dt>
+		<dd>If you get this message then there might be a broken recipe. This message is an actual error and should be reported.</dd>
+	</dl>
+
+	<hr>
+
 	<dialog id="select">
 		<div style="display: flex; justify-content: space-between;">
 			<h4>Select machine</h4>
@@ -59,6 +92,7 @@
 			<!--injected by js-->
 		</div>
 	</dialog>
+
 	<main id="main">
 		<div class="slot" id="inputs"></div>
 		<section class="slot" id="line">
@@ -67,6 +101,7 @@
 		<button id="add">Add</button>
 		<div class="slot" id="final-outputs"></div>
 	</main>
+
 	<button id="confirm" style="background-color: greenyellow;">Confirm</button>
 	<p id="confirm-feedback"></p>
 </body>
