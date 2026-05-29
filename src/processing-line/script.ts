@@ -1,9 +1,12 @@
-import { create, get, getRecipeOutputs, removeAllChildren, serializeCustomRecipe } from "../functions.js";
+import { getRecipeOutputs, serializeCustomRecipe } from "../crafting-system/functions.js";
+import { create, get, removeAllChildren } from "../common/utils.js";
 import { parseProcessingLine } from "./LineHistory.js";
 import * as game from "../engine.js";
 import { getDataMapToId } from "../game-data.js";
 import { createItemCell } from "../common/ui-components.js";
-import type { CustomRecipe, Input, JSONValue, Machine, MachineInstanceBlueprint } from "../types.js";
+import type { CustomRecipe, Input, Machine } from "../crafting-system/types.js";
+import type { MachineInstanceBlueprint } from "../common/types.js";
+import type { JSONValue } from "../common/types.js";
 import { ItemEntry } from "../classes.js";
 
 game.load()

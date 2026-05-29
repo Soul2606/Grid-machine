@@ -1,6 +1,11 @@
 import { getDataMapToId } from "./game-data.js";
-import { getItemFromId, JSONEquals, energyToNumber, relu, clamp, deserializeCustomRecipe, serializeCustomRecipe, capableRecipes, toCustomRecipe } from './functions.js';
-import type { CustomRecipe, Item, ItemInstanceSer, JSONValue, Machine, MachineInstanceSer, ResolvedRecipeSer, } from './types.js';
+import { getItemFromId, deserializeCustomRecipe, serializeCustomRecipe, capableRecipes, toCustomRecipe } from './crafting-system/functions.js';
+import { energyToNumber } from "./common/utils.js";
+import { clamp } from "./common/utils.js";
+import { JSONEquals } from "./common/utils.js";
+import { relu } from "./common/utils.js";
+import type { CustomRecipe, Item, ItemInstanceSer, Machine, MachineInstanceSer, ResolvedRecipeSer, } from './crafting-system/types.js';
+import type { JSONValue } from "./common/types.js";
 
 
 

@@ -1,5 +1,5 @@
 import { getData } from "./game-data.js"
-import { stepExponential } from "./functions.js"
+import { stepExponential } from "./common/utils.js"
 
 const data = getData()
 

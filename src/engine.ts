@@ -1,6 +1,9 @@
 import { Inventory, ItemEntry, ItemInstance, MachineInstance, Signal, type MachineInstanceStatus } from "./classes.js";
-import { clamp, getItemFromId, relu } from "./functions.js";
-import type { ItemInstanceSer, JSONValue, Machine, MachineInstanceSer } from "./types.js";
+import { getItemFromId } from "./crafting-system/functions.js";
+import { clamp } from "./common/utils.js";
+import { relu } from "./common/utils.js";
+import type { ItemInstanceSer, Machine, MachineInstanceSer } from "./crafting-system/types.js";
+import type { JSONValue } from "./common/types.js";
 
 
 

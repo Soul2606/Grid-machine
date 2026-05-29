@@ -1,4 +1,4 @@
-import type { Item } from "../types";
+import type { Item } from "../crafting-system/types";
 
 /**
  * Can be mutated! Use itemPointer to get which item this cell currently represents.

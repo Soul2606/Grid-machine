@@ -1,16 +1,8 @@
 // types.ts
 
-import type { ItemEntry, ItemInstance } from "./classes"
+import type { ItemEntry, ItemInstance } from "../classes"
+import type { JSONValue } from "../common/types"
 
-
-export type JSONValue = 
- | string
- | number
- | boolean
- | null
- | JSONValue[]
- | { [key: string]: JSONValue }
-//
 
 // A json friendly way to reference an ItemInstance or ItemEntry
 export type ItemInstanceSer = {
@@ -168,9 +160,4 @@ export type CustomRecipeSer = {
 }
 
 
-// Serialized minimal blueprint for constructing a MachineInstance
-export type MachineInstanceBlueprint = Readonly<{
-	capabilities:CustomRecipeSer[]
-	cost:ItemInstanceSer[]
-}>
 

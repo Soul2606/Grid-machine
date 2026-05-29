@@ -1,6 +1,6 @@
 import { ItemEntry, Inventory, ResolvedRecipe } from "../classes.js";
-import { capableRecipes, tryCraft, toCustomRecipe, getRecipeOutputs, getRecipeInputs } from "../functions.js";
-import type { Recipe, Machine, Input } from "../types.js";
+import { capableRecipes, tryCraft, toCustomRecipe, getRecipeOutputs, getRecipeInputs } from "../crafting-system/functions.js";
+import type { Recipe, Machine, Input } from "../crafting-system/types.js";
 
 type LineHistory = Readonly<{
 	incoming: readonly ItemEntry[];

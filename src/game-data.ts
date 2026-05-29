@@ -1,5 +1,6 @@
 // =============== NO IMPORT (except types) ================
-import type { Extractor, Item, ItemInstanceSer, JSONValue, Machine, Recipe } from "./types"
+import type { Extractor, Item, ItemInstanceSer, Machine, Recipe } from "./crafting-system/types"
+import type { JSONValue } from "./common/types"
 
 type Data = Readonly<{
 	items:readonly Item[],
