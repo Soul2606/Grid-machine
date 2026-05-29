@@ -1,7 +1,7 @@
-import { getData } from "./game-data.js"
-import { type MachineInstance, type Inventory, type SignalInterface, ResolvedRecipe, ItemEntry, ItemInstance } from "./classes.js"
-import { clamp, getItemFromId, getItemsFromTag, getRecipeInputs, getRecipeOutputs, maxCraftableCount, removeAllChildren, resolveCraftingCosts, stepExponential } from "./functions.js"
-import type { CraftingOptions, Item, Machine, Recipe } from "./types.js"
+import { getData } from "../game-data.js"
+import { type MachineInstance, type Inventory, type SignalInterface, ResolvedRecipe, ItemEntry, ItemInstance } from "../classes.js"
+import { clamp, getItemFromId, getItemsFromTag, getRecipeInputs, getRecipeOutputs, maxCraftableCount, removeAllChildren, resolveCraftingCosts, stepExponential } from "../functions.js"
+import type { CraftingOptions, Item, Machine, Recipe } from "../types.js"
 
 
 

@@ -1,11 +1,11 @@
 
-import { getData } from "./game-data.js"; // async
-import type { Item, Machine, Recipe } from './types.js'
-import { get, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, relu, removeAllChildren } from './functions.js'
-import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from './classes.js'
+import { getData } from "../game-data.js"; // async
+import type { Item, Machine, Recipe } from '../types.js'
+import { get, getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing, relu, removeAllChildren } from '../functions.js'
+import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from '../classes.js'
 import { createChemicalFormula, createInfoPanel, createItemCell, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
-import { getSignals, isPressed } from "./keyboard-events.js";
-import { addSteamEngine, addToSimulation, getMachine, getMachines, getSteamEngines, getWorkers, load as loadEngine, mainInventory, power, tick as pubSubTick, save as saveEngine, setWorkers, workersReact } from "./engine.js";
+import { getSignals, isPressed } from "../keyboard-events.js";
+import { addSteamEngine, addToSimulation, getMachine, getMachines, getSteamEngines, getWorkers, load as loadEngine, mainInventory, power, tick as pubSubTick, save as saveEngine, setWorkers, workersReact } from "../engine.js";
 
 
 
