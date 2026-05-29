@@ -10,7 +10,7 @@
 		main{
 			display: grid;
 			grid-template-columns: auto auto 60px auto;
-			gap: 5px;
+			gap: 6px;
 			overflow-x: auto;
 			padding: 15px;
 			min-height: 100px;
@@ -28,6 +28,7 @@
 
 		#line{
 			gap: 5px;
+			align-items: center;
 		}
 
 		.cell{
@@ -74,7 +75,7 @@
 	<h4>Error message meaning</h4>
 	<dl>
 		<dt>No_recipe</dt>
-		<dd>The following machine has no recipes that can consume any items provided from the previous machine.</dd>
+		<dd>The machine has no recipes that can consume any of the provided items.</dd>
 		<dt>Ambiguous</dt>
 		<dd>Multiple recipes can consume the same items or there is an overlapping set of items being consumed.</dd>
 		<dt>No_outputs</dt>

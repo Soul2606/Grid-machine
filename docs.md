@@ -1,6 +1,8 @@
 # Documentation
 ## Project overview
 
+Entry point: `src/main/scripts.ts`
+
 This project is a data-driven game simulation with a strict separation between:
 
 - Game configuration data.

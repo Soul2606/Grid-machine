@@ -100,8 +100,7 @@ function refresh() {
 	const height = suRecipes.length
 	console.log("superRecipes", suRecipes);
 
-	for (let i = 0; i < machineLine.length; i++) {
-		const mac = machineLine[i]!;
+	for (const [i, mac] of machineLine.entries()) {
 		const img = create("img")
 		img.src = mac.machine.img
 		img.style.gridRow = "1/" + String(height + 1)
@@ -113,6 +112,13 @@ function refresh() {
 
 			const outputsEl = create("div")
 			outputsEl.style.gridRow = String(j+1) + "/" + String(j+2)
+
+			if (history.status !== "ok") {
+				const stat = create("span")
+				stat.textContent = "status:" + history.status
+
+				outputsEl.append(stat)
+			}
 
 			for (const rec of history.recipes) {
 				const outputs = getRecipeOutputs(rec)
@@ -133,23 +139,23 @@ function refresh() {
 		const input = superRecipe.input
 		const history = superRecipe.history
 
-		const recIn = create("div")
-		inputs.append(recIn)
+		const inpDiv = create("div")
+		inputs.append(inpDiv)
 		for (const inp of input) {
-			const inputEl = create("div")
-			inputEl.textContent = inp.amount.toString()
-			recIn.append(inputEl)
+			const inputOptions = create("div")
+			inputOptions.textContent = inp.amount.toString()
+			inpDiv.append(inputOptions)
 			for (const inst of inp.items) {
 				const cell = createItemCell(inst.item)
 				cell.amountLabel.textContent = ""
-				inputEl.append(cell.element)
+				inputOptions.append(cell.element)
 			}
 		}
 
 		if (superRecipe.status !== "ok") {
 			const errMessage = create("p")
 			errMessage.textContent = superRecipe.status
-			recIn.append(errMessage)
+			inpDiv.append(errMessage)
 			continue
 		}
 
@@ -157,7 +163,7 @@ function refresh() {
 
 		const span = create("span")
 		span.textContent = `time:${time}`
-		recIn.append(span)
+		inpDiv.append(span)
 		
 		console.log("history", history);
 		const recOut = create("div")

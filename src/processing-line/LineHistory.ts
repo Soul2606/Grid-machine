@@ -2,39 +2,51 @@ import { ItemEntry, Inventory, ResolvedRecipe } from "../classes.js";
 import { capableRecipes, tryCraft, toCustomRecipe, getRecipeOutputs, getRecipeInputs } from "../crafting-system/functions.js";
 import type { Recipe, Machine, Input } from "../crafting-system/types.js";
 
-type LineHistory = Readonly<{
-	incoming: readonly ItemEntry[];
-	consumed: readonly ItemEntry[];
-	unused: readonly ItemEntry[];
-	recipes: Recipe[];
-	batchSize: number;
-	recipeConflicts: readonly Recipe[];
-	tooComplex: boolean;
-}>;
-type LineResult = Readonly<{
+
+
+
+/**Info on what was discarded due to complexity */
+type ComplexityInfo = {
+	recipe:Recipe;
+	resolves:ResolvedRecipe[];
+}
+
+
+
+
+/**
+ * Info on one step of the processing line algorithm
+ */
+type LineHistory = {
+	status:          "ok"|"ambiguous"|"no_recipe"|"no_output"|"unknown";
+	incoming:        ItemEntry[];
+	consumed:        ItemEntry[];
+	unused:          ItemEntry[];
+	recipes:         Recipe[];
+	batchSize:       number;
+	recipeConflicts: Recipe[];
+	tooComplex:      ComplexityInfo[];
+	time:            null|number
+}
+
+
+
+
+/**
+ * Results of processing line compilation
+ */
+type SuperRecipe = {
 	status: "ok";
-	history: readonly LineHistory[];
-	output: readonly ItemEntry[];
+	input:  Input[];
+	output:  ItemEntry[];
 	time: number;
-}> |
-Readonly<{
-	status: "ambiguous";
-	history: readonly LineHistory[];
-	step: number;
-	incoming: readonly ItemEntry[];
-}> |
-Readonly<{
-	status: "no_recipe";
-	history: readonly LineHistory[];
-	step: number;
-	incoming: readonly ItemEntry[];
-}> |
-Readonly<{
-	status: "no_output";
-	history: readonly LineHistory[];
-	step: number;
-	recipes: readonly Recipe[];
-}>;
+	history:  LineHistory[];
+} |
+{
+	status: "error";
+	input:  Input[];
+	history:  LineHistory[];
+};
 
 
 
@@ -62,9 +74,9 @@ export function runProcessingLine(
 		stack: number;
 	}>[],
 	input: readonly ItemEntry[]
-): LineResult {
+) {
 
-	let current: readonly ItemEntry[] = input;
+	let current: ItemEntry[] = input.map(ItemEntry.from);
 	const output: ItemEntry[] = [];
 	const history: LineHistory[] = [];
 	const times: number[] = [];
@@ -76,10 +88,10 @@ export function runProcessingLine(
 		let recipes: Recipe[] = [];
 		let batchSize = 0;
 		let ambiguous = false;
-		let tooComplex = false;
+		let tooComplex:ComplexityInfo[] = [];
 		let conflicting: Recipe[] = [];
-		let unused: readonly ItemEntry[] = [];
-		let consumed: readonly ItemEntry[] = [];
+		let unused: ItemEntry[] = [];
+		let consumed: ItemEntry[] = [];
 
 		for (const rec of capable) {
 			const inv = new Inventory();
@@ -100,7 +112,10 @@ export function runProcessingLine(
 
 			if (sqa.length !== 1) {
 				// Recipe batch did not resolve cleanly, scattered batch crafting is unsupported.
-				tooComplex = true;
+				tooComplex.push({
+					recipe: rec,
+					resolves,
+				});
 				continue;
 			}
 
@@ -113,7 +128,8 @@ export function runProcessingLine(
 			);
 		}
 
-		history.push({
+		const info:LineHistory = {
+			status:"unknown",
 			incoming: current,
 			consumed: consumed,
 			unused: unused,
@@ -121,48 +137,48 @@ export function runProcessingLine(
 			batchSize,
 			recipeConflicts: conflicting,
 			tooComplex,
-		});
+			time: null,
+		}
+
+		history.push(info);
 
 		if (ambiguous) {
-			return {
-				status: "ambiguous",
-				incoming: current,
-				step: i,
-				history
-			} as const;
+			info.status = "ambiguous"
+			return history
 		}
 
 		if (recipes.length === 0) {
-			return {
-				status: "no_recipe",
-				incoming: current,
-				step: i,
-				history
-			} as const;
+			info.status = "no_recipe"
+			return history
 		}
 
-		const out = ItemEntry.squash(recipes.flatMap(recipe => getRecipeOutputs(recipe)
+		const out = ItemEntry.squash(recipes.flatMap(recipe => 
+			getRecipeOutputs(recipe)
 		));
-		out.forEach(ent => ent.amount *= batchSize
+
+		out.forEach(ent => 
+			ent.amount *= batchSize
 		);
+
 		if (out.length === 0) {
-			return {
-				status: "no_output",
-				recipes: recipes,
-				step: i,
-				history
-			} as const;
+			info.status = "no_output"
+			return history
 		}
 
-		times.push(...recipes.map(r => r.processTimeSeconds / step.stack * batchSize
-		));
+		info.status = "ok"
+
+		const time = Math.max(...recipes.map(r => 
+			r.processTimeSeconds / step.stack * batchSize
+		))
+
+		times.push(time);
 		current = out;
 	}
 
 	output.push(...current);
 
 	return {
-		status: "ok",
+		status:"final",
 		output,
 		time: Math.max(...times),
 		history,
@@ -183,21 +199,6 @@ export function parseProcessingLine(
 	}>[],
 	multipliers: (undefined | number)[] = []
 ) {
-
-	type SuperRecipe = Readonly<{
-		status: "ok";
-		input: readonly Input[];
-		output: readonly ItemEntry[];
-		time: number;
-		history: readonly LineHistory[];
-	}> |
-		Readonly<{
-			status: "ambiguous" | "no_recipe" | "no_output";
-			input: readonly Input[];
-			history: readonly LineHistory[];
-		}>;
-
-	const problems = [];
 	const superRecipes: SuperRecipe[] = [];
 	const first = line[0];
 	if (!first) return "empty_line";
@@ -206,16 +207,17 @@ export function parseProcessingLine(
 	for (const [index, recipe] of capable.entries()) {
 		const multiplier = Math.floor(Math.max(1, multipliers[index] ?? 1));
 		const inputs = getRecipeInputs(recipe);
-		const firstInputs = inputs.map(inst => ItemEntry.fromInst(inst.items[0]!, inst.amount * multiplier)
+		const firstInputs = inputs.map(inst => 
+			ItemEntry.fromInst(inst.items[0]!, inst.amount * multiplier)
 		);
 
 		const results = runProcessingLine(line, firstInputs);
 
-		if (results.status !== "ok") {
+		if (Array.isArray(results)) {
 			superRecipes.push({
-				status: results.status,
+				status: "error",
 				input: inputs,
-				history: results.history,
+				history: results,
 			});
 			continue;
 		}
