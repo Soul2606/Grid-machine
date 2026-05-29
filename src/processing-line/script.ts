@@ -1,9 +1,10 @@
-import { create, get, getRecipeOutputs, parseProcessingLine, removeAllChildren, serializeCustomRecipe } from "../functions.js";
+import { create, get, getRecipeOutputs, removeAllChildren, serializeCustomRecipe } from "../functions.js";
+import { parseProcessingLine } from "./LineHistory.js";
 import * as game from "../engine.js";
 import { getDataMapToId } from "../game-data.js";
-import { createItemCell } from "../main/ui-components.js";
-import type { CustomRecipe, Input, Item, JSONValue, Machine, MachineInstanceBlueprint, Recipe } from "../types.js";
-import { ItemEntry, MachineInstance } from "../classes.js";
+import { createItemCell } from "../common/ui-components.js";
+import type { CustomRecipe, Input, JSONValue, Machine, MachineInstanceBlueprint } from "../types.js";
+import { ItemEntry } from "../classes.js";
 
 game.load()
 

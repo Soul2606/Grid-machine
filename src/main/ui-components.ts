@@ -1,7 +1,8 @@
 import { getData } from "../game-data.js"
 import { type MachineInstance, type Inventory, type SignalInterface, ResolvedRecipe, ItemEntry, ItemInstance } from "../classes.js"
 import { clamp, getItemFromId, getItemsFromTag, getRecipeInputs, getRecipeOutputs, maxCraftableCount, removeAllChildren, resolveCraftingCosts, stepExponential } from "../functions.js"
-import type { CraftingOptions, Item, Machine, Recipe } from "../types.js"
+import type { CraftingOptions, Machine, Recipe } from "../types.js"
+import { createItemCell } from "../common/ui-components.js"
 
 
 
@@ -134,37 +135,6 @@ export function createQuantitySlider() {
 		setup: setupExp,
 	} as const
 	return { element: root, methods } as const
-}
-
-
-
-
-/**
- * Can be mutated! Use itemPointer to get which item this cell currently represents.
- * @param item The item that the cell represents
- * @returns 
- */
-export function createItemCell(item: Item) {
-	let itemPointer = item
-	const cell = document.createElement('div')
-	cell.className = 'inventory-grid-cell'
-	
-	const number = document.createElement('span')
-	number.textContent = '0'
-	cell.appendChild(number)
-
-	function setItem(item:Item) {
-		itemPointer = item
-		cell.style.backgroundImage = item.img ? `url(${item.img})` : ''
-	}
-	setItem(item)
-
-	return {
-		element: cell,
-		amountLabel: number,
-		getItem:()=>itemPointer, 
-		setItem
-	} as const
 }
 
 
