@@ -1,6 +1,7 @@
 // types.ts
 
-import type { ItemEntry, ItemInstance } from "../classes"
+import type { ItemEntry } from '../classes/item-entry'
+import type { ItemInstance } from '../classes/item-instance'
 import type { JSONValue } from "../common/types"
 
 

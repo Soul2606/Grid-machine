@@ -3,7 +3,11 @@ import { getData } from "../game-data.js"; // async
 import type { Item, Machine, Recipe } from '../crafting-system/types.js'
 import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing } from '../crafting-system/functions.js'
 import { get, relu, removeAllChildren } from "../common/utils.js";
-import { Inventory, ItemEntry, ItemInstance, MachineInstance, ResolvedRecipe } from '../classes.js'
+import { MachineInstance } from '../classes/machine-instance.js'
+import { ItemEntry } from '../classes/item-entry.js';
+import { ItemInstance } from '../classes/item-instance.js';
+import { Inventory } from '../classes/inventory.js';
+import { ResolvedRecipe } from "../classes/resolved-recipe.js";
 import { createChemicalFormula, createInfoPanel, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
 import { createItemCell } from "../common/ui-components.js";
 import { getSignals, isPressed } from "../keyboard-events.js";

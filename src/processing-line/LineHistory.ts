@@ -1,4 +1,6 @@
-import { ItemEntry, Inventory, ResolvedRecipe } from "../classes.js";
+import { ItemEntry } from '../classes/item-entry.js';
+import { Inventory } from '../classes/inventory.js';
+import { ResolvedRecipe } from "../classes/resolved-recipe.js";
 import { capableRecipes, tryCraft, toCustomRecipe, getRecipeOutputs, getRecipeInputs } from "../crafting-system/functions.js";
 import type { Recipe, Machine, Input } from "../crafting-system/types.js";
 

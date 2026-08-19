@@ -1,6 +1,8 @@
 import { getDataMapToId } from "../game-data.js";
-import { ItemEntry, ItemInstance, ResolvedRecipe } from '../classes.js';
-import { Inventory } from '../classes.js';
+import { ItemEntry } from '../classes/item-entry.js';
+import { ItemInstance } from '../classes/item-instance.js';
+import { ResolvedRecipe } from "../classes/resolved-recipe.js";
+import { Inventory } from '../classes/inventory.js';
 import type { CraftingOptions, CustomRecipe, CustomRecipeSer, Input, InputSer, Item, Machine, Recipe } from "./types.js";
 
 

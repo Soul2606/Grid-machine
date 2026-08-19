@@ -7,7 +7,7 @@ import { createItemCell } from "../common/ui-components.js";
 import type { CustomRecipe, Input, Machine } from "../crafting-system/types.js";
 import type { MachineInstanceBlueprint } from "../common/types.js";
 import type { JSONValue } from "../common/types.js";
-import { ItemEntry } from "../classes.js";
+import { ItemEntry } from '../classes/item-entry.js';
 
 game.load()
 

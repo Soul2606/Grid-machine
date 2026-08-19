@@ -1,4 +1,4 @@
-import { Signal } from "./classes.js"
+import { Signal } from "./lib/events/signal.js"
 
 
 const pressed = new Set<string>()

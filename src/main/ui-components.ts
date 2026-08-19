@@ -1,11 +1,16 @@
 import { getData } from "../game-data.js"
-import { type MachineInstance, type Inventory, type SignalInterface, ResolvedRecipe, ItemEntry, ItemInstance } from "../classes.js"
-import { getItemFromId, getItemsFromTag, getRecipeInputs, getRecipeOutputs, maxCraftableCount, resolveCraftingCosts } from "../crafting-system/functions.js"
+import type { MachineInstance } from "../classes/machine-instance.js"
+import { ItemEntry } from '../classes/item-entry.js'
+import { ItemInstance } from '../classes/item-instance.js'
+import { type Inventory } from '../classes/inventory.js'
+import { ResolvedRecipe } from "../classes/resolved-recipe.js"
+import { getItemFromId, getItemsFromTag, maxCraftableCount, resolveCraftingCosts } from "../crafting-system/functions.js"
 import { stepExponential } from "../common/utils.js"
 import { clamp } from "../common/utils.js"
 import { removeAllChildren } from "../common/utils.js"
 import type { CraftingOptions, Machine, Recipe } from "../crafting-system/types.js"
 import { createItemCell } from "../common/ui-components.js"
+import type { SignalInterface } from "../lib/events/signal.js";
 
 
 
