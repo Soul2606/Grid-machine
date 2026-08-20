@@ -1,26 +1,27 @@
-import { ItemInstance } from './item-instance.js';
+import { Item } from './item.js';
 import type { JSONValue } from '../common/types';
 import { getItemFromId } from '../crafting-system/functions.js';
-import type { Item, ItemInstanceSer } from '../crafting-system/types';
+import type { ItemSer } from '../crafting-system/types';
+import type { ItemDef } from '../game-data.js';
 
 
 
 
-export class ItemEntry extends ItemInstance {
+export class ItemEntry extends Item {
 
 	static from(ent: ItemEntry) {
 		return new ItemEntry(ent.item, structuredClone(ent.metadata), ent.amount);
 	}
 
-	static fromInst(inst: ItemInstance, amount: number) {
+	static fromInst(inst: Item, amount: number) {
 		return new ItemEntry(inst.item, structuredClone(inst.metadata), amount);
 	}
 
-	static fromItem(item: Item, amount: number = 1) {
+	static fromItem(item: ItemDef, amount: number = 1) {
 		return new ItemEntry(item, null, amount);
 	}
 
-	static fromSer(ref: ItemInstanceSer) {
+	static fromSer(ref: ItemSer) {
 		const item = getItemFromId(ref.id);
 		const meta = ref.metadata === undefined ? null : ref.metadata;
 		const amount = ref.amount === undefined ? 0 : ref.amount;
@@ -28,7 +29,7 @@ export class ItemEntry extends ItemInstance {
 	}
 
 	amount: number;
-	constructor(item: Item, metadata: JSONValue, amount: number) {
+	constructor(item: ItemDef, metadata: JSONValue, amount: number) {
 		super(item, metadata);
 		this.amount = amount;
 	}
@@ -37,7 +38,7 @@ export class ItemEntry extends ItemInstance {
 		return new ItemEntry(this.item, this.metadata, this.amount);
 	}
 
-	serialize(): ItemInstanceSer {
+	serialize(): ItemSer {
 		return { id: this.item.id, metadata: this.metadata, amount: this.amount };
 	}
 

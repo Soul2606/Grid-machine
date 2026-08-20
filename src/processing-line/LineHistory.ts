@@ -2,14 +2,15 @@ import { ItemEntry } from '../classes/item-entry.js';
 import { Inventory } from '../classes/inventory.js';
 import { ResolvedRecipe } from "../classes/resolved-recipe.js";
 import { capableRecipes, tryCraft, toCustomRecipe, getRecipeOutputs, getRecipeInputs } from "../crafting-system/functions.js";
-import type { Recipe, Machine, Input } from "../crafting-system/types.js";
+import type { Input } from "../crafting-system/types.js";
+import type { RecipeDef, MachineDef } from '../game-data.js';
 
 
 
 
 /**Info on what was discarded due to complexity */
 type ComplexityInfo = {
-	recipe:Recipe;
+	recipe:RecipeDef;
 	resolves:ResolvedRecipe[];
 }
 
@@ -24,9 +25,9 @@ type LineHistory = {
 	incoming:        ItemEntry[];
 	consumed:        ItemEntry[];
 	unused:          ItemEntry[];
-	recipes:         Recipe[];
+	recipes:         RecipeDef[];
 	batchSize:       number;
-	recipeConflicts: Recipe[];
+	recipeConflicts: RecipeDef[];
 	tooComplex:      ComplexityInfo[];
 	time:            null|number
 }
@@ -72,7 +73,7 @@ type SuperRecipe = {
  */
 export function runProcessingLine(
 	line: readonly Readonly<{
-		machine: Machine;
+		machine: MachineDef;
 		stack: number;
 	}>[],
 	input: readonly ItemEntry[]
@@ -87,11 +88,11 @@ export function runProcessingLine(
 		const step = line[i]!;
 		const capable = capableRecipes(step.machine);
 
-		let recipes: Recipe[] = [];
+		let recipes: RecipeDef[] = [];
 		let batchSize = 0;
 		let ambiguous = false;
 		let tooComplex:ComplexityInfo[] = [];
-		let conflicting: Recipe[] = [];
+		let conflicting: RecipeDef[] = [];
 		let unused: ItemEntry[] = [];
 		let consumed: ItemEntry[] = [];
 
@@ -196,7 +197,7 @@ export function runProcessingLine(
  */
 export function parseProcessingLine(
 	line: readonly Readonly<{
-		machine: Machine;
+		machine: MachineDef;
 		stack: number;
 	}>[],
 	multipliers: (undefined | number)[] = []

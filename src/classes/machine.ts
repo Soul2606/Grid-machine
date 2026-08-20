@@ -2,9 +2,10 @@ import { deserializeCustomRecipe, serializeCustomRecipe, capableRecipes, toCusto
 import { energyToNumber } from "../common/utils.js";
 import { clamp } from "../common/utils.js";
 import { relu } from "../common/utils.js";
-import type { CustomRecipe, Machine, MachineInstanceSer, } from '../crafting-system/types.js';
+import type { Recipe, MachineSer, } from '../crafting-system/types.js';
+import type { MachineDef } from '../game-data.js';
 import { ResolvedRecipe } from "./resolved-recipe.js";
-import { ItemInstance } from './item-instance.js';
+import { Item } from './item.js';
 import { ItemEntry } from './item-entry.js';
 
 
@@ -23,9 +24,9 @@ export type MachineInstanceStatus = "idle" | {
 }
 
 
-export class MachineInstance {
+export class Machine {
 
-	static fromMachine(machine: Machine, stack = 1){
+	static fromMachine(machine: MachineDef, stack = 1){
 		let modules:MIModules = {} 
 		const fn = machine.fuelNeeds
 		if (fn) {
@@ -40,7 +41,7 @@ export class MachineInstance {
 			modules.powerNeed = {need:energyToNumber(pn.energy), voltageTier:pn.voltageTier, energy:0}
 		}
 		const capable = capableRecipes(machine)
-		return new MachineInstance(
+		return new Machine(
 			capable.map(toCustomRecipe),
 			machine.cost.map(inst => ItemEntry.fromSer(inst)),
 			stack,
@@ -53,8 +54,8 @@ export class MachineInstance {
 		)
 	}
 
-	static fromSer(ser:MachineInstanceSer){
-		return new MachineInstance(
+	static fromSer(ser:MachineSer){
+		return new Machine(
 			ser.capableRecipes.map(deserializeCustomRecipe),
 			ser.cost.map(ItemEntry.fromSer),
 			ser.stack,
@@ -79,7 +80,7 @@ export class MachineInstance {
 	readonly sprite:        string
 	readonly name:          string
 	readonly machineId:     string|undefined
-	readonly capableRecipes = new Map<string, CustomRecipe>()
+	readonly capableRecipes = new Map<string, Recipe>()
 	readonly cost:            readonly ItemEntry[]
 
 	//Private
@@ -93,7 +94,7 @@ export class MachineInstance {
 
 	// ============== Constructor ====================
 	constructor(
-		recipes:   readonly CustomRecipe[],
+		recipes:   readonly Recipe[],
 		cost:      readonly ItemEntry[],
 		stack      = 1,
 		work       = 0,
@@ -132,7 +133,7 @@ export class MachineInstance {
 	}
 
 	/**Returns a serialized snapshot of the state of a machine instance. */
-	serialize():MachineInstanceSer{
+	serialize():MachineSer{
 		const workerNeed = structuredClone(this.workerNeed)
 		const fuelNeed = structuredClone(this.fuelNeed)
 		const powerNeed = structuredClone(this.powerNeed)
@@ -186,7 +187,7 @@ export class MachineInstance {
 		return this
 	}
 
-	refundWorkingOn(recipeId: ResolvedRecipe): ItemInstance[]|"not_found"{
+	refundWorkingOn(recipeId: ResolvedRecipe): Item[]|"not_found"{
 		const existing = this.workingOn.find(wo => wo.recipe.equals(recipeId))
 		if (existing) {
 			const consumed = existing.recipe.inputs.map(item => ItemEntry.fromInst(item, item.amount * existing.amount))

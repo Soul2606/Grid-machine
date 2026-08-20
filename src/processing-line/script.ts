@@ -4,7 +4,8 @@ import { parseProcessingLine } from "./LineHistory.js";
 import * as game from "../engine.js";
 import { getDataMapToId } from "../game-data.js";
 import { createItemCell } from "../common/ui-components.js";
-import type { CustomRecipe, Input, Machine } from "../crafting-system/types.js";
+import type { Recipe, Input } from "../crafting-system/types.js";
+import type { MachineDef } from '../game-data.js';
 import type { MachineInstanceBlueprint } from "../common/types.js";
 import type { JSONValue } from "../common/types.js";
 import { ItemEntry } from '../classes/item-entry.js';
@@ -67,7 +68,7 @@ function refresh() {
 	removeAllChildren(line)
 
 	const machineLine:{
-		machine:Machine,
+		machine:MachineDef,
 		stack:number
 	}[] = []
 
@@ -198,12 +199,12 @@ get("confirm").addEventListener("click", () => {
 	}
 
 
-	const customRecipes:CustomRecipe[] = compiledRecipes.map(cr => {
+	const customRecipes:Recipe[] = compiledRecipes.map(cr => {
 		return {
 			inputs:cr.inputs,
 			outputs:cr.outputs,
 			processTimeSeconds: cr.time,
-		} satisfies CustomRecipe
+		} satisfies Recipe
 	})
 
 	const blueprint:MachineInstanceBlueprint = {

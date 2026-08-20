@@ -1,11 +1,12 @@
-import { MachineInstance, type MachineInstanceStatus } from "./classes/machine-instance.js";
+import { Machine, type MachineInstanceStatus } from "./classes/machine.js";
 import { ItemEntry } from './classes/item-entry.js';
-import { ItemInstance } from './classes/item-instance.js';
+import { Item } from './classes/item.js';
 import { Inventory } from './classes/inventory.js';
 import { getItemFromId } from "./crafting-system/functions.js";
 import { clamp } from "./common/utils.js";
 import { relu } from "./common/utils.js";
-import type { ItemInstanceSer, Machine, MachineInstanceSer } from "./crafting-system/types.js";
+import type { ItemSer, MachineSer } from "./crafting-system/types.js";
+import type { MachineDef } from './game-data.js';
 import { Signal } from "./lib/events/signal.js";
 
 
@@ -16,7 +17,7 @@ type MachineInstanceAPI = {
 
 
 
-const machinesSimulated = new Map<MachineInstance, MachineInstanceAPI>()
+const machinesSimulated = new Map<Machine, MachineInstanceAPI>()
 
 
 
@@ -46,7 +47,7 @@ const workersSignal = new Signal()
 
 
 
-export function getMachine(machine:MachineInstance) {
+export function getMachine(machine:Machine) {
 	return machinesSimulated.get(machine)
 }
 
@@ -83,7 +84,7 @@ export const tick = (() => {
  * @param tickCall This is called last, after all internal logic is run, so global values might be mutated.
  * @returns An unsubscribe function that removes this machine when called.
  */
-export function addToSimulation(machine:MachineInstance) {
+export function addToSimulation(machine:Machine) {
 	const existing = machinesSimulated.get(machine)
 	let tickEvent:(status:MachineInstanceStatus)=>void | undefined
 
@@ -133,8 +134,8 @@ export function addToSimulation(machine:MachineInstance) {
 
 type SaveFormat = {
 	version:number
-	items:ItemInstanceSer[]
-	machines:MachineInstanceSer[]
+	items:ItemSer[]
+	machines:MachineSer[]
 }
 
 
@@ -161,7 +162,7 @@ export function load()  {
 	}
 	machinesSimulated.clear()
 	for (const mac of save.machines) {
-		addToSimulation(MachineInstance.fromSer(mac))
+		addToSimulation(Machine.fromSer(mac))
 	}
 }
 
@@ -208,7 +209,7 @@ export function getSteamEngines() {
 
 let fuelOverflow = 0
 tick.subscribe(delta => {
-	const fuel = ItemInstance.fromItem(getItemFromId(steamEngines.info.fuelId))
+	const fuel = Item.fromItem(getItemFromId(steamEngines.info.fuelId))
 	const fuelAmount = mainInventory.getReflection(fuel).amount + fuelOverflow
 
 	const fuelNeed = steamEngines.info.consumption

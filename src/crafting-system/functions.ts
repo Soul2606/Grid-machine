@@ -1,9 +1,10 @@
 import { getDataMapToId } from "../game-data.js";
 import { ItemEntry } from '../classes/item-entry.js';
-import { ItemInstance } from '../classes/item-instance.js';
+import { Item } from '../classes/item.js';
 import { ResolvedRecipe } from "../classes/resolved-recipe.js";
 import { Inventory } from '../classes/inventory.js';
-import type { CraftingOptions, CustomRecipe, CustomRecipeSer, Input, InputSer, Item, Machine, Recipe } from "./types.js";
+import type { CraftingOptions, Recipe, RecipeSer, Input, InputSer } from "./types.js";
+import type { ItemDef, MachineDef, RecipeDef } from '../game-data.js';
 
 
 //Global variables
@@ -15,7 +16,7 @@ const {items, machines, recipes, extractors} = getDataMapToId()
 /**
  * Get all recipes that crafts the provided item
  */
-export function getRecipesProducing(craftable: ItemInstance) {
+export function getRecipesProducing(craftable: Item) {
 	return recipes.values().toArray().filter(recipe =>
 		getRecipeOutputs(recipe).some(output => craftable.isEqual(output))
 	)
@@ -28,7 +29,7 @@ export function getRecipesProducing(craftable: ItemInstance) {
  * Returns each recipe that consumes exactly every provided item.
  * @param consumed the items the recipe must consume
  */
-export function getRecipesConsuming(consumed: ItemInstance|(readonly ItemInstance[])) {
+export function getRecipesConsuming(consumed: Item|(readonly Item[])) {
 	const _consumed = Array.isArray(consumed) ? consumed : [consumed]
 	return recipes.values().toArray().filter(recipe => {
 		const inputs = getRecipeInputs(recipe)
@@ -47,10 +48,10 @@ export function getRecipesConsuming(consumed: ItemInstance|(readonly ItemInstanc
 /**
  * Returns every input with each item that is valid for that input of the recipe. think of it like this (item||item...)&&(item||item...)...
  */
-export function getRecipeInputs(recipe: Recipe): Input[] {
+export function getRecipeInputs(recipe: RecipeDef): Input[] {
 	if (!Array.isArray(recipe.inputs)) return []
 	return recipe.inputs.map(input => {
-		const inputItems = new Set<Item>()
+		const inputItems = new Set<ItemDef>()
 		for (const [id, item] of items) {
 			if (item.id === input.id || (input.tag && item.tags.includes(input.tag))) {
 				inputItems.add(item)
@@ -58,7 +59,7 @@ export function getRecipeInputs(recipe: Recipe): Input[] {
 		}
 		return {
 			items: Array.from(inputItems).map(item=>
-				new ItemInstance(item, input.meta)
+				new Item(item, input.meta)
 			),
 			amount: input.amount
 		}
@@ -68,7 +69,7 @@ export function getRecipeInputs(recipe: Recipe): Input[] {
 
 
 
-export function getItemFromId(id: string): Item {
+export function getItemFromId(id: string): ItemDef {
 	const item = items.get(id)
 	if (!item) throw new Error("Could not find item from id:" + id)
 	return item
@@ -77,14 +78,14 @@ export function getItemFromId(id: string): Item {
 
 
 
-export function getItemsFromTag(tag: string): Item[] {
+export function getItemsFromTag(tag: string): ItemDef[] {
 	return items.values().toArray().filter(item => item.tags.includes(tag))
 }
 
 
 
 
-export function getRecipeFromId(id: string): Recipe {
+export function getRecipeFromId(id: string): RecipeDef {
 	const item = recipes.get(id)
 	if (!item) throw new Error("Could not find recipe from id: " + id)
 	return item
@@ -93,7 +94,7 @@ export function getRecipeFromId(id: string): Recipe {
 
 
 
-export function getRecipeOutputs(recipe: Recipe): readonly ItemEntry[] {
+export function getRecipeOutputs(recipe: RecipeDef): readonly ItemEntry[] {
 	return recipe.outputs.map(output => 
 		new ItemEntry(getItemFromId(output.id), null, output.amount === undefined ? 0 : output.amount)
 	)
@@ -102,7 +103,7 @@ export function getRecipeOutputs(recipe: Recipe): readonly ItemEntry[] {
 
 
 
-export function capableRecipes(machine: Machine) {
+export function capableRecipes(machine: MachineDef) {
 	return recipes.values().toArray().filter(recipe=>machine.capabilities.includes(recipe.requiredProcess))
 }
 
@@ -178,7 +179,7 @@ export function maxCraftableCount(inputs: readonly Input[], inventory: Inventory
  * Does not mutate any give value
  */
 export function resolveCraftingCosts(
-	recipe: CustomRecipe,
+	recipe: Recipe,
 	inventory: Inventory,
 	options: CraftingOptions = { multiply: 1 }
 ): ResolvedRecipe[] | false {
@@ -237,7 +238,7 @@ export function resolveCraftingCosts(
  * Similar to resolveCraftingCosts but it actually executes the craft and mutates the provided inventory if craft is completely successful
  */
 export function tryCraft(
-	recipe: CustomRecipe,
+	recipe: Recipe,
 	inventory: Inventory,
 	options?: CraftingOptions
 	): ResolvedRecipe[] | false {
@@ -257,7 +258,7 @@ export function tryCraft(
  * If the options: maximize is true, or multiply is not one, then the craft will fail.
  */
 export function trySingleCraft(
-	recipe: CustomRecipe,
+	recipe: Recipe,
 	inventory: Inventory,
 	options: CraftingOptions = {multiply: 1}
 ): ResolvedRecipe | false {
@@ -289,14 +290,14 @@ export function serializeInput(val:Input):InputSer {
 export function deserializeInput(val:InputSer):Input {
 	return {
 		amount:val.amount,
-		items:val.items.map(ItemInstance.fromSer)
+		items:val.items.map(Item.fromSer)
 	}
 }
 
 
 
 
-export function serializeCustomRecipe(val:CustomRecipe):CustomRecipeSer {
+export function serializeCustomRecipe(val:Recipe):RecipeSer {
 	return {
 		inputs:val.inputs.map(serializeInput),
 		outputs:val.outputs.map(v=>v.serialize()),
@@ -307,7 +308,7 @@ export function serializeCustomRecipe(val:CustomRecipe):CustomRecipeSer {
 
 
 
-export function deserializeCustomRecipe(val:CustomRecipeSer):CustomRecipe {
+export function deserializeCustomRecipe(val:RecipeSer):Recipe {
 	return {
 		inputs:val.inputs.map(deserializeInput),
 		outputs:val.outputs.map(ItemEntry.fromSer),
@@ -318,7 +319,7 @@ export function deserializeCustomRecipe(val:CustomRecipeSer):CustomRecipe {
 
 
 
-export function toCustomRecipe(rec:Recipe):CustomRecipe {
+export function toCustomRecipe(rec:RecipeDef):Recipe {
 	return {
 		inputs: getRecipeInputs(rec),
 		outputs: getRecipeOutputs(rec),

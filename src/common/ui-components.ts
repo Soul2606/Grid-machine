@@ -1,11 +1,11 @@
-import type { Item } from "../crafting-system/types";
+import type { ItemDef } from '../game-data';
 
 /**
  * Can be mutated! Use itemPointer to get which item this cell currently represents.
  * @param item The item that the cell represents
  * @returns
  */
-export function createItemCell(item: Item) {
+export function createItemCell(item: ItemDef) {
 	let itemPointer = item;
 	const cell = document.createElement('div');
 	cell.className = 'inventory-grid-cell';
@@ -14,7 +14,7 @@ export function createItemCell(item: Item) {
 	number.textContent = '0';
 	cell.appendChild(number);
 
-	function setItem(item: Item) {
+	function setItem(item: ItemDef) {
 		itemPointer = item;
 		cell.style.backgroundImage = item.img ? `url(${item.img})` : '';
 	}

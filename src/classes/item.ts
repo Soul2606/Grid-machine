@@ -2,25 +2,26 @@ import { ItemEntry } from './item-entry';
 import type { JSONValue } from '../common/types';
 import { JSONEquals } from '../common/utils';
 import { getItemFromId } from '../crafting-system/functions';
-import type { ItemInstanceSer, Item } from '../crafting-system/types';
+import type { ItemSer } from '../crafting-system/types';
+import type { ItemDef } from '../game-data';
 
 
 
 
-export class ItemInstance {
+export class Item {
 
-	static from(inst: ItemInstance): ItemInstance {
-		return new ItemInstance(inst.item, inst.metadata);
+	static from(inst: Item): Item {
+		return new Item(inst.item, inst.metadata);
 	}
 
-	static fromSer(ref: ItemInstanceSer) {
+	static fromSer(ref: ItemSer) {
 		const item = getItemFromId(ref.id);
 		const meta = ref.metadata === undefined ? null : ref.metadata;
-		return new ItemInstance(item, meta);
+		return new Item(item, meta);
 	}
 
-	static fromItem(item: Item) {
-		return new ItemInstance(item);
+	static fromItem(item: ItemDef) {
+		return new Item(item);
 	}
 
 	/**
@@ -39,23 +40,23 @@ export class ItemInstance {
 		return squashed.values().toArray();
 	}
 
-	readonly item: Item;
+	readonly item: ItemDef;
 	metadata: JSONValue;
-	constructor(item: Item, metadata: JSONValue = null) {
+	constructor(item: ItemDef, metadata: JSONValue = null) {
 		this.item = item;
 		this.metadata = structuredClone(metadata);
 	}
 
 	clone() {
-		return new ItemInstance(this.item, this.metadata);
+		return new Item(this.item, this.metadata);
 	}
 
-	serialize(): ItemInstanceSer {
+	serialize(): ItemSer {
 		return { id: this.item.id, metadata: this.metadata, amount: 1 };
 	}
 
-	isEqual(itemInstance: ItemInstance) {
-		if (!(itemInstance instanceof ItemInstance)) throw new Error("itemInstance is not an ItemInstance");
+	isEqual(itemInstance: Item) {
+		if (!(itemInstance instanceof Item)) throw new Error("itemInstance is not an ItemInstance");
 		return (
 			this.item.id === itemInstance.item.id
 			&&

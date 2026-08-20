@@ -1,11 +1,11 @@
 
 import { getData } from "../game-data.js"; // async
-import type { Item, Machine, Recipe } from '../crafting-system/types.js'
+import type { ItemDef, MachineDef, RecipeDef } from '../game-data.js';
 import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing } from '../crafting-system/functions.js'
 import { get, relu, removeAllChildren } from "../common/utils.js";
-import { MachineInstance } from '../classes/machine-instance.js'
+import { Machine } from '../classes/machine.js'
 import { ItemEntry } from '../classes/item-entry.js';
-import { ItemInstance } from '../classes/item-instance.js';
+import { Item } from '../classes/item.js';
 import { Inventory } from '../classes/inventory.js';
 import { ResolvedRecipe } from "../classes/resolved-recipe.js";
 import { createChemicalFormula, createInfoPanel, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
@@ -41,7 +41,7 @@ function updatePower() {
  * @param item the item to transfer
  * @returns void
  */
-function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, item:ItemInstance): void {
+function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, item:Item): void {
 	console.log("doing item transfer. Context;", transferContext.kind)
 	if (transferContext.kind !== "empty" && transferContext.kind !== "item") return
 	if (transferContext.kind === "item" && !transferContext.value.isEqual(item)) return
@@ -106,7 +106,7 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 
 
 
-function setItemPopup(item:ItemInstance) {
+function setItemPopup(item:Item) {
 	recipeHoverState = {valid:true, value:item}
 	MouseOverlay.show()
 	MouseOverlay.elements.infoPanel.show()
@@ -122,7 +122,7 @@ function setItemPopup(item:ItemInstance) {
 	})())
 }
 
-function hideItemPopup(item:ItemInstance|null) {
+function hideItemPopup(item:Item|null) {
 	if (recipeHoverState?.valid && item && recipeHoverState.value.isEqual(item)) {
 		recipeHoverState.valid = false
 	}
@@ -175,7 +175,7 @@ var sideMenuMode:"recipes" | "inventory" | "machines" = "inventory"
 /**
  * Used by "showUsage"
  */
-var recipeHoverState: undefined | {valid:boolean, value:ItemInstance}
+var recipeHoverState: undefined | {valid:boolean, value:Item}
 
 
 const items = getData().items
@@ -301,7 +301,7 @@ type TransferContext = {
 }
 | {
 	kind: "machine"
-	value: Machine
+	value: MachineDef
 	transfer: (success:boolean) => void
 }
 
@@ -407,7 +407,7 @@ workersReact.subscribe(updateWorkers)
 
 
 
-const showItemRecipes = (recipes:readonly Recipe[]) => {
+const showItemRecipes = (recipes:readonly RecipeDef[]) => {
 	const existingPro = new Map<string, HTMLElement>()
 
 	recipeWindow.style.display = ""
@@ -452,7 +452,7 @@ const showItemRecipes = (recipes:readonly Recipe[]) => {
 
 
 
-const showMachineRecipe = (machine:Machine) => {
+const showMachineRecipe = (machine:MachineDef) => {
 	recipeWindow.style.display = ""
 	const card = createRecipeCard()
 	card.setMachineRecipe(machine)
@@ -475,7 +475,7 @@ const showMachineRecipe = (machine:Machine) => {
 
 
 
-const showItemUsage = (item:ItemInstance) => {
+const showItemUsage = (item:Item) => {
 	const rs = recipes.filter(r =>
 		r.inputs.some(i => i.id === item.item.id)
 	)
@@ -505,7 +505,7 @@ keyboardEvents.keydown.subscribe(code => {
 
 
 const invItemCells = items.map(item => {
-	const inst = ItemInstance.fromItem(item)
+	const inst = Item.fromItem(item)
 	const v = createItemCell(item)
 	v.element.style.display = "none"
 
@@ -516,7 +516,7 @@ const invItemCells = items.map(item => {
 		e.preventDefault()
 		e.stopPropagation()
 		if (sideMenuMode === "inventory") {
-			itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, ItemInstance.fromItem(v.getItem()))
+			itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, Item.fromItem(v.getItem()))
 		} else if (sideMenuMode === "recipes") {
 			removeAllChildren(recipeDisplay)
 			showItemRecipes(getRecipesProducing(inst))
@@ -542,7 +542,7 @@ mainInventory.signal.subscribe((itemInstance)=>{
 
 
 
-const machineCellElements: {element:HTMLDivElement, machinePointer:Machine}[] = []
+const machineCellElements: {element:HTMLDivElement, machinePointer:MachineDef}[] = []
 for(const machine of machines){
 	const cell = document.createElement('div')
 	cell.className = 'inventory-grid-cell'
@@ -655,7 +655,7 @@ get('extract-starter')!.addEventListener('click',()=>{
 			}
 		}
 		if (resultId === null) continue
-		mainInventory.changeItem(ItemInstance.fromItem(getItemFromId(resultId)), 1)
+		mainInventory.changeItem(Item.fromItem(getItemFromId(resultId)), 1)
 	}
 })
 
@@ -663,7 +663,7 @@ get('extract-starter')!.addEventListener('click',()=>{
 
 const machineUI = {
 	...createMachineUI(pubSubTick),
-	owner: null as null | MachineInstance,
+	owner: null as null | Machine,
 }
 
 
@@ -719,7 +719,7 @@ get('machine-line-cell-button')!.addEventListener('click',()=>{
 	const machineObject = transferContext.value
 	if (!machineObject) return
 	
-	const machineInst = MachineInstance.fromMachine(machineObject)
+	const machineInst = Machine.fromMachine(machineObject)
 	
 	addToSimulation(machineInst)
 	get('machine-line')!.append(bindToUi(machineInst))
@@ -731,7 +731,7 @@ get('machine-line-cell-button')!.addEventListener('click',()=>{
 
 
 
-const bindToUi = (machineInst:MachineInstance) => {
+const bindToUi = (machineInst:Machine) => {
 	const api = getMachine(machineInst);
 	if (!api) throw new Error("Machine does not exist");
 

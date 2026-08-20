@@ -1,14 +1,15 @@
 import { getData } from "../game-data.js"
-import type { MachineInstance } from "../classes/machine-instance.js"
+import type { Machine } from "../classes/machine.js"
 import { ItemEntry } from '../classes/item-entry.js'
-import { ItemInstance } from '../classes/item-instance.js'
+import { Item } from '../classes/item.js'
 import { type Inventory } from '../classes/inventory.js'
 import { ResolvedRecipe } from "../classes/resolved-recipe.js"
 import { getItemFromId, getItemsFromTag, maxCraftableCount, resolveCraftingCosts } from "../crafting-system/functions.js"
 import { stepExponential } from "../common/utils.js"
 import { clamp } from "../common/utils.js"
 import { removeAllChildren } from "../common/utils.js"
-import type { CraftingOptions, Machine, Recipe } from "../crafting-system/types.js"
+import type { CraftingOptions } from "../crafting-system/types.js"
+import type { MachineDef, RecipeDef } from '../game-data.js'
 import { createItemCell } from "../common/ui-components.js"
 import type { SignalInterface } from "../lib/events/signal.js";
 
@@ -291,7 +292,7 @@ export function createMachineUI(
 		subscribers.forEach(f => f())
 	})
 
-	const refresh = (machine: MachineInstance, availableResources: Inventory) => {
+	const refresh = (machine: Machine, availableResources: Inventory) => {
 		refreshText(machine)
 
 		grid.innerHTML = ""
@@ -326,7 +327,7 @@ export function createMachineUI(
 		})
 	}
 
-	const refreshText = (machine: MachineInstance) => {
+	const refreshText = (machine: Machine) => {
 		const fNeed = machine.getFuelNeed()
 		if (fNeed) {
 			pe.textContent = `Energy: ${fNeed.energy}`
@@ -365,14 +366,14 @@ export function createProcessingLine() {
 	 */
 	const events = {
 		add:()=>{},
-		remove:(inst:MachineInstance)=>{},
-		right:(inst:MachineInstance)=>{},
-		left:(inst:MachineInstance)=>{},
+		remove:(inst:Machine)=>{},
+		right:(inst:Machine)=>{},
+		left:(inst:Machine)=>{},
 	}
 	
 	addBtn.addEventListener("click", ()=>events.add())
 
-	function setLine(mInst:readonly MachineInstance[]) {
+	function setLine(mInst:readonly Machine[]) {
 
 		removeAllChildren(root)
 
@@ -411,7 +412,7 @@ export function createRecipeCard() {
 		readonly value:string
 	}|{
 		readonly type:"item"
-		readonly value:ItemInstance
+		readonly value:Item
 	}
 	const events = {
 		onMouseEnter: null as null | ((value:EventsValue)=>void),
@@ -464,7 +465,7 @@ export function createRecipeCard() {
 	let animFunc:(()=>void)[] = []
 
 	function setRecipe(
-		recipe:Recipe,
+		recipe:RecipeDef,
 		resolve?:ResolvedRecipe
 	) {
 		removeAllChildren(input)
@@ -480,7 +481,7 @@ export function createRecipeCard() {
 					const item = getItemFromId(rIn.id)
 					const cell = createItemCell(item)
 					cell.amountLabel.textContent = String(rIn.amount)
-					applyEvents(cell.element, {type:"item", value:new ItemInstance(item)})
+					applyEvents(cell.element, {type:"item", value:new Item(item)})
 					input.append(cell.element)
 				} else {
 					const cell = createItemTagCell(rIn.tag)
@@ -496,12 +497,12 @@ export function createRecipeCard() {
 		for (const rOut of recipe.outputs) {
 			const cell = createItemCell(getItemFromId(rOut.id))
 			cell.amountLabel.textContent = String(rOut.amount || 1)
-			applyEvents(cell.element, {type:"item", value:ItemInstance.fromSer(rOut)})
+			applyEvents(cell.element, {type:"item", value:Item.fromSer(rOut)})
 			output.append(cell.element)
 		}
 	}
 
-	const setMachineRecipe = (machine:Machine) => {
+	const setMachineRecipe = (machine:MachineDef) => {
 		removeAllChildren(input)
 		info.textContent = "Machine recipe"
 		setResolvedRecipe(new ResolvedRecipe(0,

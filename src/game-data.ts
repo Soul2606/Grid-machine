@@ -1,12 +1,12 @@
 // =============== NO IMPORT (except types) ================
-import type { Extractor, Item, ItemInstanceSer, Machine, Recipe } from "./crafting-system/types"
+import type { ItemSer } from "./crafting-system/types"
 import type { JSONValue } from "./common/types"
 
 type Data = Readonly<{
-	items:readonly Item[],
-	machines:readonly Machine[],
-	recipes:readonly Recipe[],
-	extractors:readonly Extractor[]
+	items:readonly ItemDef[],
+	machines:readonly MachineDef[],
+	recipes:readonly RecipeDef[],
+	extractors:readonly ExtractorDef[]
 }>
 
 
@@ -299,7 +299,7 @@ async function fetchData(){
 				requiredProcess: r.requiredProcess,
 				requiredTier: r.requiredTier??0,
 				processTimeSeconds: r.processTimeSeconds??0
-			} satisfies Recipe)),
+			} satisfies RecipeDef)),
 			extractors:Object.entries(extraction as ExtractorSchema).map(([key,value]) => ({
 				id:key,
 				name:value.name,
@@ -324,17 +324,82 @@ export const getData = ()=>data
 
 
 export const getDataMapToId = ()=>({
-	items: new Map<string,Item>(data.items.map(item=>
+	items: new Map<string,ItemDef>(data.items.map(item=>
 		([item.id, item])
-	)) as ReadonlyMap<string, Item>,
-	machines: new Map<string, Machine>(data.machines.map(machine=>
+	)) as ReadonlyMap<string, ItemDef>,
+	machines: new Map<string, MachineDef>(data.machines.map(machine=>
 		([machine.id, machine])
-	)) as ReadonlyMap<string, Machine>,
-	recipes: new Map<string, Recipe>(data.recipes.map(recipe=>
+	)) as ReadonlyMap<string, MachineDef>,
+	recipes: new Map<string, RecipeDef>(data.recipes.map(recipe=>
 		([recipe.id, recipe])
 	)),
 	extractors: data.extractors // Does not have id
 })
+// ========= Game data =========
+
+
+
+
+export type ItemDef = {
+	readonly id: string
+	readonly name: string
+	readonly formula: string
+	readonly description: string
+	readonly tags: readonly string[]
+	readonly img: string
+	readonly energy: string | undefined
+}
+
+export type MachineDef = {
+	readonly id: string
+	readonly name: string
+	readonly tier: number
+	readonly capabilities: readonly string[]
+	readonly cost: readonly ItemSer[]
+	readonly img: string
+	readonly fuelNeeds: {
+		readonly tags: readonly string[]
+		readonly energy: string
+	} | undefined
+	readonly energyNeeds: {
+		readonly voltageTier: number
+		readonly energy: string
+	} | undefined
+	readonly workerNeeds: {
+		readonly minimum: number
+		readonly maximum: number
+	} | undefined
+}
+
+type RecipeInput = {
+	readonly amount: number
+	readonly id: string
+	readonly meta: JSONValue
+} | {
+	readonly amount: number
+	readonly tag: string
+	readonly meta: JSONValue
+}
+
+export type RecipeDef = {
+	readonly id: string
+	readonly inputs: readonly RecipeInput[]
+	readonly outputs: readonly ItemSer[]
+	readonly requiredProcess: string
+	readonly requiredTier: number
+	readonly processTimeSeconds: number
+}
+
+export type ExtractorDef = {
+	readonly id: string
+	readonly name: string
+	readonly manualPower: number
+	readonly requiredPower: number
+	readonly yields: Array<{
+		readonly itemId: string
+		readonly weight: number
+	}>
+}
 
 
 
