@@ -1,4 +1,4 @@
-import { ItemEntry } from './item-entry';
+import { ItemEntry } from './item-entry.js';
 import type { ResolvedRecipeSer } from "../crafting-system/types";
 
 /**

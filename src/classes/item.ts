@@ -1,7 +1,7 @@
-import { ItemEntry } from './item-entry';
+import { ItemEntry } from './item-entry.js';
 import type { JSONValue } from '../common/types';
-import { JSONEquals } from '../common/utils';
-import { getItemFromId } from '../crafting-system/functions';
+import { JSONEquals } from '../common/utils.js';
+import { getItemFromId } from '../crafting-system/functions.js';
 import type { ItemSer } from '../crafting-system/types';
 import type { ItemDef } from '../game-data';
 

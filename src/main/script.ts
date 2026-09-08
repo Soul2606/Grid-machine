@@ -477,7 +477,7 @@ const showMachineRecipe = (machine:MachineDef) => {
 
 const showItemUsage = (item:Item) => {
 	const rs = recipes.filter(r =>
-		r.inputs.some(i => i.id === item.item.id)
+		r.inputs.some(i => "id" in i ? i.id === item.item.id : item.item.tags.includes(i.tag))
 	)
 
 	const ms = machines.filter(m =>
