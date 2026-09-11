@@ -427,6 +427,10 @@
 		"name":"Ruby",
 		"img":"svg/ruby.svg"
 	},
+	"phosphorus":{
+		"name":"Phosphorus",
+		"formula":"P"
+	},
 	"ruby_dust":{
 		"name":"Ruby dust",
 		"img":"svg/ruby-dust.svg"
@@ -506,5 +510,13 @@
 	"epoxy_circuit_board":{
 		"name":"Epoxy circuit board",
 		"img":"svg/epoxy-circuit-board.svg"
+	},
+	"polypropylene":{
+		"name":"PP",
+		"formula":"C3H3"
+	},
+	"propane_gas":{
+		"name":"Propane gas",
+		"formula":"C3H8"
 	}
 }

@@ -297,6 +297,16 @@
 },
 {
 	"inputs":[
+		{"id":"foliage", "amount":1}
+	],
+	"outputs":[
+		{"id":"plant_pulp", "amount":1}
+	],
+	"requiredProcess":"centrifuge",
+	"processTimeSeconds":1
+},
+{
+	"inputs":[
 		{"id":"plant_pulp", "amount":1}
 	],
 	"outputs":[
@@ -935,7 +945,8 @@
 },
 {
 	"inputs":[
-		{"id":"monocrystalline_silicon_boule", "amount":1}
+		{"id":"monocrystalline_silicon_boule", "amount":1},
+		{"id":"phosphorus", "amount":1}
 	],
 	"outputs":[
 		{"id":"silicon_wafer", "amount":32}
@@ -1207,4 +1218,43 @@
 	"requiredProcess":"assembly",
 	"processTimeSeconds":5,
 	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"propene_gas", "amount":1}
+	],
+	"outputs":[
+		{"id":"carbon", "amount":3},
+		{"id":"hydrogen_gas", "amount":3}
+	],
+	"requiredProcess":"electrolysis",
+	"processTimeSeconds":5,
+	"requiredTier":0
+},
+{
+	"inputs":[
+		{"id":"chlorine_gas", "amount":1},
+		{"id":"silicon_dust", "amount":2},
+		{"id":"methane_gas", "amount":4},
+		{"id":"oxygen_gas", "amount":1}
+	],
+	"outputs":[
+		{"id":"rubber", "amount":8},
+		{"id":"hydrogen_gas", "amount":2}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":2,
+	"requiredTier":2
+},
+{
+	"inputs":[
+		{"id":"propene_gas", "amount":2}
+	],
+	"outputs":[
+		{"id":"polypropylene", "amount":2},
+		{"id":"hydrogen_gas", "amount":3}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5,
+	"requiredTier":2
 }]
