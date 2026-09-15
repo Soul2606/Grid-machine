@@ -121,7 +121,13 @@
 	},
 	"rubber":{
 		"name":"Rubber",
-		"img":"svg/rubber-plate.svg"
+		"img":"svg/rubber-plate.svg",
+		"tags":["rubber-sheet"]
+	},
+	"silicon_rubber":{
+		"name":"Silicon rubber",
+		"img":"svg/rubber-plate.svg",
+		"tags":["rubber-sheet"]
 	},
 	"glass_tube":{
 		"name":"Glass tube",
@@ -354,10 +360,17 @@
 	},
 	"propylene_gas":{
 		"name":"Propylene gas",
+		"img":"svg/propene-gas.svg",
 		"formula":"C3H6"
+	},
+	"toluene":{
+		"name":"Toluene",
+		"img":"svg/toluene.svg",
+		"formula":"C7H8"
 	},
 	"propylene_oxide_gas":{
 		"name":"Propylene oxide gas",
+		"img":"svg/propene-oxide-gas.svg",
 		"formula":"C3H6O"
 	},
 	"sulfur":{
@@ -399,6 +412,14 @@
 		"name":"Iron III chloride",
 		"img":"svg/iron-three-chloride.svg",
 		"formula":"FeCl3"
+	},
+	"coal_gas":{
+		"name":"Coal gas",
+		"img":"svg/coal-gas.svg"
+	},
+	"coal_tar":{
+		"name":"Coal tar",
+		"img":"svg/coal-tar.svg"
 	},
 	"plastic_circuit_board":{
 		"name":"Plastic circuit board",
@@ -507,11 +528,6 @@
 		"name":"Soda ash",
 		"img":"svg/soda-ash.svg",
 		"formula":"Na2CO3"
-	},
-	"propene_gas":{
-		"name":"Propene gas",
-		"img":"svg/propene-gas.svg",
-		"formula":"C3H6"
 	},
 	"bisphenol_a":{
 		"name":"Bisphenol A",

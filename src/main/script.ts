@@ -1,7 +1,7 @@
 
 import { getData } from "../game-data.js"; // async
 import type { ItemDef, MachineDef, RecipeDef } from '../game-data.js';
-import { getItemFromId, getRecipeInputs, getRecipeOutputs, getRecipesProducing } from '../crafting-system/functions.js'
+import { getItemFromId, getItemsFromTag, getRecipeInputs, getRecipeOutputs, getRecipesProducing } from '../crafting-system/functions.js'
 import { get, relu, removeAllChildren } from "../common/utils.js";
 import { Machine } from '../classes/machine.js'
 import { ItemEntry } from '../classes/item-entry.js';
@@ -429,7 +429,10 @@ const showItemRecipes = (recipes:readonly RecipeDef[]) => {
 		}
 
 		card.events.onClick = value=>{
-			if (value.type === "tag") return
+			if (value.type === "tag") {
+				showTag(value.value)
+				return
+			}
 			removeAllChildren(recipeDisplay)
 			showItemRecipes(getRecipesProducing(value.value))
 		}
@@ -438,7 +441,7 @@ const showItemRecipes = (recipes:readonly RecipeDef[]) => {
 			if (value.type === "tag") {
 				MouseOverlay.show()
 				MouseOverlay.elements.infoPanel.show()
-				MouseOverlay.elements.infoPanel.setTitle(`Tag "${value}"`)
+				MouseOverlay.elements.infoPanel.setTitle(`Tag "${value.value}"`)
 				return
 			}
 			setItemPopup(value.value)
@@ -502,6 +505,17 @@ keyboardEvents.keydown.subscribe(code => {
 	const val = recipeHoverState.value
 	showItemUsage(val)
 })
+
+
+
+
+function showTag(tag:string) {
+	removeAllChildren(recipeDisplay)
+	for (const item of getItemsFromTag(tag)) {
+		const cell = createItemCell(item)
+		recipeDisplay.append(cell.element)
+	}
+}
 
 
 

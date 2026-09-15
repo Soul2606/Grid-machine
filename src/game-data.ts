@@ -82,7 +82,8 @@ const recipeSchema:Config = {
 				match:{
 					type:"obj",
 					match:{
-						id:{type:"str"},
+						id:{type:"str", option:true},
+						tag:{type:"str", option:true},
 						amount:{type:"num"},
 						meta:{type:"any", option:true}
 					}

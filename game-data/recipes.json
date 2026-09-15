@@ -236,7 +236,7 @@
 {
 	"inputs":[
 		{"id":"copper_wire", "amount":1},
-		{"id":"rubber", "amount":1}
+		{"tag":"rubber-sheet", "amount":1}
 	],
 	"outputs":[
 		{"id":"copper_cable", "amount":1}
@@ -968,7 +968,7 @@
 },
 {
 	"inputs":[
-		{"id":"rubber", "amount":1}
+		{"tag":"rubber-sheet", "amount":1}
 	],
 	"outputs":[
 		{"id":"rubber_pipe", "amount":2}
@@ -1003,8 +1003,19 @@
 },
 {
 	"inputs":[
-		{"id":"sand", "amount":4},
+		{"id":"sand", "amount":2},
 		{"id":"phenol", "amount":1}
+	],
+	"outputs":[
+		{"id":"tempered_glass", "amount":2}
+	],
+	"requiredProcess":"smelt",
+	"processTimeSeconds":10
+},
+{
+	"inputs":[
+		{"id":"sand", "amount":4},
+		{"id":"coal_gas", "amount":1}
 	],
 	"outputs":[
 		{"id":"tempered_glass", "amount":4}
@@ -1082,7 +1093,7 @@
 		{"id":"raw_oil", "amount":2}
 	],
 	"outputs":[
-		{"id":"propene_gas", "amount":1}
+		{"id":"propylene_gas", "amount":1}
 	],
 	"requiredProcess":"distillation",
 	"processTimeSeconds":3,
@@ -1167,7 +1178,7 @@
 {
 	"inputs":[
 		{"id":"phenol", "amount":2},
-		{"id":"propene_gas", "amount":1}
+		{"id":"propylene_gas", "amount":1}
 	],
 	"outputs":[
 		{"id":"bisphenol_a", "amount":1}
@@ -1221,7 +1232,7 @@
 },
 {
 	"inputs":[
-		{"id":"propene_gas", "amount":1}
+		{"id":"propylene_gas", "amount":1}
 	],
 	"outputs":[
 		{"id":"carbon", "amount":3},
@@ -1239,7 +1250,7 @@
 		{"id":"oxygen_gas", "amount":1}
 	],
 	"outputs":[
-		{"id":"rubber", "amount":8},
+		{"id":"silicon_rubber", "amount":8},
 		{"id":"hydrogen_gas", "amount":2}
 	],
 	"requiredProcess":"chemical",
@@ -1383,6 +1394,54 @@
 },
 {
 	"inputs":[
+		{"id":"acetic_acid", "amount":1}
+	],
+	"outputs":[
+		{"id":"carbon", "amount":2},
+		{"id":"hydrogen_gas", "amount":2},
+		{"id":"oxygen_gas", "amount":1}
+	],
+	"processTimeSeconds":1,
+	"requiredProcess":"electrolysis",
+	"requiredTier":0
+},
+{
+	"inputs":[
+		{"id":"raw_coal", "amount":2}
+	],
+	"outputs":[
+		{"id":"coal_gas", "amount":1},
+		{"id":"coal_tar", "amount":1},
+		{"id":"coke", "amount":2}
+	],
+	"requiredProcess":"pyrolysis",
+	"processTimeSeconds":4,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"coal_tar", "amount":1}
+	],
+	"outputs":[
+		{"id":"phenol", "amount":1}
+	],
+	"requiredProcess":"distillation",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"coal_tar", "amount":1}
+	],
+	"outputs":[
+		{"id":"toluene", "amount":1}
+	],
+	"requiredProcess":"distillation",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
 		{"id":"methanol", "amount":2}
 	],
 	"outputs":[
@@ -1396,7 +1455,7 @@
 {
 	"inputs":[
 		{"id":"dimethyl_ether", "amount":2},
-		{"id":"carbon", "amount":3}
+		{"id":"carbon", "amount":1}
 	],
 	"outputs":[
 		{"id":"ethylene_gas", "amount":1},
