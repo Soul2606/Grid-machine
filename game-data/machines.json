@@ -311,7 +311,8 @@
 			{"id":"computer", "amount":1},
 			{"id":"stainless_machine_hull", "amount":1},
 			{"id":"copper_cable", "amount":4},
-			{"id":"steel_rod", "amount":4}
+			{"id":"steel_rod", "amount":4},
+			{"id":"pneumatic_robot_arm", "amount":4}
 		]
 	},
 	"advanced_freezer":{

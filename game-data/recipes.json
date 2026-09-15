@@ -631,7 +631,8 @@
 {
 	"inputs":[
 		{"id":"polyethylene", "amount":1},
-		{"id":"aluminum_ingot", "amount":1}
+		{"id":"aluminum_ingot", "amount":1},
+		{"id":"polyvinyl_chloride", "amount":1}
 	],
 	"outputs":[
 		{"id":"smd_capacitor", "amount":32}
@@ -1101,6 +1102,17 @@
 },
 {
 	"inputs":[
+		{"id":"raw_oil", "amount":2}
+	],
+	"outputs":[
+		{"id":"propane_gas", "amount":1}
+	],
+	"requiredProcess":"distillation",
+	"processTimeSeconds":3,
+	"requiredTier":1
+},
+{
+	"inputs":[
 		{"id":"nitrogen_gas", "amount":1},
 		{"id":"hydrogen_gas", "amount":3}
 	],
@@ -1383,10 +1395,10 @@
 		{"id":"wood", "amount":16}
 	],
 	"outputs":[
-		{"id":"ethanol", "amount":9},
+		{"id":"ethanol", "amount":8},
 		{"id":"methanol", "amount":4},
 		{"id":"acetic_acid", "amount":1},
-		{"id":"water", "amount":2}
+		{"id":"water", "amount":3}
 	],
 	"requiredProcess":"pyrolysis",
 	"processTimeSeconds":16,

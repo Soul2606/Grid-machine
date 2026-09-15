@@ -531,10 +531,12 @@
 	},
 	"bisphenol_a":{
 		"name":"Bisphenol A",
+		"img":"svg/salt.svg",
 		"formula":"(CH3)2C(C6H4OH)2"
 	},
 	"epichlorohydrin":{
 		"name":"Epichlorohydrin",
+		"img":"svg/salt.svg",
 		"formula":"C3H5ClO"
 	},
 	"epoxy_resin":{
@@ -552,6 +554,7 @@
 	},
 	"propane_gas":{
 		"name":"Propane gas",
+		"img":"svg/propane-gas.svg",
 		"formula":"C3H8"
 	},
 	"stainless_steel":{
