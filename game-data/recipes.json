@@ -680,7 +680,7 @@
 },
 {
 	"inputs":[
-		{"id":"wood", "amount":1}
+		{"id":"wood", "amount":4}
 	],
 	"outputs":[
 		{"id":"ethanol", "amount":1}
@@ -1246,15 +1246,176 @@
 	"processTimeSeconds":2,
 	"requiredTier":2
 },
+
 {
 	"inputs":[
-		{"id":"propene_gas", "amount":2}
+		{"id":"water", "amount":1},
+		{"id":"soda_ash", "amount":1}
 	],
 	"outputs":[
-		{"id":"polypropylene", "amount":2},
-		{"id":"hydrogen_gas", "amount":3}
+		{"id":"distilled_water", "amount":1}
+	],
+	"requiredProcess":"distillation",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"propylene_oxide_gas", "amount":1},
+		{"id":"water", "amount":3}
+	],
+	"outputs":[
+		{"id":"mpg", "amount":1}
+	],
+	"requiredProcess":"distillation",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"distilled_water", "amount":1},
+		{"id":"mpg", "amount":1}
+	],
+	"outputs":[
+		{"id":"coolant", "amount":1}
 	],
 	"requiredProcess":"chemical",
 	"processTimeSeconds":5,
-	"requiredTier":2
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"ethylene_gas", "amount":2},
+		{"id":"oxygen_gas", "amount":1}
+	],
+	"outputs":[
+		{"id":"ethylene_oxide_gas", "amount":2}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"ethylene_oxide_gas", "amount":2},
+		{"id":"water", "amount":2}
+	],
+	"outputs":[
+		{"id":"ethylene_glycol", "amount":2},
+		{"id":"oxygen_gas", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"ethylene_glycol", "amount":1}
+	],
+	"outputs":[
+		{"id":"meg", "amount":1}
+	],
+	"requiredProcess":"distillation",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"distilled_water", "amount":1},
+		{"id":"meg", "amount":1}
+	],
+	"outputs":[
+		{"id":"coolant", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"iron_ingot", "amount":5},
+		{"id":"carbon", "amount":1}
+	],
+	"outputs":[
+		{"id":"steel_ingot", "amount":5}
+	],
+	"requiredProcess":"blasting",
+	"processTimeSeconds":1,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"steel_ingot", "amount":4},
+		{"id":"nickel_ingot", "amount":2},
+		{"id":"chromium_dust", "amount":1}
+	],
+	"outputs":[
+		{"id":"stainless_steel", "amount":7}
+	],
+	"requiredProcess":"blasting",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"coke", "amount":1}
+	],
+	"outputs":[
+		{"id":"carbon", "amount":8}
+	],
+	"requiredProcess":"pyrolysis",
+	"processTimeSeconds":16,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"wood", "amount":16}
+	],
+	"outputs":[
+		{"id":"ethanol", "amount":9},
+		{"id":"methanol", "amount":4},
+		{"id":"acetic_acid", "amount":1},
+		{"id":"water", "amount":2}
+	],
+	"requiredProcess":"pyrolysis",
+	"processTimeSeconds":16,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"methanol", "amount":2}
+	],
+	"outputs":[
+		{"id":"dimethyl_ether", "amount":1},
+		{"id":"water", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"dimethyl_ether", "amount":2},
+		{"id":"carbon", "amount":3}
+	],
+	"outputs":[
+		{"id":"ethylene_gas", "amount":1},
+		{"id":"propylene_gas", "amount":1},
+		{"id":"oxygen_gas", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"propylene_gas", "amount":2},
+		{"id":"oxygen_gas", "amount":1}
+	],
+	"outputs":[
+		{"id":"propylene_oxide_gas", "amount":2}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":1,
+	"requiredTier":1
 }]

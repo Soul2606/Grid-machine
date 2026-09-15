@@ -202,6 +202,18 @@
 			{"id":"steel_ingot", "amount":1}
 		]
 	},
+	"basic_compressor":{
+		"name":"Basic Compressor",
+		"capabilities":["compress"],
+		"tier":0,
+		"cost":[
+			{"id":"logic_circuit", "amount":1},
+			{"id":"basic_machine_hull", "amount":1},
+			{"id":"copper_cable", "amount":1},
+			{"id":"basic_piston", "amount":2},
+			{"id":"iron_rod", "amount":6}
+		]
+	},
 	"solid_chemical_reactor":{
 		"name":"Solid Chemical reactor",
 		"capabilities":["chemical"],
@@ -267,6 +279,51 @@
 			{"id":"solid_machine_hull", "amount":1},
 			{"id":"copper_cable", "amount":2},
 			{"id":"steel_rod", "amount":4}
+		]
+	},
+	"solid_arc_furnace":{
+		"name":"Solid Arc Furnace",
+		"capabilities":["blasting"],
+		"tier":1,
+		"cost":[
+			{"id":"processor", "amount":1},
+			{"id":"solid_machine_hull", "amount":1},
+			{"id":"copper_cable", "amount":4},
+			{"id":"steel_rod", "amount":4},
+			{"id":"nichrome_ingot", "amount":2}
+		]
+	},
+	"solid_pyrolysis_oven":{
+		"name":"Solid Pyrolysis Oven",
+		"capabilities":["coke_oven", "pyrolysis"],
+		"tier":1,
+		"cost":[
+			{"id":"processor", "amount":1},
+			{"id":"solid_machine_hull", "amount":1},
+			{"id":"steel_ingot", "amount":8}
+		]
+	},
+	"advanced_assembler":{
+		"name":"Advanced Assembler",
+		"capabilities":["assembly"],
+		"tier":2,
+		"cost":[
+			{"id":"computer", "amount":1},
+			{"id":"stainless_machine_hull", "amount":1},
+			{"id":"copper_cable", "amount":4},
+			{"id":"steel_rod", "amount":4}
+		]
+	},
+	"advanced_freezer":{
+		"name":"Advanced Freezer",
+		"capabilities":["freezing"],
+		"tier":2,
+		"cost":[
+			{"id":"processor", "amount":1},
+			{"id":"stainless_machine_hull", "amount":1},
+			{"id":"copper_cable", "amount":1},
+			{"id":"aluminum_plate", "amount":4},
+			{"id":"coolant", "amount":1}
 		]
 	}
 }

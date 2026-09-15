@@ -337,6 +337,29 @@
 		"img":"svg/ethanol.svg",
 		"formula":"C2H5OH"
 	},
+	"methanol":{
+		"name":"Methanol",
+		"img":"svg/methanol.svg",
+		"formula":"CH3OH"
+	},
+	"acetic_acid":{
+		"name":"Acetic acid",
+		"img":"svg/acetic-acid.svg",
+		"formula":"C2H4O2"
+	},
+	"dimethyl_ether":{
+		"name":"Dimethyl ether",
+		"img":"svg/dimethyl-ether.svg",
+		"formula":"C2H6O"
+	},
+	"propylene_gas":{
+		"name":"Propylene gas",
+		"formula":"C3H6"
+	},
+	"propylene_oxide_gas":{
+		"name":"Propylene oxide gas",
+		"formula":"C3H6O"
+	},
 	"sulfur":{
 		"name":"Sulfur",
 		"img":"svg/sulfur.svg",
@@ -511,12 +534,40 @@
 		"name":"Epoxy circuit board",
 		"img":"svg/epoxy-circuit-board.svg"
 	},
-	"polypropylene":{
-		"name":"PP",
-		"formula":"C3H3"
-	},
 	"propane_gas":{
 		"name":"Propane gas",
 		"formula":"C3H8"
+	},
+	"stainless_steel":{
+		"name":"Stainless steel ingot",
+		"img":"svg/stainless-steel.svg"
+	},
+	"stainless_machine_hull":{
+		"name":"Stainless machine hull",
+		"img":"svg/stainless-machine-hull.svg"
+	},
+	"distilled_water":{
+		"name":"Distilled water",
+		"img":"svg/distilled-water.svg"
+	},
+	"mpg":{
+		"name":"MPG",
+		"description":"mono propylene glycol"
+	},
+	"ethylene_oxide_gas":{
+		"name":"Ethylene oxide gas",
+		"formula":"C2H4O",
+		"img":"svg/ethylene-oxide-gas.svg"
+	},
+	"ethylene_glycol":{
+		"name":"Ethylene glycol",
+		"formula":"C2H6O2"
+	},
+	"meg":{
+		"name":"MEG",
+		"description":"mono ethylene glycol"
+	},
+	"coolant":{
+		"name":"Coolant"
 	}
 }

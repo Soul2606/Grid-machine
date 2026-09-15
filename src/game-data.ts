@@ -32,11 +32,18 @@ const itemSchema:Config = {
 			formula: {type:"str", option:true},
 			description: {type:"str", option:true},
 			tags: {
+				option:true,
 				type:"arr",
 				match:{type:"str"}
 			},
-			img: {type:"str"},
-			energy: {type:"str"},
+			img: {
+				option:true,
+				type:"str"
+			},
+			energy: {
+				option:true,
+				type:"str"
+			},
 		}
 	}
 }
@@ -66,7 +73,10 @@ const recipeSchema:Config = {
 	match:{
 		type:"obj",
 		match:{
-			id:{type:"str"},
+			id:{
+				option:true,
+				type:"str"
+			},
 			inputs:{
 				type:"arr",
 				match:{
@@ -123,7 +133,6 @@ const machineSchema:Config = {
 	match:{
 		type:"obj",
 		match:{
-			id:{type:"str"},
 			name:{type:"str"},
 			tier:{type:"num"},
 			capabilities:{
@@ -186,7 +195,7 @@ const extractorSchema:Config = {
 	match:{
 		type:"obj",
 		match:{
-			name:{type:"num"},
+			name:{type:"str"},
 			manualPower:{type:"num", option:true},
 			requiredPower:{type:"num"},
 			yields:{
@@ -222,10 +231,14 @@ async function fetchData():Promise<Data> {
 	const machines = await fetchJSON<MachineSchema>('game-data/machines.json')
 	const recipes = await fetchJSON<RecipeSchema>('game-data/recipes.json')
 	const extraction = await fetchJSON<ExtractorSchema>('game-data/extraction.json')
-	validate(items, itemSchema)
-	validate(machines as any, machineSchema)
-	validate(recipes, recipeSchema)
-	validate(extraction, extractorSchema)
+	const errors = []
+	errors.push(...validate(items, itemSchema))
+	errors.push(...validate(machines as any, machineSchema))
+	errors.push(...validate(recipes, recipeSchema))
+	errors.push(...validate(extraction, extractorSchema))
+
+	if (errors.length > 0) throw new Error(JSON.stringify(errors, null, 3));
+
 	return { 
 		items: Object.entries(items as ItemSchema).map(([key, value]) =>{
 			const item = {
