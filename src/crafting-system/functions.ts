@@ -3,7 +3,7 @@ import { ItemEntry } from '../classes/item-entry.js';
 import { Item } from '../classes/item.js';
 import { ResolvedRecipe } from "../classes/resolved-recipe.js";
 import { Inventory } from '../classes/inventory.js';
-import type { CraftingOptions, Recipe, RecipeSer, Input, InputSer } from "./types.js";
+import type { CraftingOptions, Recipe, Input } from "./types.js";
 import type { ItemDef, MachineDef, RecipeDef } from '../game-data.js';
 
 
@@ -18,7 +18,7 @@ const {items, machines, recipes, extractors} = getDataMapToId()
  */
 export function getRecipesProducing(craftable: Item) {
 	return recipes.values().toArray().filter(recipe =>
-		getRecipeOutputs(recipe).some(output => craftable.isEqual(output))
+		getRecipeOutputs(recipe).some(output => Item.isEqual(craftable, output))
 	)
 }
 
@@ -49,20 +49,25 @@ export function getRecipesConsuming(consumed: Item|(readonly Item[])) {
  * Returns every input with each item that is valid for that input of the recipe. think of it like this (item||item...)&&(item||item...)...
  */
 export function getRecipeInputs(recipe: RecipeDef): Input[] {
-	if (!Array.isArray(recipe.inputs)) return []
-	return recipe.inputs.map(input => {
+	return recipe.inputs.map<Input>(input => {
 		const inputItems = new Set<ItemDef>()
 		for (const [id, item] of items) {
-			if (item.id === input.id || (input.tag && item.tags.includes(input.tag))) {
-				inputItems.add(item)
+			if ("id" in input) {
+				if (item.id === input.id) {
+					inputItems.add(item)
+				}
+			} else {
+				if (input.tag && item.tags.includes(input.tag)) {
+					inputItems.add(item)
+				}
 			}
 		}
 		return {
-			items: Array.from(inputItems).map(item=>
-				new Item(item, input.meta)
+			items: Array.from(inputItems).map(item =>
+				Item.n(item.id, input.meta)
 			),
 			amount: input.amount
-		}
+		} satisfies Input
 	})
 }
 
@@ -96,7 +101,7 @@ export function getRecipeFromId(id: string): RecipeDef {
 
 export function getRecipeOutputs(recipe: RecipeDef): readonly ItemEntry[] {
 	return recipe.outputs.map(output => 
-		new ItemEntry(getItemFromId(output.id), null, output.amount === undefined ? 0 : output.amount)
+		ItemEntry.n(output.id, null, output.amount === undefined ? 0 : output.amount)
 	)
 }
 
@@ -119,22 +124,22 @@ function applyCraftingOptions(options:CraftingOptions, inputs: readonly Input[])
 		
 		// Apply whitelist filters
 		const whitelisted = input.items.filter(itemInst =>{
-			const item = itemInst.item
-			return (!options.itemWhitelist || options.itemWhitelist.includes(item)) &&
-			(!options.tagWhitelist || item.tags.some(tag => options.tagWhitelist?.includes(tag)))
+			const item = itemInst.id
+			return (!options.itemWhitelist || options.itemWhitelist.map(i => i.id).includes(item)) &&
+			(!options.tagWhitelist || getItemFromId(item).tags.some(tag => options.tagWhitelist?.includes(tag)))
 		});
 		
 		// Apply priority ordering
 		if (options.itemPriorityList) {
 			whitelisted.sort((a, b) => {
-				const ai = options.itemPriorityList!.indexOf(a.item);
-				const bi = options.itemPriorityList!.indexOf(b.item);
+				const ai = options.itemPriorityList!.map(i => i.id).indexOf(a.id);
+				const bi = options.itemPriorityList!.map(i => i.id).indexOf(b.id);
 				return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
 			});
 		} else if (options.tagPriorityList) {
 			whitelisted.sort((a, b) => {
-				const ai = a.item.tags.findIndex(tag => options.tagPriorityList!.includes(tag));
-				const bi = b.item.tags.findIndex(tag => options.tagPriorityList!.includes(tag));
+				const ai = getItemFromId(a.id).tags.findIndex(tag => options.tagPriorityList!.includes(tag));
+				const bi = getItemFromId(b.id).tags.findIndex(tag => options.tagPriorityList!.includes(tag));
 				return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
 			});
 		}
@@ -215,14 +220,14 @@ export function resolveCraftingCosts(
 				const available = simInv.getAmount(item)
 				const take = Math.min(available, remaining)
 				if (take > 0) {
-					chosenInstances.push(new ItemEntry(item.item, item.metadata, take))
+					chosenInstances.push(ItemEntry.n(item.id, item.metadata, take))
 					if (!simInv.subtractItem(item, take)) throw new Error("Invariant broke");
 					remaining -= take
 				}
 			}
 			if (remaining > 0) return false // not enough items
 		}
-		resolvedRecipes.push(new ResolvedRecipe(
+		resolvedRecipes.push(ResolvedRecipe.n(
 			recipe.processTimeSeconds,
 			chosenInstances,
 			output
@@ -272,48 +277,6 @@ export function trySingleCraft(
 	if (res === undefined) return false
 	if (!inventory.subtractItems(res.inputs)) throw new Error("Invariant broke");
 	return res
-}
-
-
-
-
-export function serializeInput(val:Input):InputSer {
-	return {
-		amount:val.amount,
-		items:val.items.map(v=>v.serialize())
-	}
-}
-
-
-
-
-export function deserializeInput(val:InputSer):Input {
-	return {
-		amount:val.amount,
-		items:val.items.map(Item.fromSer)
-	}
-}
-
-
-
-
-export function serializeCustomRecipe(val:Recipe):RecipeSer {
-	return {
-		inputs:val.inputs.map(serializeInput),
-		outputs:val.outputs.map(v=>v.serialize()),
-		processTimeSeconds:val.processTimeSeconds
-	}
-}
-
-
-
-
-export function deserializeCustomRecipe(val:RecipeSer):Recipe {
-	return {
-		inputs:val.inputs.map(deserializeInput),
-		outputs:val.outputs.map(ItemEntry.fromSer),
-		processTimeSeconds:val.processTimeSeconds
-	}
 }
 
 

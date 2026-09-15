@@ -1,48 +1,43 @@
 import { Item } from './item.js';
 import type { JSONValue } from '../common/types';
-import { getItemFromId } from '../crafting-system/functions.js';
-import type { ItemSer } from '../crafting-system/types';
 import type { ItemDef } from '../game-data.js';
 
 
 
 
-export class ItemEntry extends Item {
+export type ItemEntry = Item & {
+	amount:number
+}
 
-	static from(ent: ItemEntry) {
-		return new ItemEntry(ent.item, structuredClone(ent.metadata), ent.amount);
-	}
-
-	static fromInst(inst: Item, amount: number) {
-		return new ItemEntry(inst.item, structuredClone(inst.metadata), amount);
-	}
-
-	static fromItem(item: ItemDef, amount: number = 1) {
-		return new ItemEntry(item, null, amount);
-	}
-
-	static fromSer(ref: ItemSer) {
-		const item = getItemFromId(ref.id);
-		const meta = ref.metadata === undefined ? null : ref.metadata;
-		const amount = ref.amount === undefined ? 0 : ref.amount;
-		return new ItemEntry(item, meta, amount);
-	}
-
-	amount: number;
-	constructor(item: ItemDef, metadata: JSONValue, amount: number) {
-		super(item, metadata);
-		this.amount = amount;
-	}
-
-	clone(): ItemEntry {
-		return new ItemEntry(this.item, this.metadata, this.amount);
-	}
-
-	serialize(): ItemSer {
-		return { id: this.item.id, metadata: this.metadata, amount: this.amount };
-	}
-
-	strictEquals(ent: ItemEntry) {
-		return this.isEqual(ent) && this.amount === ent.amount;
+function n(id: string, metadata: JSONValue, amount: number):ItemEntry {
+	return {
+		id,
+		metadata:structuredClone(metadata),
+		amount
 	}
 }
+
+function from(ent: ItemEntry) {
+	return ItemEntry.n(ent.id, structuredClone(ent.metadata), ent.amount);
+}
+
+function fromInst(inst: Item, amount: number) {
+	return ItemEntry.n(inst.id, structuredClone(inst.metadata), amount);
+}
+
+function fromItem(item: ItemDef, amount: number = 1) {
+	return ItemEntry.n(item.id, null, amount);
+}
+
+function strictEquals(ent1:ItemEntry, ent2:ItemEntry) {
+	return Item.isEqual(ent1, ent2) && ent2.amount === ent1.amount;
+}
+
+export const ItemEntry = {
+	n,
+	from,
+	fromInst,
+	fromItem,
+	strictEquals,
+	squash:Item.squash
+} as const

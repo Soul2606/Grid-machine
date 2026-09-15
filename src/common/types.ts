@@ -1,4 +1,5 @@
-import type { RecipeSer, ItemSer } from "../crafting-system/types";
+import type { Recipe } from "../crafting-system/types";
+import type { Item } from '../classes/item'
 
 
 export type JSONValue = string |
@@ -11,7 +12,7 @@ export type JSONValue = string |
 
 // Serialized minimal blueprint for constructing a MachineInstance
 export type MachineInstanceBlueprint = Readonly<{
-	capabilities: RecipeSer[]
-	cost: ItemSer[]
+	capabilities: Recipe[]
+	cost: Item[]
 }>
 

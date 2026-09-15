@@ -5,8 +5,7 @@ import { Inventory } from './classes/inventory.js';
 import { getItemFromId } from "./crafting-system/functions.js";
 import { clamp } from "./common/utils.js";
 import { relu } from "./common/utils.js";
-import type { ItemSer, MachineSer } from "./crafting-system/types.js";
-import type { MachineDef } from './game-data.js';
+import type { MachineSer } from "./crafting-system/types.js";
 import { Signal } from "./lib/events/signal.js";
 
 
@@ -134,7 +133,7 @@ export function addToSimulation(machine:Machine) {
 
 type SaveFormat = {
 	version:number
-	items:ItemSer[]
+	items:ItemEntry[]
 	machines:MachineSer[]
 }
 
@@ -144,7 +143,7 @@ type SaveFormat = {
 export function save() {
 	localStorage.setItem('save', JSON.stringify({
 		version: 0.1,
-		items:    mainInventory.getAllItemInstances().map(i => i.serialize()),
+		items:    mainInventory.getAllItemInstances(),
 		machines: machinesSimulated.keys().toArray().map(v => v.serialize())
 	} satisfies SaveFormat))
 }
@@ -156,7 +155,7 @@ export function load()  {
 	const save: SaveFormat = JSON.parse(localStorage.getItem('save')??"null")
 	if (save.version !== 0.1) console.warn(`Wrong save version, current: 0.1, save: ${save.version}`)
 	mainInventory.clear()
-	mainInventory.addItems(save.items.map(ItemEntry.fromSer))
+	mainInventory.addItems(save.items)
 	for (const [mac, api] of machinesSimulated.entries()) {
 		api.remove()
 	}
@@ -191,7 +190,7 @@ export const workersReact = workersSignal.createInterface(true)
 
 export function addSteamEngine(amount=1) {
 	if (mainInventory.subtractItems([
-		ItemEntry.fromSer({id:"stone", amount:10*amount, metadata:null}),
+		ItemEntry.n("stone", null, 10*amount),
 	])) {
 		steamEngines.value += amount
 	}

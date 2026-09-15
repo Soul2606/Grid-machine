@@ -44,7 +44,7 @@ function updatePower() {
 function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, item:Item): void {
 	console.log("doing item transfer. Context;", transferContext.kind)
 	if (transferContext.kind !== "empty" && transferContext.kind !== "item") return
-	if (transferContext.kind === "item" && !transferContext.value.isEqual(item)) return
+	if (transferContext.kind === "item" && !Item.isEqual(item, transferContext.value)) return
 
 	const transfer = (amount:number) => {
 		// try to subtract; if subtraction fails, restore UI and exit
@@ -58,7 +58,8 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 		const value = ItemEntry.fromInst(item, amount)
 
 		MouseOverlay.elements.heldItemIcon.setText(String(value.amount))
-		if (value.item.img) MouseOverlay.elements.heldItemIcon.setImage(value.item.img)
+		const img = getItemFromId(value.id).img
+		if (img) MouseOverlay.elements.heldItemIcon.setImage(img)
 		MouseOverlay.elements.heldItemIcon.show(true)
 		MouseOverlay.show()
 
@@ -95,7 +96,7 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 			transfer(1)
 		} else {
 			const received = transferContext.value
-			if (!received.isEqual(item)) return
+			if (!Item.isEqual(item, received)) return
 			// Cancel the ongoing transfer and create a new transfer with both added together
 			transferContext.transfer(false)
 			transfer(received.amount + 1)
@@ -110,20 +111,21 @@ function setItemPopup(item:Item) {
 	recipeHoverState = {valid:true, value:item}
 	MouseOverlay.show()
 	MouseOverlay.elements.infoPanel.show()
-	MouseOverlay.elements.infoPanel.setTitle(item.item.name)
+	const def = getItemFromId(item.id)
+	MouseOverlay.elements.infoPanel.setTitle(def.name)
 	const desc = MouseOverlay.elements.infoPanel.description
 	removeAllChildren(desc)
-	desc.append(createChemicalFormula(item.item.formula))
+	desc.append(createChemicalFormula(def.formula))
 	desc.append(document.createElement("br"))
 	desc.append((()=>{
 		const el = document.createElement("span")
-		el.textContent = item.item.description
+		el.textContent = def.description
 		return el
 	})())
 }
 
 function hideItemPopup(item:Item|null) {
-	if (recipeHoverState?.valid && item && recipeHoverState.value.isEqual(item)) {
+	if (recipeHoverState?.valid && item && Item.isEqual(item, recipeHoverState.value)) {
 		recipeHoverState.valid = false
 	}
 	MouseOverlay.elements.infoPanel.hide()
@@ -477,11 +479,11 @@ const showMachineRecipe = (machine:MachineDef) => {
 
 const showItemUsage = (item:Item) => {
 	const rs = recipes.filter(r =>
-		r.inputs.some(i => "id" in i ? i.id === item.item.id : item.item.tags.includes(i.tag))
+		r.inputs.some(i => "id" in i ? i.id === item.id : getItemFromId(item.id).tags.includes(i.tag))
 	)
 
 	const ms = machines.filter(m =>
-		m.cost.some(i => i.id === item.item.id)
+		m.cost.some(i => i.id === item.id)
 	)
 
 	removeAllChildren(recipeDisplay)
@@ -530,10 +532,10 @@ const invItemCells = items.map(item => {
 
 
 mainInventory.signal.subscribe((itemInstance)=>{
-	const item = itemInstance.item
+	const item = itemInstance.id
 	const amount = itemInstance.amount
 	for(const cellElement of invItemCells){
-		if (cellElement.getItem() !== item) continue
+		if (cellElement.getItem().id !== item) continue
 		cellElement.amountLabel.textContent = String(amount) // Yes this is correct
 		if (sideMenuMode === 'recipes') continue
 		cellElement.element.style.display = ''
@@ -567,11 +569,8 @@ for(const machine of machines){
 				return
 			}
 			console.log("Clicked machine cell");
-			const cost = machine.cost.map(ser =>
-				ItemEntry.fromSer(ser)
-			)
-			console.log("machine costs: ", cost.map(i=>i.amount).join(","));
-			if (!mainInventory.subtractItems(cost)) return
+			console.log("machine costs: ", machine.cost.map(i=>i.amount).join(","));
+			if (!mainInventory.subtractItems(machine.cost)) return
 			transferContext = {
 				kind: "machine",
 				value: machine,
@@ -579,7 +578,7 @@ for(const machine of machines){
 					transferContext = {kind: "empty"}
 					cell.style.backgroundColor = ''
 					if (success) return
-					mainInventory.addItems(cost)
+					mainInventory.addItems(machine.cost)
 				}
 			}
 			cell.style.backgroundColor = 'green'
@@ -602,7 +601,7 @@ const showGrid = (showInventory: boolean, showMachines: boolean) => {
 
 const repairCells = () => {
 	for (const inventoryCell of invItemCells) {
-		const entry = mainInventory.getAllItemInstances().find(e => e.item === inventoryCell.getItem());
+		const entry = mainInventory.getAllItemInstances().find(e => e.id === inventoryCell.getItem().id);
 		inventoryCell.element.style.display = entry && entry.amount > 0 ? '' : 'none';
 		inventoryCell.amountLabel.style.display = ''
 	}
@@ -755,7 +754,7 @@ const bindToUi = (machineInst:Machine) => {
 			}
 		} else {
 			const incoming = transferContext.value 
-			console.log('incomingItem', incoming.item.id)
+			console.log('incomingItem', incoming.id)
 			if (incoming === null) return
 			let success = false
 			if (machineInst.addFuel(incoming) === "success") {
@@ -772,7 +771,9 @@ const bindToUi = (machineInst:Machine) => {
 					obj.inputs.length === 1
 				).map(obj=>{
 					const slot = obj.inputs[0]!
-					const input = slot.items.find(i=>i.isEqual(incoming) && slot.amount <= incoming.amount)
+					const input = slot.items.find(i => 
+						Item.isEqual(i, incoming) && slot.amount <= incoming.amount
+					)
 					if (input === undefined) return null
 					return{
 						recipe: obj.recipe,
@@ -786,7 +787,7 @@ const bindToUi = (machineInst:Machine) => {
 					if (batches > 0) {						
 						success = true // success so the main inventory does not get it back
 						machineInst.addWorkingOn(
-							Array(batches).fill(new ResolvedRecipe(
+							Array(batches).fill(ResolvedRecipe.n(
 								ri.recipe.processTimeSeconds,
 								[ri.input],
 								ri.recipe.outputs.map(ItemEntry.from),

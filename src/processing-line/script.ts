@@ -1,4 +1,4 @@
-import { getRecipeOutputs, serializeCustomRecipe } from "../crafting-system/functions.js";
+import { getItemFromId, getRecipeOutputs } from "../crafting-system/functions.js";
 import { create, get, removeAllChildren } from "../common/utils.js";
 import { parseProcessingLine } from "./LineHistory.js";
 import * as game from "../engine.js";
@@ -125,7 +125,7 @@ function refresh() {
 				const outputs = getRecipeOutputs(rec)
 				outputs.forEach(ent => ent.amount *= history.batchSize)
 				for (const ent of outputs) {
-					const cell = createItemCell(ent.item)
+					const cell = createItemCell(getItemFromId(ent.id))
 					cell.amountLabel.textContent = ent.amount.toString()
 					outputsEl.append(cell.element)
 				}
@@ -147,7 +147,7 @@ function refresh() {
 			inputOptions.textContent = inp.amount.toString()
 			inpDiv.append(inputOptions)
 			for (const inst of inp.items) {
-				const cell = createItemCell(inst.item)
+				const cell = createItemCell(getItemFromId(inst.id))
 				cell.amountLabel.textContent = ""
 				inputOptions.append(cell.element)
 			}
@@ -170,7 +170,7 @@ function refresh() {
 		const recOut = create("div")
 		outputs.append(recOut)
 		for (const out of output) {
-			const cell = createItemCell(out.item)
+			const cell = createItemCell(getItemFromId(out.id))
 			cell.amountLabel.textContent = out.amount.toString()
 			recOut.append(cell.element)
 		}
@@ -208,12 +208,12 @@ get("confirm").addEventListener("click", () => {
 	})
 
 	const blueprint:MachineInstanceBlueprint = {
-		capabilities:customRecipes.map(serializeCustomRecipe),
+		capabilities:customRecipes,
 		cost:ItemEntry.squash(lineData.flatMap(str => {
 			const mac = machines.get(str)
 			if (!mac) return []
-			return mac.cost.map(ItemEntry.fromSer)
-		})).map(ent => ent.serialize())
+			return mac.cost
+		}))
 	}
 
 	console.log("Final blueprint:", JSON.stringify(blueprint));

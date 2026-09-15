@@ -1,7 +1,7 @@
 import type { ItemEntry } from '../classes/item-entry'
 import type { Item } from '../classes/item'
-import type { JSONValue } from "../common/types"
 import type { ItemDef } from '../game-data'
+import type { ResolvedRecipe } from '../classes/resolved-recipe'
 
 
 // type represents a Recipe input slot, because multiple different items can are valid in a single input, then items is an array of Items
@@ -34,46 +34,18 @@ export type CraftingOptions = Readonly<{ // defaults:
 }>
 
 
-// A json friendly way to reference an ItemInstance or ItemEntry
-export type ItemSer = {
-	readonly id: string
-	readonly amount: number
-	readonly metadata: JSONValue
-}
-
-
-export type InputSer = {
-	readonly items: readonly ItemSer[]
-	readonly amount: number
-}
-
-
-export type ResolvedRecipeSer = Readonly<{
-	time: number
-	inputs: readonly ItemSer[]
-	output: readonly ItemSer[]
-}>
-
-
-export type RecipeSer = {
-	readonly inputs:  readonly InputSer[]
-	readonly outputs: readonly ItemSer[]
-	readonly processTimeSeconds: number
-}
-
-
 // Serialized snapshot of a Machine instance
 export type MachineSer = Readonly<{
-	capableRecipes: readonly RecipeSer[];
+	capableRecipes: readonly Recipe[];
 	work:           number;
 	stack:          number;
-	cost:           ItemSer[];
+	cost:           readonly ItemEntry[];
 	name:           string;
 	sprite:         string;
 	machineId:      string|null;
 	workingOn: {
 		readonly amount: number;
-		readonly recipe: ResolvedRecipeSer;
+		readonly recipe: ResolvedRecipe;
 	}[];
 	workerNeed: {
 		readonly minimum: number;

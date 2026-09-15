@@ -34,7 +34,7 @@ export class Inventory {
 	 * Finds an instance of the item in !ONLY THIS! inventory. Use with caution, this returns direct references!
 	 */
 	private findInstance(item: Item) {
-		return this.itemInstances.find(entry => entry.isEqual(item));
+		return this.itemInstances.find(entry => Item.isEqual(entry, item));
 	}
 
 	// ====== Execution ======
@@ -106,7 +106,7 @@ export class Inventory {
 	 * Tries to subtract every item at once. if any item can't be subtracted then nothing gets subtracted and it returns false
 	 */
 	subtractItems(items: readonly ItemEntry[]): boolean {
-		return this.changeItems(items.map(v => new ItemEntry(v.item, v.metadata, -v.amount)));
+		return this.changeItems(items.map(v => ItemEntry.n(v.id, v.metadata, -v.amount)));
 	}
 
 	// ====== Queries ======
@@ -130,8 +130,8 @@ export class Inventory {
 	 * Returns an item based on content in this and shared inventories, does not return direct reference
 	 */
 	getReflection(item: Item): ItemEntry {
-		const instance = this.getAllItemInstances().find(v => v.isEqual(item));
-		if (instance) return instance.clone();
+		const instance = this.getAllItemInstances().find(v => Item.isEqual(v, item));
+		if (instance) return ItemEntry.from(instance);
 		return ItemEntry.fromInst(item, 0);
 	}
 

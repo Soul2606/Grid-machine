@@ -1,4 +1,4 @@
-import { deserializeCustomRecipe, serializeCustomRecipe, capableRecipes, toCustomRecipe } from '../crafting-system/functions.js';
+import { capableRecipes, toCustomRecipe, getItemFromId } from '../crafting-system/functions.js';
 import { energyToNumber } from "../common/utils.js";
 import { clamp } from "../common/utils.js";
 import { relu } from "../common/utils.js";
@@ -43,7 +43,7 @@ export class Machine {
 		const capable = capableRecipes(machine)
 		return new Machine(
 			capable.map(toCustomRecipe),
-			machine.cost.map(inst => ItemEntry.fromSer(inst)),
+			machine.cost,
 			stack,
 			0,
 			[],
@@ -56,14 +56,11 @@ export class Machine {
 
 	static fromSer(ser:MachineSer){
 		return new Machine(
-			ser.capableRecipes.map(deserializeCustomRecipe),
-			ser.cost.map(ItemEntry.fromSer),
+			ser.capableRecipes,
+			ser.cost,
 			ser.stack,
 			ser.work,
-			ser.workingOn.map(wo => ({
-				amount:wo.amount,
-				recipe:ResolvedRecipe.fromSer(wo.recipe)
-			})),
+			ser.workingOn,
 			{
 				fuelNeed:  structuredClone(ser.fuelNeed),
 				powerNeed: structuredClone(ser.powerNeed),
@@ -127,9 +124,11 @@ export class Machine {
 	}
 
 	private craft(multiplier: number, recipe: ResolvedRecipe) {
-		
-		const output = recipe.output
-		return output.map(ent=>{const n = ItemEntry.from(ent); n.amount *= multiplier; return n})
+		const output = recipe.outputs
+		return output.map(ent=>{
+			const n = ItemEntry.from(ent)
+			n.amount *= multiplier; return n
+		})
 	}
 
 	/**Returns a serialized snapshot of the state of a machine instance. */
@@ -138,17 +137,14 @@ export class Machine {
 		const fuelNeed = structuredClone(this.fuelNeed)
 		const powerNeed = structuredClone(this.powerNeed)
 		return {
-			capableRecipes: this.capableRecipes.values().toArray().map(serializeCustomRecipe),
+			capableRecipes: this.capableRecipes.values().toArray(),
 			work: this.work,
 			stack: this.stack,
-			cost: this.cost.map(ent => ent.serialize()),
+			cost: this.cost,
 			name: this.name,
 			sprite: this.sprite,
 			machineId: this.machineId??null,
-			workingOn: this.workingOn.map(wo => ({
-				amount: wo.amount,
-				recipe: wo.recipe.serialize()
-			})),
+			workingOn: this.workingOn,
 			workerNeed:workerNeed,
 			fuelNeed:fuelNeed,
 			powerNeed:powerNeed,
@@ -177,7 +173,7 @@ export class Machine {
 
 	addWorkingOn(recipes: ResolvedRecipe[]){		
 		for (const recipe of recipes) {
-			const existing = this.workingOn.find(wo => wo.recipe.equals(recipe))
+			const existing = this.workingOn.find(wo => ResolvedRecipe.equals(recipe, wo.recipe))
 			if (existing) {
 				existing.amount ++
 			} else {
@@ -187,8 +183,8 @@ export class Machine {
 		return this
 	}
 
-	refundWorkingOn(recipeId: ResolvedRecipe): Item[]|"not_found"{
-		const existing = this.workingOn.find(wo => wo.recipe.equals(recipeId))
+	refundWorkingOn(recipe: ResolvedRecipe): Item[]|"not_found"{
+		const existing = this.workingOn.find(wo => ResolvedRecipe.equals(recipe, wo.recipe))
 		if (existing) {
 			const consumed = existing.recipe.inputs.map(item => ItemEntry.fromInst(item, item.amount * existing.amount))
 			existing.amount = 0
@@ -269,9 +265,12 @@ export class Machine {
 	addFuel(fuel: ItemEntry){
 		const fuelNeeds = this.fuelNeed
 		if (!fuelNeeds) return "incapable"
-		if (!fuelNeeds.tags.some(tag=>fuel.item.tags.includes(tag))) return "incompatible"
-		if (!fuel.item.energy) return "no_energy_in_item"
-		fuelNeeds.energy += energyToNumber(fuel.item.energy) * fuel.amount
+		const def = getItemFromId(fuel.id)
+		if (!fuelNeeds.tags.some(tag => 
+			def.tags.includes(tag)
+		)) return "incompatible"
+		if (!def.energy) return "no_energy_in_item"
+		fuelNeeds.energy += energyToNumber(def.energy) * fuel.amount
 		return "success"
 	}
 

@@ -1,66 +1,59 @@
 import { ItemEntry } from './item-entry.js';
 import type { JSONValue } from '../common/types';
 import { JSONEquals } from '../common/utils.js';
-import { getItemFromId } from '../crafting-system/functions.js';
-import type { ItemSer } from '../crafting-system/types';
 import type { ItemDef } from '../game-data';
 
 
 
 
-export class Item {
-
-	static from(inst: Item): Item {
-		return new Item(inst.item, inst.metadata);
-	}
-
-	static fromSer(ref: ItemSer) {
-		const item = getItemFromId(ref.id);
-		const meta = ref.metadata === undefined ? null : ref.metadata;
-		return new Item(item, meta);
-	}
-
-	static fromItem(item: ItemDef) {
-		return new Item(item);
-	}
-
-	/**
-	 * Does not mutate provided values
-	 */
-	static squash(items: readonly ItemEntry[]) {
-		const squashed = new Map<string, ItemEntry>();
-		for (const inst of items) {
-			const f = squashed.get(inst.item.id);
-			if (f) {
-				f.amount += inst.amount;
-			} else {
-				squashed.set(inst.item.id, ItemEntry.from(inst));
-			}
-		}
-		return squashed.values().toArray();
-	}
-
-	readonly item: ItemDef;
+export type Item = {
+	readonly id: string;
 	metadata: JSONValue;
-	constructor(item: ItemDef, metadata: JSONValue = null) {
-		this.item = item;
-		this.metadata = structuredClone(metadata);
-	}
-
-	clone() {
-		return new Item(this.item, this.metadata);
-	}
-
-	serialize(): ItemSer {
-		return { id: this.item.id, metadata: this.metadata, amount: 1 };
-	}
-
-	isEqual(itemInstance: Item) {
-		if (!(itemInstance instanceof Item)) throw new Error("itemInstance is not an ItemInstance");
-		return (
-			this.item.id === itemInstance.item.id
-			&&
-			JSONEquals(this.metadata, itemInstance.metadata)
-		);
-	}
 }
+
+function n(id: string, metadata: JSONValue = null) {
+	return {
+		id,
+		metadata:structuredClone(metadata)
+	} satisfies Item
+}
+
+function from(item: Item): Item {
+	return Item.n(item.id, item.metadata);
+}
+
+function fromItem(item: ItemDef) {
+	return Item.n(item.id);
+}
+
+/**
+ * Does not mutate provided values
+ */
+function squash(items: readonly ItemEntry[]) {
+	const squashed = new Map<string, ItemEntry>();
+	for (const inst of items) {
+		const f = squashed.get(inst.id);
+		if (f) {
+			f.amount += inst.amount;
+		} else {
+			squashed.set(inst.id, ItemEntry.from(inst));
+		}
+	}
+	return squashed.values().toArray();
+}
+
+function isEqual(item1:Item, item2:Item) {
+	return (
+		item2.id === item1.id
+		&&
+		JSONEquals(item2.metadata, item1.metadata)
+	);
+}
+
+export const Item = {
+	n,
+	from,
+	fromItem,
+	squash,
+	isEqual,
+} as const

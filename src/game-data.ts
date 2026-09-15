@@ -1,5 +1,5 @@
 // =============== NO IMPORT (except types) ================
-import type { ItemSer } from "./crafting-system/types"
+import type { ItemEntry } from "./classes/item-entry.js";
 import type { JSONValue } from "./common/types"
 import { validate, type Config } from "./lib/data/json/validator.js";
 
@@ -334,7 +334,7 @@ export type MachineDef = {
 	readonly name: string
 	readonly tier: number
 	readonly capabilities: readonly string[]
-	readonly cost: readonly ItemSer[]
+	readonly cost: readonly ItemEntry[]
 	readonly img: string
 	readonly fuelNeeds: {
 		readonly tags: readonly string[]
@@ -363,7 +363,7 @@ type RecipeInput = {
 export type RecipeDef = {
 	readonly id: string
 	readonly inputs: readonly RecipeInput[]
-	readonly outputs: readonly ItemSer[]
+	readonly outputs: readonly ItemEntry[]
 	readonly requiredProcess: string
 	readonly requiredTier: number
 	readonly processTimeSeconds: number

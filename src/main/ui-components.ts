@@ -301,12 +301,12 @@ export function createMachineUI(
 			const options: CraftingOptions = {}
 
 			const out = cr.outputs
-			console.log("out: ", out.map(o=>o.item.id).join(","))
+			console.log("out: ", out.map(o=>o.id).join(","))
 
 			const outFirst = out[0]
 			if (outFirst === undefined) throw new Error("Recipe produces nothing.")
 
-			const cell = createItemCell(outFirst.item)
+			const cell = createItemCell(getItemFromId(outFirst.id))
 
 			const getCount = () => {
 				const count = maxCraftableCount(cr.inputs, availableResources, options)
@@ -449,13 +449,13 @@ export function createRecipeCard() {
 
 	function setResolvedRecipe(recipe:ResolvedRecipe) {
 		for (const inItem of recipe.inputs) {
-			const cell = createItemCell(inItem.item)
+			const cell = createItemCell(getItemFromId(inItem.id))
 			cell.amountLabel.textContent = String(inItem.amount)
 			applyEvents(cell.element, {type:"item", value:inItem})
 			input.append(cell.element)
 		}
-		for (const outItem of recipe.output) {
-			const cell = createItemCell(outItem.item)
+		for (const outItem of recipe.outputs) {
+			const cell = createItemCell(getItemFromId(outItem.id))
 			cell.amountLabel.textContent = String(outItem.amount)
 			applyEvents(cell.element, {type:"item", value:outItem})
 			output.append(cell.element)
@@ -481,7 +481,7 @@ export function createRecipeCard() {
 					const item = getItemFromId(rIn.id)
 					const cell = createItemCell(item)
 					cell.amountLabel.textContent = String(rIn.amount)
-					applyEvents(cell.element, {type:"item", value:new Item(item)})
+					applyEvents(cell.element, {type:"item", value:Item.n(item.id)})
 					input.append(cell.element)
 				} else {
 					const cell = createItemTagCell(rIn.tag)
@@ -497,7 +497,7 @@ export function createRecipeCard() {
 		for (const rOut of recipe.outputs) {
 			const cell = createItemCell(getItemFromId(rOut.id))
 			cell.amountLabel.textContent = String(rOut.amount || 1)
-			applyEvents(cell.element, {type:"item", value:Item.fromSer(rOut)})
+			applyEvents(cell.element, {type:"item", value:rOut})
 			output.append(cell.element)
 		}
 	}
@@ -505,7 +505,7 @@ export function createRecipeCard() {
 	const setMachineRecipe = (machine:MachineDef) => {
 		removeAllChildren(input)
 		info.textContent = "Machine recipe"
-		setResolvedRecipe(new ResolvedRecipe(0,
+		setResolvedRecipe(ResolvedRecipe.n(0,
 			machine.cost.map(val =>
 				ItemEntry.fromItem(
 					getItemFromId(val.id),
