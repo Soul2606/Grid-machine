@@ -1113,6 +1113,17 @@
 },
 {
 	"inputs":[
+		{"id":"raw_oil", "amount":2}
+	],
+	"outputs":[
+		{"id":"toluene", "amount":1}
+	],
+	"requiredProcess":"distillation",
+	"processTimeSeconds":3,
+	"requiredTier":1
+},
+{
+	"inputs":[
 		{"id":"nitrogen_gas", "amount":1},
 		{"id":"hydrogen_gas", "amount":3}
 	],
