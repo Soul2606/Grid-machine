@@ -351,7 +351,7 @@ export type MachineDef = {
 	} | undefined
 }
 
-type RecipeInput = {
+export type RecipeInput = {
 	readonly amount: number
 	readonly id: string
 	readonly meta: JSONValue

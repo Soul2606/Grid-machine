@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<link rel="stylesheet" href="globals.css">
+	<script type="module" src="dist/browser/browser.js" defer></script>
+	<style>
+		body{
+			color: var(--text-color);
+		}
+
+		#info{
+			position: fixed;
+			border: solid hsla(240, 30%, 14%, 0.9) 4px;
+			border-radius: 10px;
+			padding: 4px;
+			opacity: 90%;
+			background: var(--grad0);
+			background-size: 500px 100%;
+			animation: movingGradient 3s linear infinite;
+		}
+
+		#info-body{
+			background-color: hsla(240, 30%, 14%, 1);
+			border-radius: 5px;
+			padding: 5px;
+		}
+
+		#info-body hr{
+			border: none;
+			height: 5px;
+		}
+
+		@keyframes movingGradient {
+			from { background-position: 0 0; }
+			to   { background-position: 500px 0; }
+		}
+
+		.recipe-card{
+			display: grid;
+			grid-template-columns: auto auto auto;
+			align-items: center;
+			background-color: var(--surface-2-color);
+			border: solid 2px var(--border-color-dark);
+			border-radius: 5px;
+			width: fit-content;
+			padding: 3px;
+		}
+
+		.recipe-card-info{
+			grid-area: 1/1/2/-1;
+		}
+
+		.recipe-card-io{
+			display: grid;
+			grid-template-columns: repeat(3, auto);
+		}
+
+		.recipe-card-io img{
+			width: 100px;
+		}
+
+		#catalog{
+			display: flex;
+			flex-wrap: wrap;
+		}
+
+		.capability{
+			display: flex;
+		}
+	</style>
+</head>
+<body>
+	<div id="info" class="background-gradient">
+		<div id="info-body">
+			<span id="info-title">Title</span>
+			<br>
+			<span id="info-description">Description</span>
+			<br>
+			<span id="info-formula">Formula</span>
+		</div>
+	</div>
+	<main id="main">
+
+	</main>
+	<div id="catalog">
+
+	</div>
+</body>
+</html>

@@ -30,12 +30,12 @@ export function getRecipesProducing(craftable: Item) {
  * @param consumed the items the recipe must consume
  */
 export function getRecipesConsuming(consumed: Item|(readonly Item[])) {
-	const _consumed = Array.isArray(consumed) ? consumed : [consumed]
+	const _consumed = [consumed].flat()
 	return recipes.values().toArray().filter(recipe => {
 		const inputs = getRecipeInputs(recipe)
 		return inputs.every(input =>
 			input.items.some(i =>
-				_consumed.some(j => j.isEqual(i))
+				_consumed.some(j => Item.isEqual(j, i))
 			)
 			&& _consumed.length === inputs.length
 		)
