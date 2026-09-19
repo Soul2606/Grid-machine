@@ -681,7 +681,7 @@
 },
 {
 	"inputs":[
-		{"id":"wood", "amount":4}
+		{"id":"plant_pulp", "amount":4}
 	],
 	"outputs":[
 		{"id":"ethanol", "amount":1}
@@ -1403,7 +1403,7 @@
 },
 {
 	"inputs":[
-		{"id":"wood", "amount":16}
+		{"id":"plant_pulp", "amount":16}
 	],
 	"outputs":[
 		{"id":"ethanol", "amount":8},
@@ -1477,15 +1477,17 @@
 },
 {
 	"inputs":[
-		{"id":"dimethyl_ether", "amount":2},
-		{"id":"carbon", "amount":1}
+		{"id":"dimethyl_ether", "amount":3}
 	],
 	"outputs":[
 		{"id":"ethylene_gas", "amount":1},
 		{"id":"propylene_gas", "amount":1},
-		{"id":"oxygen_gas", "amount":1}
+		{"id":"oxygen_gas", "amount":1},
+		{"id":"methane_gas", "amount":1},
+		{"id":"water", "amount":1},
+		{"id":"hydrogen_gas", "amount":1}
 	],
-	"requiredProcess":"chemical",
+	"requiredProcess":"distillation",
 	"processTimeSeconds":5,
 	"requiredTier":1
 },
