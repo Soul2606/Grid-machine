@@ -1,22 +1,13 @@
-import { getData } from "../game-data.js"
 import type { Machine } from "../classes/machine.js"
-import { ItemEntry } from '../classes/item-entry.js'
-import { Item } from '../classes/item.js'
 import { type Inventory } from '../classes/inventory.js'
-import { ResolvedRecipe } from "../classes/resolved-recipe.js"
-import { getItemFromId, getItemsFromTag, maxCraftableCount, resolveCraftingCosts } from "../crafting-system/functions.js"
+import { getItemFromId, maxCraftableCount, resolveCraftingCosts } from "../crafting-system/functions.js"
 import { stepExponential } from "../common/utils.js"
 import { clamp } from "../common/utils.js"
-import { removeAllChildren } from "../common/utils.js"
 import type { CraftingOptions } from "../crafting-system/types.js"
-import type { MachineDef, RecipeDef } from '../game-data.js'
 import { createItemCell } from "../common/ui-components.js"
 import type { SignalInterface } from "../lib/events/signal.js";
 
 
-
-//Global variables
-const {items, machines, recipes, extractors} = getData()
 
 
 export function createQuantitySlider() {
@@ -144,30 +135,6 @@ export function createQuantitySlider() {
 		setup: setupExp,
 	} as const
 	return { element: root, methods } as const
-}
-
-
-
-
-export function createItemTagCell(tag:string) {
-
-	const items = getItemsFromTag(tag)
-	if (items.length === 0) return null
-
-	let index = 0
-	const cell = createItemCell(items[index]!)
-
-	function next() {
-		index = (index + 1) % items.length
-		cell.setItem(items[index]!)
-	}
-
-	return {
-		element:cell.element,
-		getItem:cell.getItem,
-		amountLabel:cell.amountLabel,
-		next,
-	} as const
 }
 
 
@@ -352,186 +319,6 @@ export function createMachineUI(
 
 
 
-export function createProcessingLine() {
-	const root = document.createElement("div")
-	root.className = "processing-line"
-
-	const addBtn = document.createElement("button")
-	addBtn.className = "processing-line-button"
-	addBtn.textContent = "+"
-	root.append(addBtn)
-	
-	/**
-	 * Mutate to use events
-	 */
-	const events = {
-		add:()=>{},
-		remove:(inst:Machine)=>{},
-		right:(inst:Machine)=>{},
-		left:(inst:Machine)=>{},
-	}
-	
-	addBtn.addEventListener("click", ()=>events.add())
-
-	function setLine(mInst:readonly Machine[]) {
-
-		removeAllChildren(root)
-
-		root.append(addBtn)
-		for (const inst of mInst) {
-			const cell = document.createElement("div")
-			cell.className = "processing-line-cell"
-			const removeBtn = document.createElement("button")
-			cell.append(removeBtn)
-			const rightBtn = document.createElement("button")
-			cell.append(rightBtn)
-			const leftBtn = document.createElement("button")
-			cell.append(leftBtn)
-
-			root.append(cell)
-
-			removeBtn.addEventListener("click", ()=>events.remove(inst))
-			rightBtn. addEventListener("click", ()=>events.right(inst))
-			leftBtn.  addEventListener("click", ()=>events.left(inst))
-		}
-	}
-
-	return {
-		element:root,
-		setLine,
-		events,
-	}
-}
-
-
-
-
-export function createRecipeCard() {
-	type EventsValue = {
-		readonly type:"tag"
-		readonly value:string
-	}|{
-		readonly type:"item"
-		readonly value:Item
-	}
-	const events = {
-		onMouseEnter: null as null | ((value:EventsValue)=>void),
-		onMouseLeave: null as null | ((value:EventsValue)=>void),
-		onClick:      null as null | ((value:EventsValue)=>void)
-	}
-	const root = document.createElement("div")
-	root.className = "recipe-card"
-
-	const info = document.createElement("span")
-	info.className = "recipe-card-info"
-	root.append(info)
-
-	const input = document.createElement("div")
-	input.className = "recipe-card-io"
-	root.append(input)
-
-	const arrow = document.createElement("img")
-	arrow.src = "svg/arrow.svg"
-	arrow.style.width = "64px"
-	arrow.setAttribute("width", "64")
-	arrow.setAttribute("height", "64")
-	root.append(arrow)
-
-	const output = document.createElement("div")
-	output.className = "recipe-card-io"
-	root.append(output)
-
-	function applyEvents(element:HTMLElement, value:EventsValue) {
-		element.addEventListener("mouseenter", ()=>events.onMouseEnter?events.onMouseEnter(value):null)
-		element.addEventListener("mouseleave", ()=>events.onMouseLeave?events.onMouseLeave(value):null)
-		element.addEventListener("click",      ()=>events.onClick     ?events.onClick(value)     :null)
-	}
-
-	function setResolvedRecipe(recipe:ResolvedRecipe) {
-		for (const inItem of recipe.inputs) {
-			const cell = createItemCell(getItemFromId(inItem.id))
-			cell.amountLabel.textContent = String(inItem.amount)
-			applyEvents(cell.element, {type:"item", value:inItem})
-			input.append(cell.element)
-		}
-		for (const outItem of recipe.outputs) {
-			const cell = createItemCell(getItemFromId(outItem.id))
-			cell.amountLabel.textContent = String(outItem.amount)
-			applyEvents(cell.element, {type:"item", value:outItem})
-			output.append(cell.element)
-		}
-	}
-
-	let animFunc:(()=>void)[] = []
-
-	function setRecipe(
-		recipe:RecipeDef,
-		resolve?:ResolvedRecipe
-	) {
-		removeAllChildren(input)
-		removeAllChildren(output)
-		info.textContent = `Time: ${recipe.processTimeSeconds} | Tier:${recipe.requiredTier}`
-		if (resolve) {
-			setResolvedRecipe(resolve)
-		} else {			
-			animFunc = []
-
-			for (const rIn of recipe.inputs) {
-				if ("id" in rIn) {
-					const item = getItemFromId(rIn.id)
-					const cell = createItemCell(item)
-					cell.amountLabel.textContent = String(rIn.amount)
-					applyEvents(cell.element, {type:"item", value:Item.n(item.id)})
-					input.append(cell.element)
-				} else {
-					const cell = createItemTagCell(rIn.tag)
-					if (cell === null) throw new Error(`Cannot find tag: ${rIn.tag} in items: ${items.map(v => v.id).join(", ")}`);
-					cell.amountLabel.textContent = String(rIn.amount)
-					applyEvents(cell.element, {type:"tag", value:rIn.tag})
-					input.append(cell.element)
-					animFunc.push(cell.next)
-				}
-			}
-		}
-
-		for (const rOut of recipe.outputs) {
-			const cell = createItemCell(getItemFromId(rOut.id))
-			cell.amountLabel.textContent = String(rOut.amount || 1)
-			applyEvents(cell.element, {type:"item", value:rOut})
-			output.append(cell.element)
-		}
-	}
-
-	const setMachineRecipe = (machine:MachineDef) => {
-		removeAllChildren(input)
-		info.textContent = "Machine recipe"
-		setResolvedRecipe(ResolvedRecipe.n(0,
-			machine.cost.map(val =>
-				ItemEntry.fromItem(
-					getItemFromId(val.id),
-					val.amount
-				)
-			),
-			[]
-		))
-		removeAllChildren(output)
-		const el = document.createElement("img")
-		el.src = machine.img
-		output.append(el)
-	}
-
-	return {
-		element:root,
-		setRecipe,
-		setMachineRecipe,
-		animate:()=>animFunc.forEach(f=>f()),
-		events,
-	} as const
-}
-
-
-
-
 export function createInfoPanel() {
 	const root = document.createElement('div');
 	root.className = 'mouse-info-panel background-gradient';
@@ -601,6 +388,4 @@ export function createChemicalFormula(formula: string): HTMLElement {
 
   return container;
 }
-
-
 

@@ -1,14 +1,14 @@
 
 import { getData } from "../game-data.js"; // async
-import type { ItemDef, MachineDef, RecipeDef } from '../game-data.js';
-import { getItemFromId, getItemsFromTag, getRecipeInputs, getRecipeOutputs, getRecipesProducing } from '../crafting-system/functions.js'
-import { get, relu, removeAllChildren } from "../common/utils.js";
+import type { MachineDef } from '../game-data.js';
+import { getItemFromId } from '../crafting-system/functions.js'
+import { get, removeAllChildren } from "../common/utils.js";
 import { Machine } from '../classes/machine.js'
 import { ItemEntry } from '../classes/item-entry.js';
 import { Item } from '../classes/item.js';
 import { Inventory } from '../classes/inventory.js';
 import { ResolvedRecipe } from "../classes/resolved-recipe.js";
-import { createChemicalFormula, createInfoPanel, createMachine, createMachineUI, createQuantitySlider, createRecipeCard } from './ui-components.js'
+import { createChemicalFormula, createInfoPanel, createMachine, createMachineUI, createQuantitySlider } from './ui-components.js'
 import { createItemCell } from "../common/ui-components.js";
 import { getSignals, isPressed } from "../keyboard-events.js";
 import { addSteamEngine, addToSimulation, getMachine, getMachines, getSteamEngines, getWorkers, load as loadEngine, mainInventory, power, tick as pubSubTick, save as saveEngine, setWorkers, workersReact } from "../engine.js";
@@ -132,39 +132,6 @@ function hideItemPopup(item:Item|null) {
 }
 
 
-
-
-function createProcessBox(capability:string) {
-	const root = document.createElement("div")
-	root.className = "capability-box"
-
-	const header = document.createElement("span")
-	header.className = "capability-box-header"
-	header.textContent = capability
-	root.append(header)
-
-	const machinesList = document.createElement("div")
-	machinesList.className = "capability-box-machines"
-	for (const machine of machines.filter(m => m.capabilities.includes(capability))) {
-		const img = document.createElement("img")
-		img.src = machine.img
-		machinesList.append(img)
-	}
-	root.append(machinesList)
-
-	const recipeWindow = document.createElement("div")
-	recipeWindow.className = "capability-box-recipe-box"
-	root.append(recipeWindow)
-
-	return {
-		root,
-		recipeWindow,
-	}
-}
-
-
-
-
 //Global Variables
 
 const keyboardEvents = getSignals()
@@ -172,7 +139,7 @@ const keyboardEvents = getSignals()
 /**
  * What state the side menu is in.
  */
-var sideMenuMode:"recipes" | "inventory" | "machines" = "inventory"
+var sideMenuMode: "inventory" | "machines" = "inventory"
 
 /**
  * Used by "showUsage"
@@ -182,7 +149,6 @@ var recipeHoverState: undefined | {valid:boolean, value:Item}
 
 const items = getData().items
 const machines = getData().machines
-const recipes = getData().recipes
 const extraction  = getData().extractors
 
 
@@ -409,117 +375,6 @@ workersReact.subscribe(updateWorkers)
 
 
 
-const showItemRecipes = (recipes:readonly RecipeDef[]) => {
-	const existingPro = new Map<string, HTMLElement>()
-
-	recipeWindow.style.display = ""
-	
-	for (const r of recipes) {
-		const card = createRecipeCard()
-		card.setRecipe(r)
-
-		const exist = existingPro.get(r.requiredProcess)
-		if (exist) {
-			exist.append(card.element)
-		} else {
-			const proBox = createProcessBox(r.requiredProcess)
-			recipeDisplay.append(proBox.root)
-			proBox.recipeWindow.append(card.element)
-			existingPro.set(r.requiredProcess, proBox.recipeWindow)
-		}
-
-		card.events.onClick = value=>{
-			if (value.type === "tag") {
-				showTag(value.value)
-				return
-			}
-			removeAllChildren(recipeDisplay)
-			showItemRecipes(getRecipesProducing(value.value))
-		}
-
-		card.events.onMouseEnter = value=>{
-			if (value.type === "tag") {
-				MouseOverlay.show()
-				MouseOverlay.elements.infoPanel.show()
-				MouseOverlay.elements.infoPanel.setTitle(`Tag "${value.value}"`)
-				return
-			}
-			setItemPopup(value.value)
-		}
-
-		card.events.onMouseLeave = value => {
-			if (value.type === "tag") return
-			hideItemPopup(value.value)
-		}
-	}
-}
-
-
-
-
-const showMachineRecipe = (machine:MachineDef) => {
-	recipeWindow.style.display = ""
-	const card = createRecipeCard()
-	card.setMachineRecipe(machine)
-	recipeDisplay.append(card.element)
-
-	card.events.onMouseEnter = value => {
-		if (value.type === "tag") return
-		setItemPopup(value.value)
-	}
-
-	card.events.onMouseLeave = ()=>hideItemPopup(null)
-
-	card.events.onClick = value => {
-		if (value.type === "tag") return
-		removeAllChildren(recipeDisplay)
-		showItemRecipes(getRecipesProducing(value.value))
-	}
-}
-
-
-
-
-const showItemUsage = (item:Item) => {
-	const rs = recipes.filter(r =>
-		r.inputs.some(i => "id" in i ? i.id === item.id : getItemFromId(item.id).tags.includes(i.tag))
-	)
-
-	const ms = machines.filter(m =>
-		m.cost.some(i => i.id === item.id)
-	)
-
-	removeAllChildren(recipeDisplay)
-	showItemRecipes(rs)
-	for (const m of ms) {
-		showMachineRecipe(m)
-	}
-}
-
-
-
-keyboardEvents.keydown.subscribe(code => {
-	if (code !== "KeyU") return
-	if (!recipeHoverState) return
-	if (!recipeHoverState.valid) return
-	const val = recipeHoverState.value
-	showItemUsage(val)
-})
-
-
-
-
-function showTag(tag:string) {
-	removeAllChildren(recipeDisplay)
-	for (const item of getItemsFromTag(tag)) {
-		const cell = createItemCell(item)
-		recipeDisplay.append(cell.element)
-	}
-}
-
-
-
-
 const invItemCells = items.map(item => {
 	const inst = Item.fromItem(item)
 	const v = createItemCell(item)
@@ -533,9 +388,6 @@ const invItemCells = items.map(item => {
 		e.stopPropagation()
 		if (sideMenuMode === "inventory") {
 			itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, Item.fromItem(v.getItem()))
-		} else if (sideMenuMode === "recipes") {
-			removeAllChildren(recipeDisplay)
-			showItemRecipes(getRecipesProducing(inst))
 		}
 	})
 	
@@ -551,7 +403,6 @@ mainInventory.signal.subscribe((itemInstance)=>{
 	for(const cellElement of invItemCells){
 		if (cellElement.getItem().id !== item) continue
 		cellElement.amountLabel.textContent = String(amount) // Yes this is correct
-		if (sideMenuMode === 'recipes') continue
 		cellElement.element.style.display = ''
 	}
 })
@@ -596,9 +447,6 @@ for(const machine of machines){
 				}
 			}
 			cell.style.backgroundColor = 'green'
-		} else if (sideMenuMode === "recipes") {
-			removeAllChildren(recipeDisplay)
-			showMachineRecipe(machine)
 		}
 	})
 
@@ -620,19 +468,6 @@ const repairCells = () => {
 		inventoryCell.amountLabel.style.display = ''
 	}
 };
-
-get('side-menu-recipes-button')!
-.addEventListener('click', () => {
-	sideMenuMode = 'recipes'
-	showGrid(true, true);
-	for (const inventoryCell of invItemCells) {
-		inventoryCell.element.style.display = '' 
-		inventoryCell.amountLabel.style.display = 'none'
-	}
-	for (const machineCell of machineCellElements) {
-		machineCell.element.style.display = ''
-	}
-});
 
 get('side-menu-inventory-button')!
 .addEventListener('click', () => {
