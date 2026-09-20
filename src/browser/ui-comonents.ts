@@ -3,7 +3,7 @@ import type { ItemEntry } from "../classes/item-entry.js";
 import { create } from "../common/utils.js";
 import { getItemFromId } from "../crafting-system/functions.js";
 import type { ItemDef, MachineDef, RecipeDef, RecipeInput } from "../game-data";
-import { setInfo, showRecipes } from "./browser.js";
+import { hovering, setInfo, showRecipes } from "./browser.js";
 
 const {machines} = getData()
 
@@ -20,11 +20,19 @@ export function createItem(item:ItemDef, amount?:number) {
 	}
 
 	root.addEventListener("mouseenter", e => {
+		e.stopPropagation()
 		setInfo(item)
+		hovering.id = item.id
 	})
 
 	root.addEventListener("click", e => {
+		e.stopPropagation()
 		showRecipes(item)
+	})
+	
+	root.addEventListener("mouseleave", e => {
+		e.stopPropagation()
+		if (hovering.id === item.id) hovering.id = null
 	})
 
 	return root
@@ -38,6 +46,7 @@ export function createMachine(def:MachineDef) {
 	root.style.height = "100px"
 
 	root.addEventListener("mouseenter", e => {
+		e.stopPropagation()
 		setInfo(def)
 	})
 
@@ -120,6 +129,10 @@ export function createCapability(recipes:HTMLElement[], capability:string) {
 
 	const root = create("div")
 	root.className = "capability"
+
+	const title = create("span")
+	title.textContent = capability
+	root.append(title)
 
 	const list = create("div")
 	list.className = "capability-list"

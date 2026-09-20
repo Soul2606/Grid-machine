@@ -1,8 +1,9 @@
-import { getDataMapToId, getData } from "../game-data.js";
+import { getData } from "../game-data.js";
 import { get, removeAllChildren } from "../common/utils.js";
 import type { ItemDef, MachineDef, RecipeDef } from "../game-data.js";
 import * as Ui from "./ui-comonents.js";
-import { getRecipesConsuming, getRecipesProducing } from "../crafting-system/functions.js";
+import { getItemFromId, getRecipesProducing } from "../crafting-system/functions.js";
+import { getSignals } from "../keyboard-events.js";
 
 
 const info = get("info")
@@ -11,12 +12,21 @@ const infoDesc = get("info-description")
 const infoForm = get("info-formula")
 
 const main = get("main")
+const xButton = get("x-button")
+const browser = get("browser")
 
 const catalog = get("catalog")
+
+export const hovering = {id:null as null|string}
 
 for (const item of getData().items) {
 	catalog.append(Ui.createItem(item))
 }
+
+xButton.addEventListener("click", e => {
+	e.stopPropagation()
+	main.style.display = "none"
+})
 
 
 window.addEventListener("mousemove", e => {
@@ -49,10 +59,13 @@ function show(recipes:RecipeDef[]) {
 		}
 	}
 
-	removeAllChildren(main)
+	if (capabilities.size === 0) return
+
+	main.style.display = ""
+	removeAllChildren(browser)
 
 	for (const [capability, elements] of capabilities) {
-		main.append(Ui.createCapability(elements, capability))
+		browser.append(Ui.createCapability(elements, capability))
 	}
 }
 
@@ -61,12 +74,17 @@ export function showRecipes(item:ItemDef) {
 }
 
 export function showUsage(item:ItemDef) {
-	console.log(item);
 	const recipes = getData().recipes.filter(rec => 
 		rec.inputs.some(i =>
 			"id" in i ? i.id === item.id : item.tags.includes(i.tag)
 		)
 	)
-	console.log(recipes);
 	show(recipes)
 }
+
+getSignals().keydown.subscribe(key => {
+	if (key !== "KeyU") return
+	const h = hovering.id
+	if (h === null) return
+	showUsage(getItemFromId(h))
+})
