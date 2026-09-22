@@ -1,8 +1,8 @@
-import { getData } from "../game-data.js";
+import { getData, getDataMapToId } from "../game-data.js";
 import { get, removeAllChildren } from "../common/utils.js";
 import type { ItemDef, MachineDef, RecipeDef } from "../game-data.js";
 import * as Ui from "./ui-comonents.js";
-import { getItemFromId, getRecipesProducing } from "../crafting-system/functions.js";
+import { getItemFromId, getItemsFromTag, getRecipesProducing } from "../crafting-system/functions.js";
 import { getSignals } from "../keyboard-events.js";
 
 
@@ -35,17 +35,20 @@ window.addEventListener("mousemove", e => {
 })
 
 
-export function setInfo(def:ItemDef|MachineDef) {
-	if ("formula" in def) {
+export function setInfo(def:ItemDef|MachineDef|string) {
+	infoTitle.textContent = ""
+	infoDesc.textContent = ""
+	removeAllChildren(infoForm)
+	if (typeof def === "string") {
+		infoTitle.textContent = def
+	} else if ("formula" in def) {
 		const item = def
 		infoTitle.textContent = item.name
 		infoDesc.textContent = item.description
-		infoForm.replaceChildren(Ui.createChemicalFormula(item.formula))
+		infoForm.append(Ui.createChemicalFormula(item.formula))
 	} else {
 		const machine = def
 		infoTitle.textContent = machine.name
-		removeAllChildren(infoDesc)
-		removeAllChildren(infoForm)
 	}
 }
 
@@ -84,7 +87,24 @@ export function showUsage(item:ItemDef) {
 
 getSignals().keydown.subscribe(key => {
 	if (key !== "KeyU") return
-	const h = hovering.id
-	if (h === null) return
-	showUsage(getItemFromId(h))
+	const str = hovering.id
+	if (str === null) return
+	const it = getDataMapToId().items.get(str)
+	if (it) {
+		showUsage(it)
+	} else {
+		showTag(str)
+	}
 })
+
+export function showTag(tag:string) {
+	const items = getItemsFromTag(tag)
+	if (items.length === 0) return
+
+	main.style.display = ""
+	removeAllChildren(browser)
+
+	for (const item of items) {
+		browser.append(Ui.createItem(item))
+	}
+}

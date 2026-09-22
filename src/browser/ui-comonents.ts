@@ -1,9 +1,9 @@
 import { getData } from "../game-data.js";
 import type { ItemEntry } from "../classes/item-entry.js";
 import { create } from "../common/utils.js";
-import { getItemFromId } from "../crafting-system/functions.js";
+import { getItemFromId, getItemsFromTag } from "../crafting-system/functions.js";
 import type { ItemDef, MachineDef, RecipeDef, RecipeInput } from "../game-data";
-import { hovering, setInfo, showRecipes } from "./browser.js";
+import { hovering, setInfo, showRecipes, showTag } from "./browser.js";
 
 const {machines} = getData()
 
@@ -33,6 +33,48 @@ export function createItem(item:ItemDef, amount?:number) {
 	root.addEventListener("mouseleave", e => {
 		e.stopPropagation()
 		if (hovering.id === item.id) hovering.id = null
+	})
+
+	return root
+}
+
+function createTag(tag:string, amount?:number) {
+	const root = create("div")
+	root.style.backgroundSize = "cover"
+	root.style.width = "100px"
+	root.style.height = "100px"
+
+	if (amount !== undefined) {
+		root.textContent = amount.toFixed(0)
+	}
+	
+	const items = getItemsFromTag(tag)
+	let i = 0
+	
+	function loop() {
+		const item = items[i]!
+		i++
+		if (items.length <= i) i = 0
+		root.style.backgroundImage = `url(${item.img})`
+		if (root.isConnected) setTimeout(loop, 1000);
+	}
+
+	if (items.length > 0) setTimeout(loop, 500)
+
+	root.addEventListener("mouseenter", e => {
+		e.stopPropagation()
+		setInfo("tag: " + tag)
+		hovering.id = tag
+	})
+
+	root.addEventListener("click", e => {
+		e.stopPropagation()
+		showTag(tag)
+	})
+	
+	root.addEventListener("mouseleave", e => {
+		e.stopPropagation()
+		if (hovering.id === tag) hovering.id = null
 	})
 
 	return root
@@ -100,7 +142,7 @@ export function createRecipeCard(itemsIn:readonly RecipeInput[], itemsOut:readon
 		if ("id" in item) {
 			input.append(createItem(getItemFromId(item.id), item.amount))
 		} else {
-			console.warn("tags are not implemented yet!")
+			input.append(createTag(item.tag, item.amount))
 		}
 	}
 	root.append(input)

@@ -126,7 +126,7 @@
 	},
 	"silicon_rubber":{
 		"name":"Silicon rubber",
-		"img":"svg/rubber-plate.svg",
+		"img":"svg/silicon-rubber-plate.svg",
 		"tags":["rubber-sheet"]
 	},
 	"glass_tube":{
