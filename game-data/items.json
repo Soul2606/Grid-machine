@@ -220,6 +220,30 @@
 		"name":"Processor",
 		"img":"svg/processor.svg"
 	},
+	"diode":{
+		"name":"Diode",
+		"img":"svg/diode.svg"
+	},
+	"smd_diode":{
+		"name":"SMD Diode",
+		"img":"svg/smd-diode.svg"
+	},
+	"smd_transistor":{
+		"name":"SMD Transistor",
+		"img":"svg/smd-transistor.svg"
+	},
+	"smd_capacitor":{
+		"name":"SMD Capacitor",
+		"img":"svg/smd-capacitor.svg"
+	},
+	"smd_resistor":{
+		"name":"SMD Resistor",
+		"img":"svg/smd-resistor.svg"
+	},
+	"smd_inductor":{
+		"name":"SMD Inductor",
+		"img":"svg/smd-inductor.svg"
+	},
 	"basic_electric_motor":{
 		"name":"Basic electric motor",
 		"img":"svg/basic-electric-motor.svg"
@@ -290,10 +314,6 @@
 		"name":"Gallium",
 		"img":"svg/gallium.svg"
 	},
-	"diode":{
-		"name":"Diode",
-		"img":"svg/diode.svg"
-	},
 	"methane_gas":{
 		"name":"Methane gas",
 		"img":"svg/methane-gas.svg",
@@ -314,29 +334,23 @@
 		"img":"svg/ethylene-gas.svg",
 		"formula":"H4C2"
 	},
+	"ethylene_oxide_gas":{
+		"name":"Ethylene oxide gas",
+		"formula":"C2H4O",
+		"img":"svg/ethylene-oxide-gas.svg"
+	},
+	"vinyl_chloride":{
+		"name":"Vinyl chloride",
+		"img":"svg/vinyl-chloride.svg",
+		"formula":"CH2CHCl"
+	},
 	"polyethylene":{
 		"name":"Polyethylene (PE)",
 		"img":"svg/polyethylene.svg"
 	},
-	"smd_diode":{
-		"name":"SMD Diode",
-		"img":"svg/smd-diode.svg"
-	},
-	"smd_transistor":{
-		"name":"SMD Transistor",
-		"img":"svg/smd-transistor.svg"
-	},
-	"smd_capacitor":{
-		"name":"SMD Capacitor",
-		"img":"svg/smd-capacitor.svg"
-	},
-	"smd_resistor":{
-		"name":"SMD Resistor",
-		"img":"svg/smd-resistor.svg"
-	},
-	"smd_inductor":{
-		"name":"SMD Inductor",
-		"img":"svg/smd-inductor.svg"
+	"polyvinyl_chloride":{
+		"name":"PVC",
+		"img":"svg/pvc.svg"
 	},
 	"ethanol":{
 		"name":"Ethanol",
@@ -363,15 +377,20 @@
 		"img":"svg/propene-gas.svg",
 		"formula":"C3H6"
 	},
-	"toluene":{
-		"name":"Toluene",
-		"img":"svg/toluene.svg",
-		"formula":"C7H8"
-	},
 	"propylene_oxide_gas":{
 		"name":"Propylene oxide gas",
 		"img":"svg/propene-oxide-gas.svg",
 		"formula":"C3H6O"
+	},
+	"propane_gas":{
+		"name":"Propane gas",
+		"img":"svg/propane-gas.svg",
+		"formula":"C3H8"
+	},
+	"toluene":{
+		"name":"Toluene",
+		"img":"svg/toluene.svg",
+		"formula":"C7H8"
 	},
 	"sulfur":{
 		"name":"Sulfur",
@@ -417,9 +436,44 @@
 		"name":"Coal gas",
 		"img":"svg/coal-gas.svg"
 	},
+	"ammonia":{
+		"name":"Ammonia gas",
+		"img":"svg/ammonia.svg",
+		"formula":"NH3"
+	},
 	"coal_tar":{
 		"name":"Coal tar",
 		"img":"svg/coal-tar.svg"
+	},
+	"naphthalene":{
+		"name":"Naphthalene",
+		"img":"svg/gray-powder.svg",
+		"formula":"C10H8"
+	},
+	"phthalic_acid":{
+		"name":"Phthalic acid",
+		"img":"svg/salt.svg",
+		"formula":"C6H4(CO2H)2"
+	},
+	"phthalic_anhydride":{
+		"name":"Phthalic anhydride",
+		"img":"svg/salt.svg",
+		"formula":"C6H4(CO)2O"
+	},
+	"ethylhexanol":{
+		"name":"Ethylhexanol",
+		"img":"svg/ethylhexanol.svg",
+		"formula":"C8H18O"
+	},
+	"dehp":{
+		"name":"DEHP",
+		"formula":"C24H38O4",
+		"description":"Bis(2-ethylhexyl) phthalate",
+		"tags":["plasticizer"]
+	},
+	"raw_oil":{
+		"name":"Raw oil",
+		"img":"svg/raw-oil.svg"
 	},
 	"plastic_circuit_board":{
 		"name":"Plastic circuit board",
@@ -445,10 +499,6 @@
 		"name":"RAM Chip",
 		"img":"svg/ram-chip.svg"
 	},
-	"raw_oil":{
-		"name":"Raw oil",
-		"img":"svg/raw-oil.svg"
-	},
 	"hydraulic_fluid":{
 		"name":"Hydraulic fluid"
 	},
@@ -473,6 +523,7 @@
 	},
 	"phosphorus":{
 		"name":"Phosphorus",
+		"img":"svg/phosphorus.svg",
 		"formula":"P"
 	},
 	"ruby_dust":{
@@ -487,15 +538,6 @@
 		"name":"Nichrome ingot",
 		"img":"svg/nichrome-ingot.svg"
 	},
-	"vinyl_chloride":{
-		"name":"Vinyl chloride",
-		"img":"svg/vinyl-chloride.svg",
-		"formula":"CH2CHCl"
-	},
-	"polyvinyl_chloride":{
-		"name":"PVC",
-		"img":"svg/pvc.svg"
-	},
 	"CPU_chip":{
 		"name":"CPU Chip",
 		"img":"svg/cpu-chip.svg"
@@ -503,11 +545,6 @@
 	"computer":{
 		"name":"Computer",
 		"img":"svg/computer.svg"
-	},
-	"ammonia":{
-		"name":"Ammonia",
-		"img":"svg/ammonia.svg",
-		"formula":"NH3"
 	},
 	"ammonium_chloride":{
 		"name":"Ammonium chloride",
@@ -552,11 +589,6 @@
 		"name":"Epoxy circuit board",
 		"img":"svg/epoxy-circuit-board.svg"
 	},
-	"propane_gas":{
-		"name":"Propane gas",
-		"img":"svg/propane-gas.svg",
-		"formula":"C3H8"
-	},
 	"stainless_steel":{
 		"name":"Stainless steel ingot",
 		"img":"svg/stainless-steel.svg"
@@ -572,11 +604,6 @@
 	"mpg":{
 		"name":"MPG",
 		"description":"mono propylene glycol"
-	},
-	"ethylene_oxide_gas":{
-		"name":"Ethylene oxide gas",
-		"formula":"C2H4O",
-		"img":"svg/ethylene-oxide-gas.svg"
 	},
 	"ethylene_glycol":{
 		"name":"Ethylene glycol",

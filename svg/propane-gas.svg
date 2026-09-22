@@ -39,12 +39,12 @@
        id="linearGradient3"
        inkscape:collect="always">
       <stop
-         style="stop-color:#00b4ff;stop-opacity:1;"
+         style="stop-color:#adadad;stop-opacity:1;"
          offset="0"
          id="stop3" />
       <stop
          style="stop-color:#ffc700;stop-opacity:1;"
-         offset="0.51370901"
+         offset="1"
          id="stop4" />
     </linearGradient>
     <inkscape:path-effect

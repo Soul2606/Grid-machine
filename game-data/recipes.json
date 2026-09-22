@@ -556,6 +556,18 @@
 },
 {
 	"inputs":[
+		{"id":"methane_gas", "amount":1}
+	],
+	"outputs":[
+		{"id":"carbon", "amount":1},
+		{"id":"hydrogen_gas", "amount":2}
+	],
+	"requiredProcess":"electrolysis",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
 		{"id":"methane_gas", "amount":1},
 		{"id":"carbon", "amount":1}
 	],
@@ -689,6 +701,18 @@
 	"requiredProcess":"distillation",
 	"processTimeSeconds":20,
 	"requiredTier":0
+},
+{
+	"inputs":[
+		{"id":"oxygen_gas", "amount":1},
+		{"id":"carbon", "amount":1}
+	],
+	"outputs":[
+		{"id":"carbon_dioxide", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":3,
+	"requiredTier":1
 },
 {
 	"inputs":[
@@ -918,18 +942,6 @@
 	],
 	"requiredProcess":"chemical",
 	"processTimeSeconds":10,
-	"requiredTier":1
-},
-{
-	"inputs":[
-		{"id":"vinyl_chloride", "amount":1},
-		{"id":"oxygen_gas", "amount":1}
-	],
-	"outputs":[
-		{"id":"polyvinyl_chloride", "amount":1}
-	],
-	"requiredProcess":"chemical",
-	"processTimeSeconds":2,
 	"requiredTier":1
 },
 {
@@ -1465,6 +1477,17 @@
 },
 {
 	"inputs":[
+		{"id":"coal_tar", "amount":1}
+	],
+	"outputs":[
+		{"id":"naphthalene", "amount":1}
+	],
+	"requiredProcess":"distillation",
+	"processTimeSeconds":5,
+	"requiredTier":1
+},
+{
+	"inputs":[
 		{"id":"methanol", "amount":2}
 	],
 	"outputs":[
@@ -1501,5 +1524,69 @@
 	],
 	"requiredProcess":"chemical",
 	"processTimeSeconds":1,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"naphthalene", "amount":1},
+		{"id":"oxygen_gas", "amount":2}
+	],
+	"outputs":[
+		{"id":"phthalic_acid", "amount":1},
+		{"id":"hydrogen_gas", "amount":1},
+		{"id":"carbon", "amount":2}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5,
+	"requiredTier":2
+},
+{
+	"inputs":[
+		{"id":"phthalic_acid", "amount":1}
+	],
+	"outputs":[
+		{"id":"phthalic_anhydride", "amount":1},
+		{"id":"water", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5,
+	"requiredTier":2
+},
+{
+	"inputs":[
+		{"id":"propylene_gas", "amount":2},
+		{"id":"ethylene_oxide_gas", "amount":1},
+		{"id":"hydrogen_gas", "amount":1}
+	],
+	"outputs":[
+		{"id":"ethylhexanol", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":10,
+	"requiredTier":2
+},
+{
+	"inputs":[
+		{"id":"phthalic_anhydride", "amount":1},
+		{"id":"ethylhexanol", "amount":2}
+	],
+	"outputs":[
+		{"id":"dehp", "amount":1},
+		{"id":"water", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5,
+	"requiredTier":2
+},
+{
+	"inputs":[
+		{"id":"vinyl_chloride", "amount":1},
+		{"tag":"plasticizer", "amount":1}
+	],
+	"outputs":[
+		{"id":"polyvinyl_chloride", "amount":1}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":2,
 	"requiredTier":1
 }]
