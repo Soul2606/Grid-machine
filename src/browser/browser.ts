@@ -15,13 +15,29 @@ const main = get("main")
 const xButton = get("x-button")
 const browser = get("browser")
 
-const catalog = get("catalog")
-
 export const hovering = {id:null as null|string}
 
+
+const items = get("items")
+
 for (const item of getData().items) {
-	catalog.append(Ui.createItem(item))
+	items.append(Ui.createItem(item))
 }
+
+const machines = get("machines")
+
+for (const m of getData().machines) {
+	machines.append(Ui.createMachine(m))
+}
+
+get("btn-i").addEventListener("click", () => {
+	items.style.display = ""
+	machines.style.display = "none"
+})
+get("btn-m").addEventListener("click", () => {
+	items.style.display = "none"
+	machines.style.display = ""
+})
 
 xButton.addEventListener("click", e => {
 	e.stopPropagation()
@@ -52,7 +68,7 @@ export function setInfo(def:ItemDef|MachineDef|string) {
 	}
 }
 
-function show(recipes:RecipeDef[]) {
+function show(recipes:RecipeDef[], extra:HTMLElement[] = []) {
 	const capabilities = new Map<string, HTMLElement[]>()
 	for (const rec of recipes) {
 		if (capabilities.has(rec.requiredProcess)) {
@@ -62,13 +78,15 @@ function show(recipes:RecipeDef[]) {
 		}
 	}
 
-	if (capabilities.size === 0) return
-
 	main.style.display = ""
 	removeAllChildren(browser)
 
 	for (const [capability, elements] of capabilities) {
 		browser.append(Ui.createCapability(elements, capability))
+	}
+
+	for (const element of extra) {
+		browser.append(element)
 	}
 }
 
@@ -82,7 +100,12 @@ export function showUsage(item:ItemDef) {
 			"id" in i ? i.id === item.id : item.tags.includes(i.tag)
 		)
 	)
-	show(recipes)
+	const machines = getData().machines.filter(m =>
+		m.cost.some(c =>
+			c.id === item.id
+		)
+	).map(m => machineRecipe(m))
+	show(recipes, machines)
 }
 
 getSignals().keydown.subscribe(key => {
@@ -108,3 +131,22 @@ export function showTag(tag:string) {
 		browser.append(Ui.createItem(item))
 	}
 }
+
+export function showMachine(mac:MachineDef) {
+	main.style.display = ""
+	removeAllChildren(browser)
+
+	browser.append(machineRecipe(mac))
+}
+
+function machineRecipe(mac: MachineDef) {
+	return Ui.createRecipeCard(
+		mac.cost.map(ent => ({
+			id: ent.id,
+			meta: ent.metadata,
+			amount: ent.amount
+		})),
+		mac
+	)
+}
+

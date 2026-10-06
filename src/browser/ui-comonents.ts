@@ -3,7 +3,7 @@ import type { ItemEntry } from "../classes/item-entry.js";
 import { create } from "../common/utils.js";
 import { getItemFromId, getItemsFromTag } from "../crafting-system/functions.js";
 import type { ItemDef, MachineDef, RecipeDef, RecipeInput } from "../game-data";
-import { hovering, setInfo, showRecipes, showTag } from "./browser.js";
+import { hovering, setInfo, showMachine, showRecipes, showTag } from "./browser.js";
 
 const {machines} = getData()
 
@@ -92,6 +92,11 @@ export function createMachine(def:MachineDef) {
 		setInfo(def)
 	})
 
+	root.addEventListener("click", e => {
+		e.stopPropagation()
+		showMachine(def)
+	})
+
 	return root
 }
 
@@ -128,7 +133,7 @@ export function createChemicalFormula(formula: string): HTMLElement {
   return container;
 }
 
-export function createRecipeCard(itemsIn:readonly RecipeInput[], itemsOut:readonly ItemEntry[]) {
+export function createRecipeCard(itemsIn:readonly RecipeInput[], itemsOut:(readonly ItemEntry[])|MachineDef) {
 	const root = document.createElement("div")
 	root.className = "recipe-card"
 
@@ -156,8 +161,12 @@ export function createRecipeCard(itemsIn:readonly RecipeInput[], itemsOut:readon
 
 	const output = document.createElement("div")
 	output.className = "recipe-card-io"
-	for (const item of itemsOut) {
-		output.append(createItem(getItemFromId(item.id), item.amount))
+	if (Array.isArray(itemsOut)) {
+		for (const item of itemsOut) {
+			output.append(createItem(getItemFromId(item.id), item.amount))
+		}
+	} else if ("cost" in itemsOut){
+		output.append(createMachine(itemsOut))
 	}
 	root.append(output)
 
