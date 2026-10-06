@@ -319,6 +319,11 @@
 		"img":"svg/methane-gas.svg",
 		"formula":"H4C"
 	},
+	"ethane_gas":{
+		"name":"Ethane gas",
+		"img":"svg/ethane-gas.svg",
+		"formula":"C2H6"
+	},
 	"carbon":{
 		"name":"Carbon",
 		"img":"svg/carbon.svg",
@@ -328,6 +333,11 @@
 		"name":"Carbon dioxide",
 		"img":"svg/carbondeoxide.svg",
 		"formula":"CO2"
+	},
+	"ethyne_gas":{
+		"name":"Ethyne gas",
+		"img":"svg/ethylene-gas.svg",
+		"formula":"C2H2"
 	},
 	"ethylene_gas":{
 		"name":"Ethylene gas",
@@ -420,7 +430,8 @@
 	"sodium_persulfate":{
 		"name":"Sodium persulfate",
 		"img":"svg/sodium-persulfate.svg",
-		"formula":"Na2S2O8"
+		"formula":"Na2S2O8",
+		"tags":["etching_acid"]
 	},
 	"hydrochloric_acid":{
 		"name":"Hydrochloric acid",
@@ -430,11 +441,16 @@
 	"iron_three_chloride":{
 		"name":"Iron III chloride",
 		"img":"svg/iron-three-chloride.svg",
-		"formula":"FeCl3"
+		"formula":"FeCl3",
+		"tags":["etching_acid"]
 	},
 	"coal_gas":{
 		"name":"Coal gas",
 		"img":"svg/coal-gas.svg"
+	},
+	"syngas":{
+		"name":"Syngas",
+		"img":"svg/syngas.svg"
 	},
 	"ammonia":{
 		"name":"Ammonia gas",
@@ -526,6 +542,10 @@
 		"img":"svg/phosphorus.svg",
 		"formula":"P"
 	},
+	"phosphoric_acid":{
+		"name":"Phosphoric acid",
+		"formula":"P2O7H4"
+	},
 	"ruby_dust":{
 		"name":"Ruby dust",
 		"img":"svg/ruby-dust.svg"
@@ -614,6 +634,7 @@
 		"description":"mono ethylene glycol"
 	},
 	"coolant":{
-		"name":"Coolant"
+		"name":"Coolant",
+		"img":"svg/coolant.svg"
 	}
 }

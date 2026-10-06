@@ -838,7 +838,7 @@
 {
 	"inputs":[
 		{"id":"polyethylene", "amount":1},
-		{"id":"iron_three_chloride", "amount":1},
+		{"tag":"etching_acid", "amount":1},
 		{"id":"copper_plate", "amount":1}
 	],
 	"outputs":[
@@ -846,19 +846,6 @@
 	],
 	"requiredProcess":"chemical",
 	"processTimeSeconds":6,
-	"requiredTier":0
-},
-{
-	"inputs":[
-		{"id":"polyethylene", "amount":1},
-		{"id":"sodium_persulfate", "amount":2},
-		{"id":"copper_plate", "amount":1}
-	],
-	"outputs":[
-		{"id":"plastic_circuit_board", "amount":4}
-	],
-	"requiredProcess":"chemical",
-	"processTimeSeconds":10,
 	"requiredTier":0
 },
 {
@@ -1000,6 +987,18 @@
 	],
 	"requiredProcess":"workshop",
 	"processTimeSeconds":10
+},
+{
+	"inputs":[
+		{"id":"water", "amount":4},
+		{"id":"ethylene_gas", "amount":1},
+		{"id":"phosphoric_acid", "amount":1}
+	],
+	"outputs":[
+		{"id":"hydraulic_fluid", "amount":6}
+	],
+	"requiredProcess":"chemical",
+	"processTimeSeconds":5
 },
 {
 	"inputs":[
@@ -1256,7 +1255,8 @@
 	"inputs":[
 		{"id":"epoxy_resin", "amount":1},
 		{"id":"glass_fiber", "amount":1},
-		{"id":"copper_wire", "amount":1}
+		{"id":"copper_wire", "amount":1},
+		{"tag":"etching_acid", "amount":1}
 	],
 	"outputs":[
 		{"id":"epoxy_circuit_board", "amount":1}
@@ -1503,12 +1503,11 @@
 		{"id":"dimethyl_ether", "amount":3}
 	],
 	"outputs":[
-		{"id":"ethylene_gas", "amount":1},
 		{"id":"propylene_gas", "amount":1},
 		{"id":"oxygen_gas", "amount":1},
 		{"id":"methane_gas", "amount":1},
 		{"id":"water", "amount":1},
-		{"id":"hydrogen_gas", "amount":1}
+		{"id":"ethane_gas", "amount":1}
 	],
 	"requiredProcess":"distillation",
 	"processTimeSeconds":5,
@@ -1533,8 +1532,7 @@
 	],
 	"outputs":[
 		{"id":"phthalic_acid", "amount":1},
-		{"id":"hydrogen_gas", "amount":1},
-		{"id":"carbon", "amount":2}
+		{"id":"ethyne_gas", "amount":1}
 	],
 	"requiredProcess":"chemical",
 	"processTimeSeconds":5,
@@ -1589,4 +1587,30 @@
 	"requiredProcess":"chemical",
 	"processTimeSeconds":2,
 	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"coal_gas", "amount":1}
+	],
+	"outputs":[
+		{"id":"syngas", "amount":3},
+		{"id":"coal_tar", "amount":1}
+	],
+	"requiredProcess":"distillation",
+	"processTimeSeconds":6,
+	"requiredTier":1
+},
+{
+	"inputs":[
+		{"id":"syngas", "amount":18}
+	],
+	"outputs":[
+		{"id":"carbon_dioxide", "amount":8},
+		{"id":"methane_gas", "amount":7},
+		{"id":"ethylene_gas", "amount":2},
+		{"id":"methanol", "amount":1}
+	],
+	"requiredProcess":"refining",
+	"processTimeSeconds":12,
+	"requiredTier":2
 }]
