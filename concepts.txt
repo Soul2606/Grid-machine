@@ -120,7 +120,7 @@ Example recipe
 {
 	"id": "pour_liquid",
 	"inputs": [{
-		"id": "water",
+		"id": "beaker",
 		"amount": 1,
 		"meta": {
 			"values": {
@@ -130,7 +130,7 @@ Example recipe
 		}
 	}],
 	"outputs": [{
-		"id": "oxygen",
+		"id": "flask",
 		"amount": 1,
 		"meta": {
 			"parameters": {

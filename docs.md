@@ -11,7 +11,7 @@ This project is a data-driven game simulation with a strict separation between:
 
 The system is designed so that the core simulation can run headlessly, without any UI, allowing the user to switch between different html files while the simulation runs in the background from a universal script file.
 
-It is possible to keep the state of the game when moving between different html files. Thats why many of the classes and types can be serialized.
+It is possible to keep the state of the game when moving between different html files. That's why many of the classes and types can be serialized.
 
 One of the big selling points of this game is the ability to connects machines together. There is two ways to do this: Processing lines and Factories.
 
@@ -23,7 +23,7 @@ Processing lines allow recipes to be compressed into 1 and allow for basic autom
 
 ### Factories
 
-Factories ar much simpler but much more powerful. Here everything is defined and every route is built by the user, this allows a factory to contain super complex chains of machines that can preform any recipe chain. The most powerful thing about Factories is that they can be compiled into a single process making them super performant. 
+Factories are much simpler but much more powerful. Here everything is defined and every route is built by the user, this allows a factory to contain super complex chains of machines that can preform any recipe chain. The most powerful thing about Factories is that they can be compiled into a single process making them super fast. 
 
 Because factories act so similar to machines, they can used inside factories, creating a potentially infinite recursions of factories within factories that has not performance impact because pf the compilation. This has a limit: compiling a factory is not reversible, so the factory has to remember its internal graph of machines and recipes. This is the limiting factor because you will eventually run out of memory.
 
@@ -38,55 +38,44 @@ All data defined here is:
 - Constant.
 - Deeply immutable at runtime.
 
-They are usually fetched and stored as global variables in whatever module they are used in.
-
-#### Extraction, Items
-These types form the Fixed Ontology (Non‑Customizable) of the game world.
+#### Extraction and Items
+These types form the Fixed Ontology of the game world.
 They define the fundamental building blocks of the universe and cannot be extended or modified at runtime.
 
-- **Items** describe the canonical object types that can exist. Runtime item instances reference these definitions by id.
+- **Items** describe the canonical object types that can exist. 
 
-- **Extraction** describes the canonical extraction sources or extraction rules. Like Items, they are static and globally referenced.
+- **Extraction** describes the canonical extraction sources or extraction rules.
 
-Both are immutable facts about the world, not behavior.
+#### RecipeDef
+Recipe definition describe what machines are capable of crafting. It goes together with MachineDef to construct a Machine.
 
-#### Recipes
-Recipes describe what is theoretically possible, not what is currently happening.
-They define abstract conversions between items (inputs, outputs, time).
+#### MachineDef
+This type describe the blueprint for the default machines in the game. Machines are not tied to the MachineDef type at all and custom machines can be built at runtime.
 
-They are not tied to any machine and should not be used to describe recipes in progress or recipes chosen.
-That is delegated to the **Resolved Recipe** class.
-
-#### Machines
-This type describe the blueprint for the default machines in the game. Machine Instances are not tied to the Machine type at all and custom machines can be built at runtime.
-
-### ItemInstance "Class"
+### Item
 ---
-Represents a specific item reference. It is used as an identity key since it includes metadata unlike the **Item** type. This class is tightly coupled to the **Item** type, this class acts like a wrapper for **Item**. 
+`{id:string, meta:JSONValue}`
 
-Notes:
-- Can be serialized.
+Represents a specific item reference with optional metadata which is **null** by default.
 
-### ItemEntry "Class"
+### ItemEntry
 ---
-Represents a specific item reference and quantity. It is used as an identity key and quantity holder.
+`{id:string, meta:JSONValue, amount:number}`
 
-Notes:
-- Can be serialized.
+Represents a specific item reference and quantity.
 
 ### Inventory "Class"
 ---
-Inventory represents the universal item‑holding abstraction in the simulation. It provides a consistent interface for machines, factories, and player storage, and guarantees that all item movement respects global invariants.
+Inventory represents the universal item‑holding abstraction in the simulation. It provides a consistent interface for machines, factories, and player storage, and guarantees that all item movement respects global invariant.
 
-### Input "Type"
+### Input
 ---
+`{amount:number, items:Item[]}`
+
 Represents a single recipe input slot.
 Usually used as an array of Inputs.
 
 The reason for the array of **ItemInstances** is because multiple different items may satisfy a single input slot.
-
-Notes:
-- Can be serialized.
 
 ### CraftingOptions "Type"
 ---
@@ -95,9 +84,9 @@ Used to configure multiple crafting-related functions.
 If different crafting functions are invoked with different **CraftingOptions**, they might disagree about the same state.
 Correct usage requires that all related crafting operations share the same options instance.
 
-### MachineInstance "Class"
+### Machine "Class"
 ---
-Responsible for simulating machines and recipe processing. It is not tied to **Machine** at all, **Machine** is a schematic for creating a **MachineInstance**. 
+Responsible for simulating machines and recipe processing. It is not tied to **MachineDef** at all, **MachineDef** is a schematic for creating a **Machine**. 
 
 Characteristics:
 - Operates purely on data.
@@ -107,15 +96,17 @@ This allows the same simulation to be run:
 - Inside the main UI.
 - In a separate HTML file.
 
-### ResolvedRecipe "Class"
+### Recipe
 ---
-ResolvedRecipe (“rr”) is a fully resolved, atomic execution of a single recipe. Used as a recipe in process. 
+`{input:Input[], output:ItemEntry[], processTimeSeconds:number}`
 
-Notes:
-- Atomic: Represents one execution only.
-- Irreversible: Cannot reconstruct the source recipe batch.
-- Equal **rr**s can be stacked to save on memory.
-- Can be serialized.
+This type is context sensitive, it goes inside Machines and describe what they can craft. Recipes are entirely customizable but are usually derived from Recipe Definitions.
+
+### ResolvedRecipe
+---
+`{inputs:ItemEntry[], outputs:ItemEntry[], time:number}`
+
+ResolvedRecipe is an irreversible, atomic execution of a single recipe. Used as a recipe in process where items have already been consumed. 
 
 ## Technical notes:
 The term **Item** is not entirely accurate as represents real life objects that might not fall under the category "item" such as liquids, gasses or energy. Resource is the more accurate term, but its still not perfect. Regardless **Item** is the chosen name.
@@ -124,80 +115,27 @@ Sometimes different function can disagree on the truth of the same state, in tha
 
 **resolveCraftingCosts** is a super important function, it is responsible for taking huge amount of data and turn that into a definitive set of items that can be used to satisfy the provided recipe.
 
-## Crafting system structure
-
-User generated recipe schema.
-``` JSON
-{
-	"inputs":[
-		{"id":"clay", "amount":1}
-	],
-	"outputs":[
-		{"id":"ceramic", "amount":1}
-	],
-	"requiredProcess":"smelt",
-	"processTimeSeconds":5
-}
-```
-Convert to recipe data.
-``` JSON
-{
-	"id": "1",
-	"inputs":[
-		{"id":"clay", "amount":1, "meta":null}
-	],
-	"outputs":[
-		{"id":"ceramic", "amount":1, "meta":null}
-	],
-	"requiredProcess": "smelt",
-	"requiredTier": 0,
-	"processTimeSeconds": 5
-}
-```
-Solve recipe using various means, most common is by unsing the `resolveCraftingCosts` function.
-``` Typescript
-class ResolvedRecipe {
-readonly id: string;
-readonly inputs: readonly ItemEntry[];
-readonly output: readonly ItemEntry[];
-}
-```
----
 ### Diagram of the recipe and machine instance pipeline
+---
 Rectangle: value, Diamond: function. The diagram requires mermaid to be installed.
 ```mermaid
 graph TD
 
 A[JSON Files] --> B[Definitions]
 
-B -->|Blueprint| C[Custom Recipe]
-C -->|Construct| D[Machine Instance]
+B -->|Construct| C
 
-UI[User interaction] --> RC
-I[Inventory] --> RC
-D --> RC
+UI[Inventory & User interaction] -->|Send items| RC
 
+subgraph Machine
+C[Capable Recipes] --> RC
 RC{Resolve Recipe Cost} --> R[Resolved Recipe]
+RC -->|Add items| Q
+R -->|Add to queue| Q
+Q[Working on, Inventory & Resources]
+Q -->|From queue| S{Simulate Tick}
+S -->|Update State| Q
+end
 
-R -->|Add to queue| D
-
-D -->|From queue| S{Simulate Tick}
-S -->|Update State| D
 S -->|Emit Outputs| G[Game State]
-```
-### Machine instance
-```mermaid
-graph TD
-A[Work queue] --> S
-E[State] <--Read-Write--> S
-subgraph Static
-B[Basic data: cost, sprite, id?]
-C[Capabilities]
-end
-subgraph External
-I[Inventory] -->
-D{Resolve}
-end
-C -->|Present| D -->|Add| A
-S{Simulate} -->|Mutate/remove| A
 ```
