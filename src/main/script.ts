@@ -44,7 +44,7 @@ function updatePower() {
 function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, item:Item): void {
 	console.log("doing item transfer. Context;", transferContext.kind)
 	if (transferContext.kind !== "empty" && transferContext.kind !== "item") return
-	if (transferContext.kind === "item" && !Item.isEqual(item, transferContext.value)) return
+	if (transferContext.kind === "item" && item !== transferContext.value.id) return
 
 	const transfer = (amount:number) => {
 		// try to subtract; if subtraction fails, restore UI and exit
@@ -96,7 +96,7 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 			transfer(1)
 		} else {
 			const received = transferContext.value
-			if (!Item.isEqual(item, received)) return
+			if (item !== received.id) return
 			// Cancel the ongoing transfer and create a new transfer with both added together
 			transferContext.transfer(false)
 			transfer(received.amount + 1)
@@ -111,7 +111,7 @@ function setItemPopup(item:Item) {
 	recipeHoverState = {valid:true, value:item}
 	MouseOverlay.show()
 	MouseOverlay.elements.infoPanel.show()
-	const def = getItemFromId(item.id)
+	const def = getItemFromId(item)
 	MouseOverlay.elements.infoPanel.setTitle(def.name)
 	const desc = MouseOverlay.elements.infoPanel.description
 	removeAllChildren(desc)
@@ -125,7 +125,7 @@ function setItemPopup(item:Item) {
 }
 
 function hideItemPopup(item:Item|null) {
-	if (recipeHoverState?.valid && item && Item.isEqual(item, recipeHoverState.value)) {
+	if (recipeHoverState?.valid && item && item === recipeHoverState.value) {
 		recipeHoverState.valid = false
 	}
 	MouseOverlay.elements.infoPanel.hide()
@@ -376,7 +376,7 @@ workersReact.subscribe(updateWorkers)
 
 
 const invItemCells = items.map(item => {
-	const inst = Item.fromItem(item)
+	const inst = item.id
 	const v = createItemCell(item)
 	v.element.style.display = "none"
 
@@ -387,7 +387,7 @@ const invItemCells = items.map(item => {
 		e.preventDefault()
 		e.stopPropagation()
 		if (sideMenuMode === "inventory") {
-			itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, Item.fromItem(v.getItem()))
+			itemTransferEvent({x:e.clientX, y:e.clientY}, mainInventory, v.getItem().id)
 		}
 	})
 	
@@ -503,7 +503,7 @@ get('extract-starter')!.addEventListener('click',()=>{
 			}
 		}
 		if (resultId === null) continue
-		mainInventory.changeItem(Item.fromItem(getItemFromId(resultId)), 1)
+		mainInventory.changeItem(resultId, 1)
 	}
 })
 
@@ -621,7 +621,7 @@ const bindToUi = (machineInst:Machine) => {
 				).map(obj=>{
 					const slot = obj.inputs[0]!
 					const input = slot.items.find(i => 
-						Item.isEqual(i, incoming) && slot.amount <= incoming.amount
+						i === incoming.id && slot.amount <= incoming.amount
 					)
 					if (input === undefined) return null
 					return{
@@ -642,7 +642,7 @@ const bindToUi = (machineInst:Machine) => {
 								ri.recipe.outputs.map(ItemEntry.from),
 							))
 						)
-						mainInventory.addItem(incoming, incoming.amount - cost1 * batches) // Give back leftovers
+						mainInventory.addItem(incoming.id, incoming.amount - cost1 * batches) // Give back leftovers
 					}
 				}
 			}

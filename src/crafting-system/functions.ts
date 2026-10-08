@@ -18,7 +18,7 @@ const {items, machines, recipes, extractors} = getDataMapToId()
  */
 export function getRecipesProducing(craftable: Item) {
 	return recipes.values().toArray().filter(recipe =>
-		getRecipeOutputs(recipe).some(output => Item.isEqual(craftable, output))
+		getRecipeOutputs(recipe).some(output => craftable === output.id)
 	)
 }
 
@@ -35,7 +35,7 @@ export function getRecipesConsuming(consumed: Item|(readonly Item[])) {
 		const inputs = getRecipeInputs(recipe)
 		return inputs.every(input =>
 			input.items.some(i =>
-				_consumed.some(j => Item.isEqual(j, i))
+				_consumed.includes(i)
 			)
 			&& _consumed.length === inputs.length
 		)
@@ -63,9 +63,7 @@ export function getRecipeInputs(recipe: RecipeDef): Input[] {
 			}
 		}
 		return {
-			items: Array.from(inputItems).map(item =>
-				Item.n(item.id, input.meta)
-			),
+			items: Array.from(inputItems).map(item => item.id),
 			amount: input.amount
 		} satisfies Input
 	})
@@ -101,7 +99,7 @@ export function getRecipeFromId(id: string): RecipeDef {
 
 export function getRecipeOutputs(recipe: RecipeDef): readonly ItemEntry[] {
 	return recipe.outputs.map(output => 
-		ItemEntry.n(output.id, null, output.amount === undefined ? 0 : output.amount)
+		ItemEntry.n(output.id, output.amount === undefined ? 0 : output.amount)
 	)
 }
 
@@ -124,7 +122,7 @@ function applyCraftingOptions(options:CraftingOptions, inputs: readonly Input[])
 		
 		// Apply whitelist filters
 		const whitelisted = input.items.filter(itemInst =>{
-			const item = itemInst.id
+			const item = itemInst
 			return (!options.itemWhitelist || options.itemWhitelist.map(i => i.id).includes(item)) &&
 			(!options.tagWhitelist || getItemFromId(item).tags.some(tag => options.tagWhitelist?.includes(tag)))
 		});
@@ -132,14 +130,14 @@ function applyCraftingOptions(options:CraftingOptions, inputs: readonly Input[])
 		// Apply priority ordering
 		if (options.itemPriorityList) {
 			whitelisted.sort((a, b) => {
-				const ai = options.itemPriorityList!.map(i => i.id).indexOf(a.id);
-				const bi = options.itemPriorityList!.map(i => i.id).indexOf(b.id);
+				const ai = options.itemPriorityList!.map(i => i.id).indexOf(a);
+				const bi = options.itemPriorityList!.map(i => i.id).indexOf(b);
 				return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
 			});
 		} else if (options.tagPriorityList) {
 			whitelisted.sort((a, b) => {
-				const ai = getItemFromId(a.id).tags.findIndex(tag => options.tagPriorityList!.includes(tag));
-				const bi = getItemFromId(b.id).tags.findIndex(tag => options.tagPriorityList!.includes(tag));
+				const ai = getItemFromId(a).tags.findIndex(tag => options.tagPriorityList!.includes(tag));
+				const bi = getItemFromId(b).tags.findIndex(tag => options.tagPriorityList!.includes(tag));
 				return (ai === -1 ? Infinity : ai) - (bi === -1 ? Infinity : bi);
 			});
 		}
@@ -220,7 +218,7 @@ export function resolveCraftingCosts(
 				const available = simInv.getAmount(item)
 				const take = Math.min(available, remaining)
 				if (take > 0) {
-					chosenInstances.push(ItemEntry.n(item.id, item.metadata, take))
+					chosenInstances.push(ItemEntry.n(item, take))
 					if (!simInv.subtractItem(item, take)) throw new Error("Invariant broke");
 					remaining -= take
 				}

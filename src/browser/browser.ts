@@ -91,7 +91,7 @@ function show(recipes:RecipeDef[], extra:HTMLElement[] = []) {
 }
 
 export function showRecipes(item:ItemDef) {
-	show(getRecipesProducing({id:item.id, metadata:null}))
+	show(getRecipesProducing(item.id))
 }
 
 export function showUsage(item:ItemDef) {
@@ -143,7 +143,6 @@ function machineRecipe(mac: MachineDef) {
 	return Ui.createRecipeCard(
 		mac.cost.map(ent => ({
 			id: ent.id,
-			meta: ent.metadata,
 			amount: ent.amount
 		})),
 		mac

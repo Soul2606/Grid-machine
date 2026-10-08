@@ -183,10 +183,10 @@ export class Machine {
 		return this
 	}
 
-	refundWorkingOn(recipe: ResolvedRecipe): Item[]|"not_found"{
+	refundWorkingOn(recipe: ResolvedRecipe): ItemEntry[]|"not_found"{
 		const existing = this.workingOn.find(wo => ResolvedRecipe.equals(recipe, wo.recipe))
 		if (existing) {
-			const consumed = existing.recipe.inputs.map(item => ItemEntry.fromInst(item, item.amount * existing.amount))
+			const consumed = existing.recipe.inputs.map(item => ItemEntry.fromInst(item.id, item.amount * existing.amount))
 			existing.amount = 0
 			this.workingOn = this.workingOn.filter(wo => wo.amount > 0) // prune
 			return consumed

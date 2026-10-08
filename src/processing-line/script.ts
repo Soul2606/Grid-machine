@@ -147,7 +147,7 @@ function refresh() {
 			inputOptions.textContent = inp.amount.toString()
 			inpDiv.append(inputOptions)
 			for (const inst of inp.items) {
-				const cell = createItemCell(getItemFromId(inst.id))
+				const cell = createItemCell(getItemFromId(inst))
 				cell.amountLabel.textContent = ""
 				inputOptions.append(cell.element)
 			}
@@ -213,7 +213,7 @@ get("confirm").addEventListener("click", () => {
 			const mac = machines.get(str)
 			if (!mac) return []
 			return mac.cost
-		}))
+		})).map(i => i.id)
 	}
 
 	console.log("Final blueprint:", JSON.stringify(blueprint));

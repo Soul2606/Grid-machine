@@ -34,7 +34,7 @@ export class Inventory {
 	 * Finds an instance of the item in !ONLY THIS! inventory. Use with caution, this returns direct references!
 	 */
 	private findInstance(item: Item) {
-		return this.itemInstances.find(entry => Item.isEqual(entry, item));
+		return this.itemInstances.find(entry => entry.id === item);
 	}
 
 	// ====== Execution ======
@@ -86,9 +86,9 @@ export class Inventory {
 	 * Tries to change every item at once. if any item can't be changed then nothing gets changed and it returns false
 	 */
 	changeItems(items: readonly ItemEntry[]): boolean {
-		if (items.every(item => this.changeItem(item, item.amount, true))) { // This check is not strong enough. Even if every item can be added individually, then that does not mean they can all be added at once
+		if (items.every(item => this.changeItem(item.id, item.amount, true))) { // This check is not strong enough. Even if every item can be added individually, then that does not mean they can all be added at once
 			for (const itemInstance of items) {
-				if (!this.changeItem(itemInstance, itemInstance.amount)) throw new Error("Invariant broken: inventory may be unpredictably mutated");
+				if (!this.changeItem(itemInstance.id, itemInstance.amount)) throw new Error("Invariant broken: inventory may be unpredictably mutated");
 			}
 			return true;
 		}
@@ -106,7 +106,7 @@ export class Inventory {
 	 * Tries to subtract every item at once. if any item can't be subtracted then nothing gets subtracted and it returns false
 	 */
 	subtractItems(items: readonly ItemEntry[]): boolean {
-		return this.changeItems(items.map(v => ItemEntry.n(v.id, v.metadata, -v.amount)));
+		return this.changeItems(items.map(v => ItemEntry.n(v.id, -v.amount)));
 	}
 
 	// ====== Queries ======
@@ -130,7 +130,7 @@ export class Inventory {
 	 * Returns an item based on content in this and shared inventories, does not return direct reference
 	 */
 	getReflection(item: Item): ItemEntry {
-		const instance = this.getAllItemInstances().find(v => Item.isEqual(v, item));
+		const instance = this.getAllItemInstances().find(v => v.id === item);
 		if (instance) return ItemEntry.from(instance);
 		return ItemEntry.fromInst(item, 0);
 	}

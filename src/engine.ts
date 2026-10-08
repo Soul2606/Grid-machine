@@ -190,7 +190,7 @@ export const workersReact = workersSignal.createInterface(true)
 
 export function addSteamEngine(amount=1) {
 	if (mainInventory.subtractItems([
-		ItemEntry.n("stone", null, 10*amount),
+		ItemEntry.n("stone", 10*amount),
 	])) {
 		steamEngines.value += amount
 	}
@@ -208,7 +208,7 @@ export function getSteamEngines() {
 
 let fuelOverflow = 0
 tick.subscribe(delta => {
-	const fuel = Item.fromItem(getItemFromId(steamEngines.info.fuelId))
+	const fuel:Item = steamEngines.info.fuelId
 	const fuelAmount = mainInventory.getReflection(fuel).amount + fuelOverflow
 
 	const fuelNeed = steamEngines.info.consumption

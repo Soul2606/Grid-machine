@@ -127,7 +127,7 @@ export function runProcessingLine(
 			recipes.push(rec);
 			unused = inv.getAllItemInstances();
 			output.push(...unused);
-			consumed = resolve.value.inputs.map(ent => ItemEntry.fromInst(ent, ent.amount * resolve.amount)
+			consumed = resolve.value.inputs.map(ent => ItemEntry.fromInst(ent.id, ent.amount * resolve.amount)
 			);
 		}
 

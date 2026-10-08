@@ -1,7 +1,7 @@
 // =============== NO IMPORT (except types) ================
 import type { ItemEntry } from "./classes/item-entry.js";
 import type { JSONValue } from "./common/types"
-import { validate, type Config } from "./lib/data/json/validator.js";
+import { validate, type Config, type ConfType } from "./lib/data/json/validator.js";
 
 type Data = Readonly<{
 	items:readonly ItemDef[],
@@ -11,82 +11,61 @@ type Data = Readonly<{
 }>
 
 
-type ItemSchema = Record<
-	string,
-	{
-		name: string
-		formula?: string
-		description?: string
-		tags?: string[]
-		img?: string
-		energy?: string
-	}
->
-
-const itemSchema:Config = {
+const itemSchema = {
 	type:"record",
 	match:{
 		type:"obj",
 		match:{
-			name: {type:"str"},
-			formula: {type:"str", option:true},
-			description: {type:"str", option:true},
+			name: "str",
+			formula: "str",
+			description: "str",
 			tags: {
-				option:true,
 				type:"arr",
-				match:{type:"str"}
+				match:"str"
 			},
-			img: {
-				option:true,
-				type:"str"
-			},
-			energy: {
-				option:true,
-				type:"str"
-			},
-		}
+			img: "str",
+			energy: "str",
+		},
+		optional:[
+			"formula",
+			"description",
+			"tags",
+			"img",
+			"energy"
+		]
 	}
-}
+} as const satisfies Config
+
+type ItemSchema = ConfType<typeof itemSchema>
 
 
-type RecipeSchemaInput = {
-	id:string
-	amount:number
-	meta?:JSONValue
-} | {
-	tag:string
-	amount:number
-	meta?:JSONValue
-}
 
-type RecipeSchema = {
-	id?:string
-	inputs:RecipeSchemaInput[]
-	outputs:{id:string, amount:number, meta?:JSONValue}[]
-	requiredProcess:string
-	requiredTier?:number
-	processTimeSeconds?:number
-}[]
-
-const recipeSchema:Config = {
+const recipeSchema = {
 	type:"arr",
 	match:{
 		type:"obj",
 		match:{
-			id:{
-				option:true,
-				type:"str"
-			},
+			id:"str",
 			inputs:{
 				type:"arr",
 				match:{
-					type:"obj",
-					match:{
-						id:{type:"str", option:true},
-						tag:{type:"str", option:true},
-						amount:{type:"num"},
-						meta:{type:"any", option:true}
-					}
+					type:"union",
+					match:[
+						{
+							type:"obj",
+							match:{
+								id:"str",
+								amount:"num",
+							}
+						},
+						{
+							type:"obj",
+							match:{
+								tag:"str",
+								amount:"num",
+							}
+						}
+					]
 				}
 			},
 			outputs:{
@@ -94,125 +73,108 @@ const recipeSchema:Config = {
 				match:{
 					type:"obj",
 					match:{
-						id:{type:"str"},
-						amount:{type:"num"},
-						meta:{type:"any", option:true},
+						id:"str",
+						amount:"num",
 					}
 				}
 			},
-			requiredProcess:{type:"str"},
-			requiredTier:{type:"num", option:true},
-			processTimeSeconds:{type:"num", option:true},
-		}
+			requiredProcess:"str",
+			requiredTier:"num",
+			processTimeSeconds:"num",
+		},
+		optional:[
+			"id",
+			"requiredTier",
+			"processTimeSeconds"
+		]
 	}
-}
+} as const satisfies Config
+
+type RecipeSchema = ConfType<typeof recipeSchema>
 
 
-type MachineSchema = Record<string, {
-	readonly id: string
-	readonly name: string
-	readonly tier: number
-	readonly capabilities: readonly string[]
-	readonly cost: readonly {id:string, amount:number, meta?:JSONValue}[]
-	readonly img?: string
-	readonly fuelNeeds?: {
-		readonly tags: readonly string[],
-		readonly energy: string
-	}
-	readonly energyNeeds?: {
-		readonly voltageTier: number,
-		readonly energy: string
-	}
-	readonly workerNeeds?: {
-		readonly minimum: number,
-		readonly maximum: number
-	}
-}>
-
-const machineSchema:Config = {
+const machineSchema = {
 	type:"record",
 	match:{
 		type:"obj",
+		optional:[
+			"img",
+			"fuelNeeds",
+			"energyNeeds",
+			"workerNeeds"
+		],
 		match:{
-			name:{type:"str"},
-			tier:{type:"num"},
+			name:"str",
+			tier:"num",
 			capabilities:{
 				type:"arr",
-				match:{type:"str"}
+				match:"str"
 			},
 			cost:{
 				type:"arr",
 				match:{
 					type:"obj",
 					match:{
-						id:{type:"str"},
-						amount:{type:"num"},
-						meta:{type:"any", option:true}
+						id:"str",
+						amount:"num",
 					}
 				}
 			},
-			img:{type:"str", option:true},
+			img:"str",
 			fuelNeeds:{
 				type:"obj",
-				option:true,
 				match:{
-					tags: {type:"arr", match:{type:"str"}},
-					energy: {type:"str"}
+					tags: {type:"arr", match:"str"},
+					energy: "str"
 				}
 			},
 			energyNeeds:{
 				type:"obj",
-				option:true,
 				match:{
-					voltageTier: {type:"num"},
-					energy: {type:"str"}
+					voltageTier:"num",
+					energy:"str"
 				}
 			},
 			workerNeeds:{
 				type:"obj",
-				option:true,
 				match:{
-					minimum:{type:"num"},
-					maximum:{type:"num"}
+					minimum:"num",
+					maximum:"num"
 				}
 			}
 		}
 	}
-}
+} as const satisfies Config
+
+type MachineSchema = ConfType<typeof machineSchema>
 
 
-type ExtractorSchema = Record<string, {
-	name:string
-	manualPower?:number
-	requiredPower:number
-	yields:{
-		itemId:string
-		weight?:number
-	}[]
-}>
-
-const extractorSchema:Config = {
+const extractorSchema = {
 	type:"record",
 	match:{
 		type:"obj",
+		optional:[
+			"manualPower"
+		],
 		match:{
-			name:{type:"str"},
-			manualPower:{type:"num", option:true},
-			requiredPower:{type:"num"},
+			name:"str",
+			manualPower:"num",
+			requiredPower:"num",
 			yields:{
 				type:"arr",
 				match:{
 					type:"obj",
 					match:{
-						itemId:{type:"str"},
-						weight:{type:"num"}
+						itemId:"str",
+						weight:"num"
 					}
 				}
 			}
 		}
 	}
-}
+} as const satisfies Config
 
+type ExtractorSchema = ConfType<typeof extractorSchema>
 
 
 
@@ -241,7 +203,7 @@ async function fetchData():Promise<Data> {
 	if (errors.length > 0) throw new Error(JSON.stringify(errors, null, 3));
 
 	return { 
-		items: Object.entries(items as ItemSchema).map(([key, value]) =>{
+		items: Object.entries(items).map(([key, value]) =>{
 			const item = {
 				...value,
 				id:key
@@ -256,7 +218,7 @@ async function fetchData():Promise<Data> {
 				energy:item.energy 
 			}
 		}),
-		machines: Object.entries(machines as MachineSchema).map(([key, value]) => {
+		machines: Object.entries(machines).map(([key, value]) => {
 			const machine = {
 				...value,
 				id:key
@@ -270,18 +232,18 @@ async function fetchData():Promise<Data> {
 				cost:machine.cost.map(item => ({
 					id:item.id,
 					amount:item.amount,
-					metadata: item.meta??null
+					metadata:null
 				})),
 				fuelNeeds:  machine.fuelNeeds,
 				energyNeeds:machine.energyNeeds,
 				workerNeeds:machine.workerNeeds,
-			}
+			} satisfies MachineDef
 		}
 		),
-		recipes: (recipes as RecipeSchema).map((r,i) => ({
+		recipes: (recipes).map((r,i) => ({
 			id:r.id??"v-"+i,
-			inputs:r.inputs.map(i=>("id" in i ? {id:i.id, amount:i.amount, meta:i.meta??null} : {tag:i.tag, amount:i.amount, meta:i.meta??null})),
-			outputs:r.outputs.map(i=>({id:i.id, amount:i.amount, metadata:i.meta??null})),
+			inputs:r.inputs.map(i=>("id" in i ? {id:i.id, amount:i.amount} : {tag:i.tag, amount:i.amount})),
+			outputs:r.outputs.map(i=>({id:i.id, amount:i.amount, metadata:null})),
 			requiredProcess: r.requiredProcess,
 			requiredTier: r.requiredTier??0,
 			processTimeSeconds: r.processTimeSeconds??0
@@ -354,11 +316,9 @@ export type MachineDef = {
 export type RecipeInput = {
 	readonly amount: number
 	readonly id: string
-	readonly meta: JSONValue
 } | {
 	readonly amount: number
 	readonly tag: string
-	readonly meta: JSONValue
 }
 
 export type RecipeDef = {
