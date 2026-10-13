@@ -1,6 +1,5 @@
 import { getDataMapToId } from "../game-data.js";
 import { ItemEntry } from '../classes/item-entry.js';
-import { Item } from '../classes/item.js';
 import { ResolvedRecipe } from "../classes/resolved-recipe.js";
 import { Inventory } from '../classes/inventory.js';
 import type { CraftingOptions, Recipe, Input } from "./types.js";
@@ -16,7 +15,7 @@ const {items, machines, recipes, extractors} = getDataMapToId()
 /**
  * Get all recipes that crafts the provided item
  */
-export function getRecipesProducing(craftable: Item) {
+export function getRecipesProducing(craftable: string) {
 	return recipes.values().toArray().filter(recipe =>
 		getRecipeOutputs(recipe).some(output => craftable === output.id)
 	)
@@ -29,7 +28,7 @@ export function getRecipesProducing(craftable: Item) {
  * Returns each recipe that consumes exactly every provided item.
  * @param consumed the items the recipe must consume
  */
-export function getRecipesConsuming(consumed: Item|(readonly Item[])) {
+export function getRecipesConsuming(consumed: string|(readonly string[])) {
 	const _consumed = [consumed].flat()
 	return recipes.values().toArray().filter(recipe => {
 		const inputs = getRecipeInputs(recipe)

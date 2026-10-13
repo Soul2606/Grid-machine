@@ -1,8 +1,6 @@
 import { Machine, type MachineInstanceStatus } from "./classes/machine.js";
 import { ItemEntry } from './classes/item-entry.js';
-import { Item } from './classes/item.js';
 import { Inventory } from './classes/inventory.js';
-import { getItemFromId } from "./crafting-system/functions.js";
 import { clamp } from "./common/utils.js";
 import { relu } from "./common/utils.js";
 import type { MachineSer } from "./crafting-system/types.js";
@@ -208,7 +206,7 @@ export function getSteamEngines() {
 
 let fuelOverflow = 0
 tick.subscribe(delta => {
-	const fuel:Item = steamEngines.info.fuelId
+	const fuel:string = steamEngines.info.fuelId
 	const fuelAmount = mainInventory.getReflection(fuel).amount + fuelOverflow
 
 	const fuelNeed = steamEngines.info.consumption

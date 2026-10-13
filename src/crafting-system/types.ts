@@ -1,12 +1,11 @@
 import type { ItemEntry } from '../classes/item-entry'
-import type { Item } from '../classes/item'
 import type { ItemDef } from '../game-data'
 import type { ResolvedRecipe } from '../classes/resolved-recipe'
 
 
 // type represents a Recipe input slot, because multiple different items can are valid in a single input, then items is an array of Items
 export type Input = {
-	readonly items: readonly Item[]
+	readonly items: readonly string[]
 	readonly amount: number
 }
 

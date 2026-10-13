@@ -5,7 +5,6 @@ import { relu } from "../common/utils.js";
 import type { Recipe, MachineSer, } from '../crafting-system/types.js';
 import type { MachineDef } from '../game-data.js';
 import { ResolvedRecipe } from "./resolved-recipe.js";
-import { Item } from './item.js';
 import { ItemEntry } from './item-entry.js';
 
 

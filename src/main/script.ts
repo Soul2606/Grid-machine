@@ -5,7 +5,6 @@ import { getItemFromId } from '../crafting-system/functions.js'
 import { get, removeAllChildren } from "../common/utils.js";
 import { Machine } from '../classes/machine.js'
 import { ItemEntry } from '../classes/item-entry.js';
-import { Item } from '../classes/item.js';
 import { Inventory } from '../classes/inventory.js';
 import { ResolvedRecipe } from "../classes/resolved-recipe.js";
 import { createChemicalFormula, createInfoPanel, createMachine, createMachineUI, createQuantitySlider } from './ui-components.js'
@@ -41,7 +40,7 @@ function updatePower() {
  * @param item the item to transfer
  * @returns void
  */
-function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, item:Item): void {
+function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, item:string): void {
 	console.log("doing item transfer. Context;", transferContext.kind)
 	if (transferContext.kind !== "empty" && transferContext.kind !== "item") return
 	if (transferContext.kind === "item" && item !== transferContext.value.id) return
@@ -107,7 +106,7 @@ function itemTransferEvent(position:{x:number, y:number}, inventory:Inventory, i
 
 
 
-function setItemPopup(item:Item) {
+function setItemPopup(item:string) {
 	recipeHoverState = {valid:true, value:item}
 	MouseOverlay.show()
 	MouseOverlay.elements.infoPanel.show()
@@ -124,7 +123,7 @@ function setItemPopup(item:Item) {
 	})())
 }
 
-function hideItemPopup(item:Item|null) {
+function hideItemPopup(item:string|null) {
 	if (recipeHoverState?.valid && item && item === recipeHoverState.value) {
 		recipeHoverState.valid = false
 	}
@@ -144,7 +143,7 @@ var sideMenuMode: "inventory" | "machines" = "inventory"
 /**
  * Used by "showUsage"
  */
-var recipeHoverState: undefined | {valid:boolean, value:Item}
+var recipeHoverState: undefined | {valid:boolean, value:string}
 
 
 const items = getData().items

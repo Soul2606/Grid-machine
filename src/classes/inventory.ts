@@ -1,6 +1,5 @@
 import { Signal, type SignalInterface } from '../lib/events/signal.js';
 import { ItemEntry } from './item-entry.js';
-import { Item } from './item.js';
 
 /**
  * Class for managing data of item instances. inventory can be constructed and configured before compilation.
@@ -33,7 +32,7 @@ export class Inventory {
 	/**
 	 * Finds an instance of the item in !ONLY THIS! inventory. Use with caution, this returns direct references!
 	 */
-	private findInstance(item: Item) {
+	private findInstance(item: string) {
 		return this.itemInstances.find(entry => entry.id === item);
 	}
 
@@ -45,12 +44,8 @@ export class Inventory {
 
 	/**
 	 * Used to add/subtract an item from inventory.
-	 * @param item Item instance to be added to inventory
-	 * @param amount negative integers
-	 * @param dryRun If true then no item will be added but you will still get the success value
-	 * @returns success
 	 */
-	changeItem(item: Item, amount: number, dryRun: boolean = false): boolean {
+	changeItem(item: string, amount: number, dryRun: boolean = false): boolean {
 		if (!Number.isInteger(amount)) return false;
 
 		const existing = this.findInstance(item);
@@ -74,11 +69,11 @@ export class Inventory {
 		return true;
 	}
 
-	addItem(item: Item, amount: number): boolean {
+	addItem(item: string, amount: number): boolean {
 		return this.changeItem(item, amount);
 	}
 
-	subtractItem(item: Item, amount: number): boolean {
+	subtractItem(item: string, amount: number): boolean {
 		return this.changeItem(item, -amount);
 	}
 
@@ -122,20 +117,20 @@ export class Inventory {
 		return this.maxSlots;
 	}
 
-	hasInstance(item: Item) {
+	hasInstance(item: string) {
 		return this.getReflection(item).amount > 0;
 	}
 
 	/**
 	 * Returns an item based on content in this and shared inventories, does not return direct reference
 	 */
-	getReflection(item: Item): ItemEntry {
+	getReflection(item: string): ItemEntry {
 		const instance = this.getAllItemInstances().find(v => v.id === item);
 		if (instance) return ItemEntry.from(instance);
 		return ItemEntry.fromInst(item, 0);
 	}
 
-	getAmount(item: Item): number {
+	getAmount(item: string): number {
 		return this.getReflection(item).amount;
 	}
 
@@ -149,12 +144,12 @@ export class Inventory {
 	/**
 	 * Return weather a change is possible without actually changing the content of the inventory
 	 */
-	canChange(item: Item, amount: number): boolean {
+	canChange(item: string, amount: number): boolean {
 		// For the sake of clarity
 		return this.changeItem(item, amount, true);
 	}
 
-	capacityFor(item: Item): number {
+	capacityFor(item: string): number {
 		const existing = this.hasInstance(item);
 		return !existing && this.maxSlots === this.itemInstances.length ?
 			0 :
