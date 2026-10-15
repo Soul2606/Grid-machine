@@ -978,9 +978,24 @@
 },
 {
 	"inputs":[
+		{"tag":"rubber-sheet", "amount":1},
+		{"id":"rubber_pipe", "amount":1},
+		{"id":"aluminum_plate", "amount":1},
+		{"id":"basic_electric_motor", "amount":1},
+		{"id":"steel_rod", "amount":1}
+	],
+	"outputs":[
+		{"id":"solid_pump", "amount":1}
+	],
+	"requiredProcess":"workshop",
+	"processTimeSeconds":10
+},
+{
+	"inputs":[
 		{"id":"solid_pump", "amount":1},
 		{"id":"rubber_pipe", "amount":1},
-		{"id":"aluminum_plate", "amount":1}
+		{"id":"aluminum_plate", "amount":1},
+		{"id":"hydraulic_fluid", "amount":1}
 	],
 	"outputs":[
 		{"id":"hydraulic_piston", "amount":1}

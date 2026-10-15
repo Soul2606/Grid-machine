@@ -206,6 +206,7 @@
 		"name":"Basic Compressor",
 		"capabilities":["compress"],
 		"tier":0,
+		"img":"svg/basic-compressor.svg",
 		"cost":[
 			{"id":"logic_circuit", "amount":1},
 			{"id":"basic_machine_hull", "amount":1},
@@ -285,6 +286,7 @@
 		"name":"Solid Arc Furnace",
 		"capabilities":["blasting"],
 		"tier":1,
+		"img":"svg/solid-arc-furnace.svg",
 		"cost":[
 			{"id":"processor", "amount":1},
 			{"id":"solid_machine_hull", "amount":1},
@@ -297,16 +299,19 @@
 		"name":"Solid Pyrolysis Oven",
 		"capabilities":["coke_oven", "pyrolysis"],
 		"tier":1,
+		"img":"svg/solid-pyrolisys-oven.svg",
 		"cost":[
 			{"id":"processor", "amount":1},
 			{"id":"solid_machine_hull", "amount":1},
-			{"id":"steel_ingot", "amount":8}
+			{"id":"steel_ingot", "amount":8},
+			{"id":"nichrome_ingot", "amount":1}
 		]
 	},
 	"advanced_assembler":{
 		"name":"Advanced Assembler",
 		"capabilities":["assembly"],
 		"tier":2,
+		"img":"svg/advanced-assembler.svg",
 		"cost":[
 			{"id":"computer", "amount":1},
 			{"id":"stainless_machine_hull", "amount":1},

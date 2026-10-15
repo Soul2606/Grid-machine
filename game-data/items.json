@@ -520,14 +520,15 @@
 	},
 	"solid_pump":{
 		"name":"Solid pump",
-		"img":"svg/basic-pump.svg"
+		"img":"svg/solid-pump.svg"
 	},
 	"rubber_pipe":{
 		"name":"Rubber pipe",
 		"img":"svg/rubber-pipe.svg"
 	},
 	"hydraulic_piston":{
-		"name":"Hydraulic piston"
+		"name":"Hydraulic piston",
+		"img":"svg/pneumatic-piston.svg"
 	},
 	"pneumatic_robot_arm":{
 		"name":"Pneumatic robot arm",
@@ -544,7 +545,8 @@
 	},
 	"phosphoric_acid":{
 		"name":"Phosphoric acid",
-		"formula":"P2O7H4"
+		"formula":"P2O7H4",
+		"img":"svg/phosphoric-acid.svg"
 	},
 	"ruby_dust":{
 		"name":"Ruby dust",
