@@ -72,9 +72,9 @@ function show(recipes:RecipeDef[], extra:HTMLElement[] = []) {
 	const capabilities = new Map<string, HTMLElement[]>()
 	for (const rec of recipes) {
 		if (capabilities.has(rec.requiredProcess)) {
-			capabilities.get(rec.requiredProcess)!.push(Ui.createRecipeCard(rec.inputs, rec.outputs))
+			capabilities.get(rec.requiredProcess)!.push(Ui.createRecipeCard(rec))
 		} else {
-			capabilities.set(rec.requiredProcess, [Ui.createRecipeCard(rec.inputs, rec.outputs)])
+			capabilities.set(rec.requiredProcess, [Ui.createRecipeCard(rec)])
 		}
 	}
 

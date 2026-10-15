@@ -1,5 +1,4 @@
 import { getData } from "../game-data.js";
-import type { ItemEntry } from "../classes/item-entry.js";
 import { create } from "../common/utils.js";
 import { getItemFromId, getItemsFromTag } from "../crafting-system/functions.js";
 import type { ItemDef, MachineDef, RecipeDef, RecipeInput } from "../game-data";
@@ -133,16 +132,22 @@ export function createChemicalFormula(formula: string): HTMLElement {
   return container;
 }
 
-export function createRecipeCard(itemsIn:readonly RecipeInput[], itemsOut:(readonly ItemEntry[])|MachineDef) {
+export function createRecipeCard(recipe:readonly RecipeInput[], machine:MachineDef): HTMLElement
+
+export function createRecipeCard(recipe:RecipeDef): HTMLElement
+
+export function createRecipeCard(recipe:(readonly RecipeInput[])|RecipeDef, machine?:MachineDef) {
 	const root = document.createElement("div")
 	root.className = "recipe-card"
 
 	const info = document.createElement("span")
 	info.className = "recipe-card-info"
+	if ("requiredTier" in recipe) info.textContent = `tier:${recipe.requiredTier} time:${recipe.processTimeSeconds}` 
 	root.append(info)
 
 	const input = document.createElement("div")
 	input.className = "recipe-card-io"
+	const itemsIn:readonly RecipeInput[] = "inputs" in recipe ? recipe.inputs : recipe
 	for (const item of itemsIn) {
 		if ("id" in item) {
 			input.append(createItem(getItemFromId(item.id), item.amount))
@@ -161,13 +166,14 @@ export function createRecipeCard(itemsIn:readonly RecipeInput[], itemsOut:(reado
 
 	const output = document.createElement("div")
 	output.className = "recipe-card-io"
-	if (Array.isArray(itemsOut)) {
-		for (const item of itemsOut) {
+	if (machine === undefined && "outputs" in recipe) {
+		for (const item of recipe.outputs) {
 			output.append(createItem(getItemFromId(item.id), item.amount))
 		}
-	} else if ("cost" in itemsOut){
-		output.append(createMachine(itemsOut))
-	}
+	} else if (machine !== undefined) {
+		output.append(createMachine(machine))
+	} else throw new Error("invariant broke");
+	
 	root.append(output)
 
 	return root
