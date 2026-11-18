@@ -1318,7 +1318,7 @@
 	],
 	"requiredProcess":"distillation",
 	"processTimeSeconds":5,
-	"requiredTier":1
+	"requiredTier":2
 },
 {
 	"inputs":[

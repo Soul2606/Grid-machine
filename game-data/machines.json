@@ -258,7 +258,7 @@
 	},
 	"solid_assembler":{
 		"name":"Solid Assembler",
-		"capabilities":["assembly"],
+		"capabilities":["assembly", "workshop"],
 		"tier":1,
 		"img":"svg/solid-assembler.svg",
 		"cost":[
@@ -309,7 +309,7 @@
 	},
 	"advanced_assembler":{
 		"name":"Advanced Assembler",
-		"capabilities":["assembly"],
+		"capabilities":["assembly", "workshop"],
 		"tier":2,
 		"img":"svg/advanced-assembler.svg",
 		"cost":[
